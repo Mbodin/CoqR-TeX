@@ -1,0 +1,85 @@
+\documentclass{article}
+
+\usepackage[
+   backend=biber,
+   style=alphabetic,
+   citestyle=authoryear-comp,
+   sortlocale=en,
+   url=true, 
+   doi=true,
+   eprint=false
+ ]{biblatex}
+\addbibresource{biblio.bib}
+
+\newcommand\R{R}
+
+\title{Notes about \R}
+\author{Martin Bodin}
+
+\begin{document}
+
+\maketitle
+
+\section{Presentation of the Language}
+
+\subsection{History}
+
+\R{} is a programming language designed for statistics.
+Its specification~\parencite{team2000r} is not precise:
+in practise, it is specified by its main implementation~\parencite{Rwebsite}.
+
+The original authors of \R{}~\parencite{ihaka1996r}
+describe \R{} as a programming language similar to Scheme
+which has been mutated to get a programming language similar to S.
+In particular, \R{} features scoping and first-class functions
+as Scheme.
+Similarly to S, however, it is a lazy programming language.
+
+It is a community driven programming language.
+This means that most of what is used in a \R{} program comes from various libraries,
+which can change the way the programming language behaves.
+This can be compared with JavaScript,
+and how libraries like jQuery changes the way programs look.
+
+\subsection{Features}
+
+\subsubsection{Lazyness}
+
+
+\subsubsection{Array Filtering}
+
+
+\section{\R{} Interpreters}
+
+\subsection{The Main \R{} Interpreter}
+
+\subsubsection{Concepts}
+
+Most \R{} objects are in the form of a \emph{basic language element}.
+This is a C structure composed of a tag and four pointers.
+The tag precises the kind of the basic language element;
+it can be for instance an integer vector, an environment, an expression, or an external pointer.
+The meaning of the last three vectors depends on the flag.
+%
+For instance, for an environment, the first pointer is a pointer
+to the current frame (associating each local variable to a value or a promise),
+the second pointer points to the environment of the outer scope,
+and the third pointer points to a hash (to enable faster checks).
+%
+For a list, the first pointer points to the first element of the list,
+the second, to the rest of the list,
+and the third, to an optional name for the first element.
+
+\subsubsection{Main Files and Functions}
+
+
+\subsection{FastR}
+
+The \R{} runtime can be slow.
+\cite{kalibera2014fast} propose a faster approach.
+
+
+\printbibliography
+
+\end{document}
+
