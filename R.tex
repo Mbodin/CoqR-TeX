@@ -11,7 +11,12 @@
  ]{biblatex}
 \addbibresource{biblio.bib}
 
+\newcommand\Coq{Coq}
 \newcommand\R{R}
+\newcommand\C{R}
+
+\usepackage{minted}
+\setminted{encoding=utf8}
 
 \title{Notes about \R}
 \author{Martin Bodin}
@@ -21,6 +26,11 @@
 \maketitle
 
 \section{Presentation of the Language}
+
+\R{} is now a trending programming language for mathematicians.
+In practise, it is presented as a read-eval-print-loop,
+but it is also possible to write programs in it.
+The language enables easy integration of \C{} functions.
 
 \subsection{History}
 
@@ -43,15 +53,143 @@ and how libraries like jQuery changes the way programs look.
 
 \subsection{Features}
 
-\subsubsection{Lazyness}
+\R{} is accompanied with a lot of features.
+We detail here the ones relevant from the point of view
+of it as a programming language.
+
+\subsubsection{Promises}
+
+The \R{} programming language is lazy.
+This was a design choice:
+it occurs often in \R{} to define a large array,
+but then filter it to only consider a small number of cells.
+Lazyness enables the programming language to focus on these cells
+and only compute what is needed to display their content.
+
+In practise, lazyness comes in the form of promises.
+A promise is composed of a syntactic expression,
+an environment, and an optional value.
+If \R{} needs the result of promise,
+it will check the optional value.
+If it is present, the promise already has been computed
+and the value is directly reused.
+Otherwise, the promise’s expression is evaluated,
+and the promise’s value is set to the returned value.
+The evaluation of the expression might raises side effects.
+%
+A typical place where promises are defined
+is during function calls.
+\begin{minted}{R}
+f <- function (x, y)
+     if (x == 1) y
+# “f” is now a function
+f (1, 2 + 2) # The expression “2 + 2” becomes here a promise.
+# The function “f” uses this promise, and it thus reduces to “4”.
+f (1, a <- 1) # This promise has a side effect.
+a # Returns 1. Note that the promise kept the initial environment:
+  # Variable “a” has been defined in the initial environment.
+f (0, b <- 1) # This promise has a side effect, but is not evaluated.
+b # Returns an error.
+\end{minted}
+
+This lazyness feature of \R{} enables
+language constructs like \mintinline{R}{if}
+to be considered as \emph{functions}.
+There are thus very few cases in the evaluation function
+of \R{}, corresponding to the atomic types.
+This also enables libraries to drastically change
+the language’s syntax.
+
+Function arguments can have default argument,
+but in this case, it is still a promise.
+In the following example,
+Variable \mintinline{R}{y} is associated with
+the promise \mintinline{R}{x} and the environment
+created during the call (not the initial one).
+But this environment may change during the function evaluation.
+\begin{minted}{R}
+x <- 1 # A global variable.
+f <- function (x, y = x) { # Variable “y” receives the promise “x”.
+       x <- 3 # We update Variable “x”.
+       y      # Evaluates the promise.
+       x <- 4 # We update again “x”.
+       y      # The promise has already been evaluated.
+     }
+f (2) # The local variable “x” is set to 2.
+# Returns 3.
+\end{minted}
+
+One of the goals of the \R{} programming language
+is to enable easy graphical drawings,
+through functions such as \mintinline{R}{plot}.
+To express equations, \R{} uses promises.
+Here is an example taken from the original paper~\parencite{ihaka1996r}.
+\begin{minted}{R}
+curve <- function (expr, from, to) {
+           x <- seq (from, to, length = 500)
+           y <- eval (substitute (expr))
+           plot (x, y)
+         }
+\end{minted}
+This function can then be invoked as
+\mintinline{R}{curve (x^2 - 1, -2, 2)}
+to draw the function \(f(x) = x^2 - 1\)
+over the interval \([-2, 2]\).
+Let us now understand what happens during
+such a call.
+First, Variable \mintinline{R}{expr}
+is associated with he promise \mintinline{R}{x^2 - 1}
+in the initial environment.
+This may be seen strange as the initial environment
+does not define any variable \mintinline{R}{x}.
+Inside the scope of function \mintinline{R}{curve},
+a variable \mintinline{R}{x} is defined, as a vector.
+The function \mintinline{R}{substitute} is a special function,
+as it manipulates the inner data type of the promise \mintinline{R}{expr}:
+it replaces its inner environment with the current environment
+(that is, the inner scope).
+The variable \mintinline{R}{x} inside the promise
+\mintinline{R}{expr} is now linked with the local
+variable \mintinline{R}{x},
+and the promise can be evaluated.
 
 
-\subsubsection{Array Filtering}
+\subsubsection{Vectors}
+
+In the previous example,
+Variable \mintinline{R}{x} was associated the result
+of \mintinline{R}{seq}, which is a numerical vector.
+It can be surprising that we were able to compute
+the expression \mintinline{R}{x^2 - 1},
+as \mintinline{R}{x} is not a number.
+The reason is that the operators \mintinline{R}{^} and \mintinline{R}{-}
+applies on vectors, component by component.
+The numbers \mintinline{R}{2} and \mintinline{R}{1}
+in the expression are seen as vectors with only one component.
+We cannot assign a variable with a number,
+but we can assign it a numerical vector of size one,
+and \R{} does it all the time.
+As the vectors \mintinline{R}{2} and \mintinline{R}{1}
+are not the same size than \mintinline{R}{x},
+their values are reused in a cyclic manner.
+In most cases, this is what the user wants,
+but it can be surprising if the user thought that both
+vectors had the same size but had not:
+no warning will be emitted by \R{}.
+
+One operation whose semantics can be difficult
+to fully comprehend is the vector filtering.
+Given a vector \mintinline{R}{v},
+we can filter it by \mintinline{R}{v[f]}.
+The behaviour of this operation will be very different,
+depending on the nature of \mintinline{R}{f}.
 
 
 \section{\R{} Interpreters}
 
 \subsection{The Main \R{} Interpreter}
+
+There are several variants of the \R{} interpreter.
 
 \subsubsection{Concepts}
 
@@ -78,6 +216,10 @@ and the third, to an optional name for the first element.
 The \R{} runtime can be slow.
 \cite{kalibera2014fast} propose a faster approach.
 
+
+\section{Formalisation}
+
+This section describes my approach to formalise \R{} in \Coq{}.
 
 \printbibliography
 
