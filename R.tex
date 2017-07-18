@@ -1,22 +1,41 @@
 \documentclass{article}
 
+\usepackage[xetex, colorlinks=true]{hyperref}
 \usepackage[
    backend=biber,
+   bibencoding=utf8,
    style=alphabetic,
-   citestyle=authoryear-comp,
+   hyperref=true,
+   % citestyle=authoryear-comp,
+   backref=false,
    sortlocale=en,
    url=true, 
-   doi=true,
+   doi=false,
    eprint=false
  ]{biblatex}
 \addbibresource{biblio.bib}
 
 \newcommand\Coq{Coq}
 \newcommand\R{R}
-\newcommand\C{R}
+\newcommand\Cn{C}
 
 \usepackage{minted}
 \setminted{encoding=utf8}
+
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+
+\tikzset{
+	box/.style = {
+		draw = black,
+        fill = white,
+		rectangle,
+		rounded corners = 2pt,
+		text centered,
+		minimum height = 5mm,
+		minimum width = 10mm
+	}
+}
 
 \title{Notes about \R}
 \author{Martin Bodin}
@@ -30,7 +49,7 @@
 \R{} is now a trending programming language for mathematicians.
 In practise, it is presented as a read-eval-print-loop,
 but it is also possible to write programs in it.
-The language enables easy integration of \C{} functions.
+The language enables easy integration of \Cn{} functions.
 
 \subsection{History}
 
@@ -178,20 +197,63 @@ vectors had the same size but had not:
 no warning will be emitted by \R{}.
 
 One operation whose semantics can be difficult
-to fully comprehend is the vector filtering.
+to fully comprehend is the vector indexing.
 Given a vector \mintinline{R}{v},
-we can filter it by \mintinline{R}{v[f]}.
+we can filter it by \mintinline{R}{v[i]}.
 The behaviour of this operation will be very different,
-depending on the nature of \mintinline{R}{f}.
+depending on the nature of \mintinline{R}{i}.
+\begin{itemize}
+    \item If \mintinline{R}{i} is a logical vector\footnote{
+          Logical vectors stores tri-valued booleans,
+          which can be \mintinline{R}{TRUE}, \mintinline{R}{FALSE},
+          or \mintinline{R}{NA} (not applicable).
+      }, then \mintinline{R}{i} is first repeated
+      to match the size of \mintinline{R}{v}.
+      Then, each index of \mintinline{R}{v} corresponding
+      to the value \mintinline{R}{TRUE} from the index array \mintinline{R}{i}
+      are conserved;
+      each corresponding to \mintinline{R}{FALSE} are removed;
+      and each corresponding to \mintinline{R}{NA} are replaced
+      by the \mintinline{R}{NA} of the expected type.
+    \item If \mintinline{R}{i} is a numerical vector,
+      and that all its elements are positive, zero, or \mintinline{R}{NA},
+      then the corresponding indexes of \mintinline{R}
+      are taken in the given order, resulting in an array
+      that can be thought of the same size than \mintinline{R}{i}.
+      Indexes of \mintinline{R}{v} are however counted from
+      \(1\), and all \(0\) in \mintinline{R}{i} are ignored.
+      If \mintinline{R}{i} contains \mintinline{R}{NA},
+      they yield \mintinline{R}{NA} in the resulting array.
+      Values of \mintinline{R}{i} greater than the size of \mintinline{R}{v}
+      results in \mintinline{R}{NA}.
+      Note that a special case of this case is \mintinline{R}{v[1]},
+      which returns an array with only one cell.
+    \item If \mintinline{R}{i} is a non-empty numerical vector
+      whose elements are all negative or zero,
+      then the result is the array \mintinline{R}{v}
+      in which all values whose index (starting from \(1\))
+      is the opposite of a number in \mintinline{R}{i} are removed.
+    \item If \mintinline{R}{i} is a vector of character strings,
+      and that \mintinline{R}{v} is associated with a \mintinline{R}{names}
+      attribute\footnote{
+          Any \R{} object can be associated attributes.
+          They are a simple name to value mapping,
+          which can be updated at will.
+      }.
+      We do not detail this case in details,
+      but \R{} then intuitively selects the cells of \mintinline{R}{v}
+      by their names.
+\end{itemize}
 
 
 \section{\R{} Interpreters}
 
+There are several variants of \R{} interpreters.
+
 \subsection{The Main \R{} Interpreter}
 
-There are several variants of the \R{} interpreter.
-
 \subsubsection{Concepts}
+\label{sec:concepts}
 
 Most \R{} objects are in the form of a \emph{basic language element}.
 This is a C structure composed of a tag and four pointers.
@@ -210,6 +272,21 @@ and the third, to an optional name for the first element.
 
 \subsubsection{Main Files and Functions}
 
+\begin{tabular}{|c|p{7cm}|}
+    \hline
+    \texttt{src/include/Internal.h} & Defines the basic language element structure. \\
+    \hline
+    \texttt{src/main/names.c} & Fills in the global environment, associating each \R{} construct/name to its corresponding \Cn{} function. \\
+    \hline
+    \texttt{src/main/eval.c} & Defines \Cn{} functions to evaluate expressions. In particular the function \mintinline{C}{eval}, taking an expression and an environment and evaluating the expression. \\
+    \hline
+    \texttt{src/main/context.c} & Defines contexts, which is a structure used to manipulate informations relative to program points, for constructs like \mintinline{R}{break} or \mintinline{R}{return}. \\
+    \hline
+    \texttt{src/main/envir.c} & Defines various \Cn{} functions to manipulate environments. \\
+    \hline
+    \texttt{src/main/coerce.c} & Contains a \Cn{} functions to converts \R{} values to other types. It also contains the \mintinline{R}{substitute} function. \\
+    \hline
+\end{tabular}
 
 \subsection{FastR}
 
@@ -220,6 +297,95 @@ The \R{} runtime can be slow.
 \section{Formalisation}
 
 This section describes my approach to formalise \R{} in \Coq{}.
+
+\subsection{Language Formalisation}
+
+Following my experience with JSCert~\parencite{bodin2014trusted},
+I think that it is important to have a specification
+the closest possible to \R{} internals.
+Indeed, JavaScript possesses structures in some way similar
+to the basic language elements (see Section~\ref{sec:concepts}),
+called completion triples.
+In JSCert, we initially choose to represent these completion triples
+as a \Coq{} inductive,
+each case of the triples only containing the attributes that made sense for us.
+For instance, a basic language element whose tag is “symbol”
+will probably only use one pointer to represent the string of the symbol.
+By we discovered later that a construct of JavaScript % The sequence
+broke what we thought were invariants:
+the standard manipulated the structure as is it was a \Cn{} structure,
+breaking our type assumptions.
+We were forced to start the formalisation again with a structure
+closer to the standard.
+
+I thus propose a formalisation based on the structure below.
+Arrows represent trust relations,
+those which are dashed are planned but not yet there.
+It is inspired by the refinement methodology~\parencite{cohen2013refinements}:
+produce several implementations,
+one easier to specify and one easier (or more efficient) to implement,
+then prove correct each one relatively to the next one.
+\begin{center}
+\begin{tikzpicture}
+    \node [box] (C) {\Cn{} code} ;
+    \node [box, right = 1cm of C] (low) {\parbox{25mm}{\centering{}Low-level \Coq{} formalisation}} ;
+    \node [box, right = 1cm of low] (typed) {\parbox{25mm}{\centering{}Typed \Coq{} formalisation}} ;
+    \node [box, right = 1cm of typed] (intuition) {\parbox{25mm}{\centering{}High-level \Coq{} formalisation}} ;
+
+    \draw [<->, thick, dashed] (C) to [bend left] node [above] {Link with CompCert} (low) ;
+    \draw [<->, thick] (low) to [bend left] node [below] {Eyeball correspondance} (C) ;
+    \draw [<->, thick, dashed] (low) to [bend left] node [above] {\Coq{} proof} (typed) ;
+    \draw [<-, thick, dashed] (typed) to [bend left] node [above] {\Coq{} proof} (intuition) ;
+\end{tikzpicture}
+\end{center}
+At one end of the refinements is the \Cn{} source code of the \R{} interpreter.
+As \R{} is defined by implementation,
+this can be seen as a specification.
+We in particular focus on the parts defining program evaluation
+(mostly the files \texttt{src/include/Internal.h} and \texttt{src/main/eval.c}),
+ignoring most constructs of the \R{} programming language.
+A \Coq{} version of these \Cn{} definitions is defined,
+with the aim to be the closest possible to the \Cn{} definition.
+Some parts of the functions are dropped at this level,
+such as error management.
+At term, it is planned to use CompCert to prove that the \Coq{}
+version is indeed identical to the chosen parts of the \Cn{} definition.
+
+A typed \Coq{} formalisation is then defined.
+This formalisation abstracts some low-level constructs,
+such as pointers to basic language element
+(which are heavily used in \R{}’s source code).
+The expressions are also given a proper inductive at this stage,
+although it is only weakly typed.
+This inductive merely emphases with flag uses which pointers
+of the basic language element structure.
+It also makes explicit a subtlety of \Cn{} pointers,
+which can be used for two distinct usages:
+a pointer to one object,
+or a pointer to an array of this object.
+In this typed structure, the pointers to arrays
+are replaced by a list,
+which is much easier to manipulate in \Coq{}.
+
+The last step of the process aims to fit
+the intuition that the original had in mind when defining
+the \R{} programming language~\parencite{ihaka1996r}.
+Some advanced \R{} constructs may not fit such a high-level formalisation,
+as they might break the underlying assumptions.
+
+
+\subsection{Application}
+
+Once a solid \Coq{} formalisation will be finished,
+we aim to apply it by proving some properties on a \R{} program.
+%
+The \Coq{} formalisation does not contain any \R{} construct.
+The first step will thus be to identify which constructs
+are crucial for the analysis of the targeted program,
+then provide them a specification
+(either from the source, or a high-level one, which will have
+to be tested against \R{}~\parencite{maj2013testr}).
+
 
 \printbibliography
 
