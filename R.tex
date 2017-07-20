@@ -9,7 +9,7 @@
    % citestyle=authoryear-comp,
    backref=false,
    sortlocale=en,
-   url=true, 
+   url=true,
    doi=false,
    eprint=false
  ]{biblatex}
@@ -272,6 +272,8 @@ and the third, to an optional name for the first element.
 
 \subsubsection{Main Files and Functions}
 
+This table shows the various main files of the \Cn{} source code of \R{}.
+
 \begin{tabular}{|c|p{7cm}|}
     \hline
     \texttt{src/include/Internal.h} & Defines the basic language element structure. \\
@@ -287,6 +289,23 @@ and the third, to an optional name for the first element.
     \texttt{src/main/coerce.c} & Contains a \Cn{} functions to converts \R{} values to other types. It also contains the \mintinline{R}{substitute} function. \\
     \hline
 \end{tabular}
+
+These files change regularly,
+but rarely in the \Cn{} part.
+Most of the changes between the current (trunk) version
+and in Version~\(3.0\) (from 2012, that is five years ago)
+are changes in the preprocessor
+(some architectures includes different headers),
+added documentation in comments,
+small type changes between similar types
+(\mintinline{C}{unsigned long} updated to \mintinline{C}{size_t}),
+code restructuration,
+and more importantly,
+new behaviours.
+There new behaviours are mostly additional checks
+and exceptions providing more behaviours
+(or more precise behaviours) to the \R{} interpreter
+for rare cases.
 
 \subsection{FastR}
 
@@ -329,13 +348,13 @@ then prove correct each one relatively to the next one.
 \begin{tikzpicture}
     \node [box] (C) {\Cn{} code} ;
     \node [box, right = 1cm of C] (low) {\parbox{25mm}{\centering{}Low-level \Coq{} formalisation}} ;
-    \node [box, right = 1cm of low] (typed) {\parbox{25mm}{\centering{}Typed \Coq{} formalisation}} ;
-    \node [box, right = 1cm of typed] (intuition) {\parbox{25mm}{\centering{}High-level \Coq{} formalisation}} ;
+    \node [box, right = 1cm of low] (structured) {\parbox{25mm}{\centering{}Structured \Coq{} formalisation}} ;
+    \node [box, right = 1cm of structured] (intuition) {\parbox{25mm}{\centering{}High-level \Coq{} formalisation}} ;
 
     \draw [<->, thick, dashed] (C) to [bend left] node [above] {Link with CompCert} (low) ;
     \draw [<->, thick] (low) to [bend left] node [below] {Eyeball correspondance} (C) ;
-    \draw [<->, thick, dashed] (low) to [bend left] node [above] {\Coq{} proof} (typed) ;
-    \draw [<-, thick, dashed] (typed) to [bend left] node [above] {\Coq{} proof} (intuition) ;
+    \draw [<->, thick, dashed] (low) to [bend left] node [above] {\Coq{} proof} (structured) ;
+    \draw [<-, thick, dashed] (structured) to [bend left] node [above] {\Coq{} proof} (intuition) ;
 \end{tikzpicture}
 \end{center}
 At one end of the refinements is the \Cn{} source code of the \R{} interpreter.
@@ -351,7 +370,7 @@ such as error management.
 At term, it is planned to use CompCert to prove that the \Coq{}
 version is indeed identical to the chosen parts of the \Cn{} definition.
 
-A typed \Coq{} formalisation is then defined.
+A structured \Coq{} formalisation is then defined.
 This formalisation abstracts some low-level constructs,
 such as pointers to basic language element
 (which are heavily used in \R{}’s source code).
@@ -363,7 +382,7 @@ It also makes explicit a subtlety of \Cn{} pointers,
 which can be used for two distinct usages:
 a pointer to one object,
 or a pointer to an array of this object.
-In this typed structure, the pointers to arrays
+In this structured formalisation, the pointers to arrays
 are replaced by a list,
 which is much easier to manipulate in \Coq{}.
 
@@ -372,6 +391,71 @@ the intuition that the original had in mind when defining
 the \R{} programming language~\parencite{ihaka1996r}.
 Some advanced \R{} constructs may not fit such a high-level formalisation,
 as they might break the underlying assumptions.
+
+\subsection{Technical Implementation Choices}
+
+A lot is inspired from the interpreter of the JSCert project~\parencite{bodin2014trusted}.
+In contrary to JSCert, the semantics is only given in the form
+of an interpreter.
+As illustrated by the JSExplain project~\parencite{JSExplain},
+such a form is enough to describe an operational semantics.
+
+A \Cn{} program manipulates a global state
+(which is a partial mapping from pointers to values).
+To represent this in \Coq{}, we use a monadic construct, defined below.
+The main constructor \mintinline{Coq}{result_success}
+carries the global state and an object.
+If a construct fails,
+the construct \mintinline{Coq}{result_error}
+is called with the error message.
+The other constructors enable to precisely describe
+the reason why a result was not given:
+because of places of the \R{} semantics that we do not catch,
+because of lack of fuel (see below),
+or because of an assertion failure
+(which should not happen,
+and is thus important to declare if they happen).
+\begin{minted}{Coq}
+Inductive result (A : Type) :=
+  | result_success : state -> A -> result A
+  | result_error : state -> string -> result A
+  (* ... *).
+\end{minted}
+
+We can then define a monad for this type.
+Any call to a procedure that may fail
+is done through this function.
+Errors are propagated.
+\begin{minted}{Coq}
+Definition if_success (A B : Type)
+    (r : result A) (f : state -> A -> result B) : result B :=
+  match r with
+  | result_success S0 a => f S0 a
+  | result_error S0 => result_error S0
+  (* ... *)
+  end.
+\end{minted}
+
+Functions in \Coq{} must terminate.
+This makes programming in \Coq{} complex as we must explicitly
+mention what argument terminate in a recursive call.
+Co-recursive calls are common in the source code of \R{},
+so we used the same solution than in JSCert:
+the potentially looping construct are packed into a \Coq{}
+structure, which is given to the argument of any function.
+There is no recursive call in such a programming pattern:
+all recursive calls are replaced by a call to one element
+of the structure (which may have the same name than the
+current function).
+Once any function has been defined,
+with such a structure as a parameter,
+we define the interpreter as being this structure of functions
+parameterised with a fuel (an artificially decreasing argument).
+The fuel solution is common in \Coq{},
+but may be cumbersome.
+This way of defining the interpreter avoids
+having to deal with explicit fuels all along the computation.
+It also make definitions easier to read.
 
 
 \subsection{Application}
