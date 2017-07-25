@@ -49,7 +49,11 @@
 \R{} is now a trending programming language for mathematicians.
 In practise, it is presented as a read-eval-print-loop,
 but it is also possible to write programs in it.
-The language enables easy integration of \Cn{} functions.
+% The language enables easy integration of \Cn{} functions.
+The language presents itself as a weakly typed programming language
+manipulating different types of arrays.
+The language is dynamic,
+in the sense that most programs have a semantics.
 
 \subsection{History}
 
@@ -77,6 +81,7 @@ We detail here the ones relevant from the point of view
 of it as a programming language.
 
 \subsubsection{Promises}
+\label{sec:promises}
 
 The \R{} programming language is lazy.
 This was a design choice:
@@ -207,6 +212,7 @@ depending on the nature of \mintinline{R}{i}.
           Logical vectors stores tri-valued booleans,
           which can be \mintinline{R}{TRUE}, \mintinline{R}{FALSE},
           or \mintinline{R}{NA} (not applicable).
+          All base values have an \mintinline{R}{NA} value.
       }, then \mintinline{R}{i} is first repeated
       to match the size of \mintinline{R}{v}.
       Then, each index of \mintinline{R}{v} corresponding
@@ -245,6 +251,34 @@ depending on the nature of \mintinline{R}{i}.
       by their names.
 \end{itemize}
 
+\subsubsection{Function Calls}
+
+The part of \R{} source code dealing with function application,
+and in particular in the part matching given argument to expected arguments,
+is surprisingly long.
+The reason is that there are several, separately simple, ways to call
+a function.
+Each of these ways then interoperate during the call,
+making it quite complex.
+
+We have seen in Section~\ref{sec:promises} that default arguments can be given
+to a function argument:
+if the argument is not provided, a promise is associated with the default value.
+Arguments can also be given by name,
+as in the \mintinline{R}{curve} example of the same section:
+the function \mintinline{R}{seq} is given its argument named \mintinline{R}{length}
+as a named argument,
+overwriting the argument order.
+
+Arguments can also be missing.
+This does not break the function call.
+However, if the associated promise is evaluated, then an error is thrown.
+However, we can not provide more arguments than what a function expects,
+resulting in an error during the function call.
+It is however possible to provide a \mintinline{R}{...} formal argument
+to a function definition.
+When called, all additional arguments will be packed in a special array.
+
 
 \section{\R{} Interpreters}
 
@@ -256,7 +290,7 @@ There are several variants of \R{} interpreters.
 \label{sec:concepts}
 
 Most \R{} objects are in the form of a \emph{basic language element}.
-This is a C structure composed of a tag and four pointers.
+This is a \Cn{} structure composed of a tag and four pointers.
 The tag precises the kind of the basic language element;
 it can be for instance an integer vector, an environment, an expression, or an external pointer.
 The meaning of the last three vectors depends on the flag.
@@ -271,6 +305,7 @@ the second, to the rest of the list,
 and the third, to an optional name for the first element.
 
 \subsubsection{Main Files and Functions}
+\label{sec:files}
 
 This table shows the various main files of the \Cn{} source code of \R{}.
 
@@ -281,6 +316,8 @@ This table shows the various main files of the \Cn{} source code of \R{}.
     \texttt{src/main/names.c} & Fills in the global environment, associating each \R{} construct/name to its corresponding \Cn{} function. \\
     \hline
     \texttt{src/main/eval.c} & Defines \Cn{} functions to evaluate expressions. In particular the function \mintinline{C}{eval}, taking an expression and an environment and evaluating the expression. \\
+    \hline
+    \texttt{src/main/match.c} & Contains various function to deal with the association between formal and given arguments in a function call. \\
     \hline
     \texttt{src/main/context.c} & Defines contexts, which is a structure used to manipulate informations relative to program points, for constructs like \mintinline{R}{break} or \mintinline{R}{return}. \\
     \hline
@@ -392,6 +429,76 @@ the \R{} programming language~\parencite{ihaka1996r}.
 Some advanced \R{} constructs may not fit such a high-level formalisation,
 as they might break the underlying assumptions.
 
+\subsection{What is Formalised}
+
+The \Cn{} source code of \R{} is large.
+It is thus out of the question to translate every \Cn{} function to \Coq{}.
+I have focussed on the \mintinline{C}{eval} function from
+\texttt{src/main/eval.c} and its dependencies.
+This includes in particular the \Cn{} structures used to represent
+\R{} expressions,
+as well as a large parts of the files presented in Section~\ref{sec:files}.
+
+\subsubsection{Structures}
+
+The memory management are ignored in this formalisation.
+In particular, the garbage collector and its special reserved bits in the
+basic element structure are completely ignored.
+Instead, we consider that the interpreter allocates new basic language element
+without reusing them.
+The memory is thus formalised as a partial map from pointers
+(which we defined to be natural numbers)
+to basic language elements.
+We think that this part of \R{} is sufficiently local to not be an issue
+to not formalise it.
+
+\R{} implementation is done in a strong imperative style,
+as well as using pointers.
+Tracking whether two objects are aliases in the heap is thus important.
+I thus decided to include in the formalisation the \mintinline{C}{named}
+field of the language element.
+A explained in the documentation file \texttt{R-ints.pdf}
+(Section~1.1.2),
+which describes some of \R{}’s internal structures,
+this field can take three values:
+\(0\) for temporary objects,
+\(1\) for objects bounds to at least one variable,
+as \(2\) for objects that may be bound to more than one variable.
+I formalised this part as a \Coq{} inductive.
+
+Other fields of the basic language elements were not formalised.
+For instance, the \mintinline{C}{debug} field,
+which is only used when debugging \R{} programs,
+or the fields reserved for the garbage collector.
+These fields are not difficult to later add in the formalisation,
+as basic language elements are very rarely built explicitly:
+they are usually defined or edited (following \Cn{}’s imperative style)
+field by field using constructors.
+In the \Coq{} formalisation, these accessors are defined in the file
+\texttt{low/RinternalsAux.v}.
+
+Basic language elements are also associated a \mintinline{C}{gp} field,
+for general purpose.
+In a nutshell, this field is used differently by all \R{} functions
+to store some informations in the basic language elements.
+Usually, this is only stored locally.
+For instance, during the matching of given arguments to formal arguments,
+it is used to store some information about whether the argument
+has been used yet, whether it is known to be missing, etc.
+It was tempted not to formalise this part,
+or to formalise it as a parameterised type
+(each language element being able to store additional information
+of any type, using dependent-type constructs).
+Formalising out these constructs would however make the \Coq{}
+formalisation away from the \Cn{} source code.
+Such a choice would thus lead to further complexities to relate
+the \Cn{} source code with the low-level \Coq{} formalisation.
+It has thus been added in the formalisation as it is in \Cn{}.
+The structured formalisation then formalises it out.
+
+\subsubsection{Relation to the \Cn{}}
+
+
 \subsection{Technical Implementation Choices}
 
 A lot is inspired from the interpreter of the JSCert project~\parencite{bodin2014trusted}.
@@ -399,6 +506,34 @@ In contrary to JSCert, the semantics is only given in the form
 of an interpreter.
 As illustrated by the JSExplain project~\parencite{JSExplain},
 such a form is enough to describe an operational semantics.
+
+\subsubsection{Notations}
+
+When starting such a large project,
+having consistent notations is crucial.
+We try to be conservative with the variable names from
+\R{} source code as much as possible.
+
+The \Cn{} language manipulates a lot of pointers,
+and the seemingly similar \Cn{} notations \mintinline{C}{p},
+\mintinline{C}{*p}, and \mintinline{C}{p->f}
+(which is often hidden in a macro in \R{} source code)
+represent different objects in \Coq{}.
+In particular, whilst \mintinline{C}{p} is always defined,
+\mintinline{C}{*p} may not.
+To catch this, we use monads (see next section),
+returning if defined the pointed structure:
+the pointed structure and the pointer are thus not
+syntactically related in \Coq{}.
+Similarly, when a field of \mintinline{C}{p} is actually an union,
+it is represented as an inductive type in \Coq{}:
+although \Cn{} access is always possible,
+we have to go through a monad in \Coq{}.
+We chose to write \mintinline{C}{*p} as \mintinline{coq}{p_}
+and \mintinline{C}{p->f} as \mintinline{coq}{p_f} in \Coq{}.
+
+
+\subsubsection{Monadic Style}
 
 A \Cn{} program manipulates a global state
 (which is a partial mapping from pointers to values).
