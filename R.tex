@@ -279,6 +279,29 @@ It is however possible to provide a \mintinline{R}{...} formal argument
 to a function definition.
 When called, all additional arguments will be packed in a special array.
 
+Surprisingly, named arguments are matched by prefix
+(called “partial match” in \R{} source code) and not by exact name,
+unless they are after a \mintinline{R}{...} formal argument.
+For instance, in the example below,
+we can refer to the argument \mintinline{R}{cd} as just \mintinline{R}{c}.
+Exact matches have however higher priority to prefix:
+although \mintinline{R}{ab} is a prefix of \mintinline{R}{abc},
+as it exactly corresponds to the name of a formal argument,
+\R{} do not mix them.
+Also, exact matches are checked first, and partial matches second:
+this is the reason why the call \mintinline{R}{f (ab = 2, a = 1, 3)}
+below succeeds, assigning \mintinline{R}{abs} to \(1\).
+\begin{minted}{R}
+f <- function (abc, ab, cd) c(abc, ab, cd)
+# All the expressions below returns the array 1 2 3.
+f (1, 2, 3)
+f (cd = 3, 1, 2)
+f (c = 3, 1, 2)
+f (ab = 2, 1, 2)
+f (ab = 2, a = 1, 3)
+f (a = 3, 1, 2) # Returns an error, as “a” is the prefix of several formal arguments.
+\end{minted}
+
 
 \section{\R{} Interpreters}
 
@@ -429,6 +452,7 @@ the \R{} programming language~\parencite{ihaka1996r}.
 Some advanced \R{} constructs may not fit such a high-level formalisation,
 as they might break the underlying assumptions.
 
+
 \subsection{What is Formalised}
 
 The \Cn{} source code of \R{} is large.
@@ -496,10 +520,8 @@ the \Cn{} source code with the low-level \Coq{} formalisation.
 It has thus been added in the formalisation as it is in \Cn{}.
 The structured formalisation then formalises it out.
 
-\subsubsection{Relation to the \Cn{}}
 
-
-\subsection{Technical Implementation Choices}
+\subsection{The Low-Level Formalisation}
 
 A lot is inspired from the interpreter of the JSCert project~\parencite{bodin2014trusted}.
 In contrary to JSCert, the semantics is only given in the form
@@ -561,7 +583,7 @@ We can then define a monad for this type.
 Any call to a procedure that may fail
 is done through this function.
 Errors are propagated.
-\begin{minted}{Coq}
+\begin{minted}{coq}
 Definition if_success (A B : Type)
     (r : result A) (f : state -> A -> result B) : result B :=
   match r with
@@ -591,6 +613,62 @@ but may be cumbersome.
 This way of defining the interpreter avoids
 having to deal with explicit fuels all along the computation.
 It also make definitions easier to read.
+
+
+\subsubsection{Code Rewriting}
+
+Even using monadic style,
+translating a \Cn{} program into \Coq{} can be complex.
+I tried to do it the most closely possible to the original
+\Cn{} source code,
+but there were places in which direct translation was difficult.
+For instance, in function \mintinline{C}{matchArgs},
+an array \mintinline{C}{fargused} of integers is declared,
+tracking for each argument whether it is used or not.
+As I did not model the full \Cn{} memory—%
+the only kind of cells that we can allocate in the model
+is basic language elements—%
+allocating such an array would not be possible.
+\begin{minted}{C}
+int fargused[arg_i ? arg_i : 1]; // avoid undefined behaviour
+memset(fargused, 0, sizeof(fargused));
+\end{minted}
+
+One solution would be to define \mintinline{coq}{fargused}
+as a list of integers, as below.
+Such a list would then be updated through the monadic style.
+\begin{minted}{coq}
+let fargused : list nat :=
+  let fargused : list nat :=
+    let fix aux i :=
+      match i with
+      | 0 => nil
+      | S n => 0 :: aux n in
+    in aux argi in
+    (* ... *)
+\end{minted}
+
+However, when observing in practise what the \Cn{} program
+does, it does not fully use the fact that it is an array:
+the \(i\)th cell of the array is only accessed in the \(i\)th
+iteration of the loop.
+As the loop was translated into a fold on the given list,
+it was not a issue to push the array into the fold.
+One way to see this formalisation choice
+is that we have locally rewritten the original \Cn{} program
+to an equivalent program.
+I only did such a program rewriting when the style of the \Cn{}
+program was difficult to directly translate into \Coq{},
+and the change were all local:
+I do not expect it to yield more complexity for the proof of correctness.
+
+
+\subsubsection{Validation}
+
+In essence, the \Coq{} formalisation is executable.
+Waiting to relate the formalisation to CompCert’s interpretation
+of the \Cn{} source code, we can thus test the formal interpreter
+on benchmarks.
 
 
 \subsection{Application}
