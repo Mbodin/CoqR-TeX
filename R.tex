@@ -316,9 +316,13 @@ Most \R{} objects are in the form of a \emph{basic language element}.
 This is a \Cn{} structure composed of a tag and four pointers.
 The tag precises the kind of the basic language element;
 it can be for instance an integer vector, an environment, an expression, or an external pointer.
+The first pointer is used to associate \emph{attributes} to the basic language element.
+Attributes are additional fields that can be added to almost any \R{} object;
+they are untyped.
+
 The meaning of the last three vectors depends on the flag.
 %
-For instance, for an environment, the first pointer is a pointer
+For instance, for an environment, the first (data) pointer is a pointer
 to the current frame (associating each local variable to a value or a promise),
 the second pointer points to the environment of the outer scope,
 and the third pointer points to a hash (to enable faster checks).
@@ -326,6 +330,16 @@ and the third pointer points to a hash (to enable faster checks).
 For a list, the first pointer points to the first element of the list,
 the second, to the rest of the list,
 and the third, to an optional name for the first element.
+
+Vectors are specials.
+They are associated with the same tag and attribute pointer,
+then two integers follow.
+Lastly, a raw array of data directly follows the basic language element in the \Cn{} memory.
+The two integers store the size of this array as well as its allocated size.
+The kind of array following the basic language element depends on what it stores:
+for a character vector, it will be an array of characters,
+for an integer vector, an array of integers, etc.
+
 
 \subsubsection{Main Files and Functions}
 \label{sec:files}
@@ -372,6 +386,7 @@ for rare cases.
 The \R{} runtime can be slow.
 \cite{kalibera2014fast} propose a faster approach.
 
+\todo{A note about their testing architecture that we might use?}
 
 \section{Formalisation}
 
@@ -519,6 +534,21 @@ Such a choice would thus lead to further complexities to relate
 the \Cn{} source code with the low-level \Coq{} formalisation.
 It has thus been added in the formalisation as it is in \Cn{}.
 The structured formalisation then formalises it out.
+
+\subsubsection{Miscellaneous Unformalised Items}
+
+The hash of environment has not been formalised.
+We considered it to be an optimisation and did not wanted to bother
+with the complex associated proofs.
+
+The \mintinline{R}{truelength} field of vectors has also been
+removed in the \Cog{} formalisation.
+It can be seen as a general choice not to model the \Cn{} memory in details.
+Similarly, the vector following a vector is considered to be part
+of the vector (represented as a list).
+We believe it to closely follow the intuition and the comments from the \Cn{} code:
+the only reason why it was not done as-is in \Cn{} is because \Cn{} types
+are not expressive enough.
 
 
 \subsection{The Low-Level Formalisation}
