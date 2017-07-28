@@ -586,6 +586,7 @@ and \mintinline{C}{p->f} as \mintinline{coq}{p_f} in \Coq{}.
 
 
 \subsubsection{Monadic Style}
+\label{sec:monadic:style}
 
 A \Cn{} program manipulates a global state
 (which is a partial mapping from pointers to values).
@@ -691,6 +692,306 @@ I only did such a program rewriting when the style of the \Cn{}
 program was difficult to directly translate into \Coq{},
 and the change were all local:
 I do not expect it to yield more complexity for the proof of correctness.
+
+
+\subsubsection{Closeness to the \Cn{} source code}
+
+The goal of the low-level formalisation is to be close as possible
+from the \Cn{} source code of \R{}.
+In this section, we evaluate how close it is.
+
+Let us start by structure definitions.
+In the \Cn{} source code, types are defined by an enumeration.
+\begin{minted}{C}
+typedef enum {
+    NILSXP  = 0,    /* nil = NULL */
+    SYMSXP  = 1,    /* symbols */
+    LISTSXP = 2,    /* lists of dotted pairs */
+    CLOSXP  = 3,    /* closures */
+    ENVSXP  = 4,    /* environments */
+    PROMSXP = 5,    /* promises: [un]evaluated closure arguments */
+    /* ... */
+    FUNSXP  = 99    /* Closure or Builtin */
+} SEXPTYPE;
+\end{minted}
+This enumeration is naturally translated into an inductive in \Coq{}.
+\begin{minted}{Coq}
+(** SEXPTYPE **)
+Inductive SExpType :=
+  | NilSxp
+  | SymSxp
+  | ListSxp
+  | CloSxp
+  | EnvSxp
+  | PromSxp
+  (* ... *)
+  | FunSxp
+  .
+\end{minted}
+This seems very natural.
+However, there are some places in which the \mintinline{C}{SEXPTYPE}
+enumeration is stored in only \(5\) digits.
+This is an issue as the last item of the enumeration
+is associated the value \(99\)—%
+note that the one before is associated the value \(31\):
+there are holes in the enumeration.
+This makes the constructor \mintinline{C}{FUNSXP} coerced
+to the constructor \mintinline{C}{CLOSXP} in such places
+(as \(99 \mod 2^5 = 3\)).
+This behaviour was wanted by the developers,
+and it is up to us to be careful when storing a \mintinline{Coq}{SExpType}
+into a place that can not hold the value \mintinline{C}{FUNSXP}.
+
+The \Cn{} structure below is attached to any
+basic language element.
+We can recognise the small number of bits reserved for the type field.
+Some fields are currently unused by the \Cn{} interpreter,
+and have not been formalised;
+it will not be difficult to add them afterwards if needed.
+Some fields are about garbage collection
+and have been removed from the \Coq{} formalisation.
+\begin{minted}{C}
+struct sxpinfo_struct {
+    SEXPTYPE type      :  5;
+    unsigned int obj   :  1;
+    unsigned int named :  2;
+    unsigned int gp    : 16;
+    unsigned int mark  :  1;
+    unsigned int debug :  1;
+    unsigned int trace :  1;  /* functions and memory tracing */
+    unsigned int spare :  1;  /* currently unused */
+    unsigned int gcgen :  1;  /* old generation number */
+    unsigned int gccls :  3;  /* node class */
+}; /*          Tot: 32 */
+\end{minted}
+Below is the \Coq{} translation of this structure.
+The field \mintinline{C}{named} can only take three distinct values
+(and not four, as its type seems to indicate).
+It has been formalised as an inductive,
+associating each value with a more understandable constructor.
+For instance, the value \(0\) of the field \mintinline{C}{named}
+has been translated into a \Coq{} constructor \mintinline{Coq}{named_temporary}.
+The \mintinline{C}{gp} is used to store various informations,
+and is not used consistently along the program.
+We thus choose to represent it at the lowest level possible,
+as a bit vector.
+\begin{minted}{Coq}
+(** sxpinfo_struct **)
+Record SxpInfo := make_SxpInfo {
+    type : SExpType ;
+    obj : bool ;
+    named : named_field ;
+    gp : nbits 16
+  }.
+\end{minted}
+
+The type of basic language element in the \Cn{} interpreter is shown below.
+It is more complex.
+First, it is composed of a header,
+which carries the basic information shown above,
+as well as a pointer to a list of attributes
+(the two other values are used by the garbage collector).
+Due to alignment issues, the developers implemented this header
+as a macro.
+In \Coq{}, we gave it a proper type.
+The second part of the basic language element
+depends on the kind of basic element it is.
+In \Cn{}, this is naturally defined as a union.
+It is not a one-to-one correspondance, however.
+For instance, both types \mintinline{C}{LISTSXP} and \mintinline{C}{LANGSXP}
+are associated with the \mintinline{C}{listsxp_struct} structure.
+\begin{minted}{C}
+#define SEXPREC_HEADER \
+    struct sxpinfo_struct sxpinfo; \
+    struct SEXPREC *attrib; \
+    struct SEXPREC *gengc_next_node, *gengc_prev_node
+
+/* The standard node structure consists of a header followed by the node data. */
+typedef struct SEXPREC {
+    SEXPREC_HEADER;
+    union {
+        struct primsxp_struct primsxp;
+        struct symsxp_struct symsxp;
+        struct listsxp_struct listsxp;
+        /* ... */
+    } u;
+} SEXPREC, *SEXP;
+\end{minted}
+Below is the \Coq{} translation of these structures.
+The union has been translated into an inductive type.
+In \Cn{}, accesses to this union are untyped:
+there are no control performed by the compiler to check that
+is was explicitly defined as such a variant of the union.
+In \Coq{}, this checks are bound:
+the only way to access a particular field of the structure
+\mintinline{Coq}{ListSxp_struct} is to first coerce
+the union into this type.
+This coercion might fail, and is performed using a monad.
+\begin{minted}{Coq}
+Inductive SExpRec_union :=
+  | primSxp : PrimSxp_struct -> SExpRec_union
+  | symSxp : SymSxp_struct -> SExpRec_union
+  | listSxp : ListSxp_struct -> SExpRec_union
+  (* ... *)
+  .
+
+(** SEXPREC_HEADER **)
+Record SExpRecHeader := make_SExpRecHeader {
+    sxpinfo :> SxpInfo ;
+    attrib : SExpRec_pointer
+  }.
+
+(** SEXPREC **)
+Record NonVector_SExpRec := make_NonVector_SExpRec {
+    NonVector_SExpRec_header :> SExpRecHeader ;
+    NonVector_SExpRec_data :> SExpRec_union (* node data *)
+  }.
+\end{minted}
+
+The structure \mintinline{C}{SEXPREC} is unfortunately
+not the only structure that can be pointed by a \mintinline{C}{SEXP} pointer.
+Vector-like structures (of type \mintinline{C}{INTSXP}, \mintinline{C}{REALSXP}, etc.)
+actually point to the alternative structure below.
+It starts with the same header,
+which enables the \R{} interpreter to access its type without
+knowing whether it is \mintinline{C}{SEXPREC} structure
+or a \mintinline{C}{VECTOR_SEXPREC} structure.
+The structure stores two numbers,
+and is then followed by an array
+(not shown in the type).
+The number of cell of the array is described by the two numbers
+(the first one giving the size of the array and the second the allocated size).
+However, the size of the individual cells
+is given by the type.
+For instance, the size of the cells of a complex number array
+(of type \mintinline{C}{CPLXSXP}) are twice as large
+as those of a real number array (of type \mintinline{C}{REALSXP}).
+This structure is this very delicate to manipulate in \Cn{}.
+\begin{minted}{C}
+struct vecsxp_struct {
+    R_len_t length;
+    R_len_t truelength;
+};
+
+typedef struct VECTOR_SEXPREC {
+    SEXPREC_HEADER;
+    struct vecsxp_struct vecsxp;
+} VECTOR_SEXPREC, *VECSEXP;
+\end{minted}
+To represent such a structure in \Coq{},
+we are forced to parameterise the type of data stored
+in the type:
+we have to explicitly incorporate the array in the structure.
+As we do not model garbage collection,
+we here ignore the allocated size.
+\begin{minted}{Coq}
+(** vecsxp_struct **)
+Record VecSxp_struct (A : Type) := make_VecSxp_struct {
+    VecSxp_length : nat ;
+    VecSxp_data : list A
+  }.
+
+(** VECTOR_SEXPREC **)
+Record Vector_SExpRec (A : Type) := make_Vector_SExpRec {
+    Vector_SExpRec_header :> SExpRecHeader ;
+    Vector_SExpRec_vecsxp :> VecSxp_struct A
+  }.
+\end{minted}
+Finally, we define in \Coq{} the \mintinline{Coq}{SexpRec}
+structure as either being a non-vector structure
+(corresponding to the \Cn{} structure \mintinline{C}{SEXPREC}),
+or a vector structure parameterised by one of the possible vector types.
+\begin{minted}{Coq}
+Inductive SExpRec :=
+  | SExpRec_NonVector : NonVector_SExpRec -> SExpRec
+  | SExpRec_VectorChar : Vector_SExpRec char -> SExpRec
+  | SExpRec_VectorInteger : Vector_SExpRec int -> SExpRec
+  (* ... *)
+  .
+\end{minted}
+All these structures share the same header.
+It is thus possible to define an extractor \mintinline{Coq}{get_SxpInfo}
+taking the header out of a \mintinline{Coq}{SExpRec}.
+For practical reasons, we make this extractor a coercion.
+This enables us to translate \mintinline{C}{e.type}
+to \mintinline{Coq}{type e} when \mintinline{C}{e}
+is an object of type either \mintinline{C}{SEXPREC}
+or \mintinline{C}{VECTOR_SEXPREC}
+(and in \Coq{},
+any of the types \mintinline{Coq}{SExpRec}, \mintinline{Coq}{NonVector_SExpRec},
+or \mintinline{Coq}{Vector_SExpRec T}).
+
+We now consider a \Cn{} function from the \R{} interpreter,
+and show how it has been translated into \Coq{}.
+\begin{minted}{C}
+SEXP eval(SEXP e, SEXP rho)
+{
+    switch (e->type) {
+        case NILSXP:
+        case LISTSXP:
+        /* ... */
+        case EXPRSXP:
+        if (e->named <= 1) e->named = 2;
+        return e;
+        default: break;
+    }
+
+    if (!isEnvironment(rho))
+        error("'rho' must be an environment")
+
+    /* ... */
+}
+\end{minted}
+The \Coq{} translation is shown below.
+\begin{minted}{Coq}
+Definition eval runs (S : state) (e rho : SExpRec_pointer) : result SExpRec_pointer :=
+  if_defined S (read_SExp S e) (fun e_ =>
+    match type e_ with
+    | NilSxp
+    | ListSxp
+    (* ... *)
+    | ExprSxp =>
+      if_defined S (write_SExp S e (set_named_plural e_)) (fun S =>
+        result_success S e)
+    | _ =>
+      if_defined S (read_SExp S rho) (fun rho_ =>
+        ifb type rho_ <> EnvSxp then
+          result_error S "[eval] ‘rho’ must be an environment."
+        else
+          (* ... *))
+    end).
+\end{minted}
+We start by exposing the differences between these two codes.
+First, the \Coq{} function \mintinline{Coq}{eval} takes two additional arguments.
+The \mintinline{Coq}{runs} argument is explained in Section~\ref{sec:monadic:style}:
+as \Coq{} does not enable termination, potentially-non-terminating features
+are packed into this structure.
+The \mintinline{Coq}{S} argument is the state.
+There is no global variable or side effects in \Coq{}:
+we are thus forced to pass the state along all functions.
+
+Then, the \Cn{} program directly accesses the pointer \mintinline{C}{e}.
+We can not do that in \Coq{}:
+maybe this pointer does not map to an allocated basic language element.
+We first have to dereference the pointer \mintinline{Coq}{e}
+to the object \mintinline{Coq}{e_}.
+We do this dereferencing through a monad,
+making the failing case transparent.
+The \Cn{} style \mintinline{C}{switch} statement then naturally translates
+into a \Coq{} style pattern-matching.
+The \mintinline{C}{default} case in the \Cn{} code can be progblematic, though.
+We are indeed forced in \Coq{} to continue the program in this case.
+We do not think this difference to be an issue.
+In the non-\mintinline{C}{default} case,
+the \mintinline{C}{named} field is set to \(2\)
+(as it can only take three values, the test is just there to potentially avoid a write).
+In \Coq{}, we have to rewrite the entire object.
+Not that \(2\) is given a more readable name in \Coq{}:
+\mintinline{Coq}{named_plural}.
+
+Apart from these style differences,
+mostly due to the different programming styles associated with both languages,
+we believe these two programs snippets to be sufficiently close one to each others.
 
 
 \subsubsection{Validation}
