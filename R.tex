@@ -1,5 +1,7 @@
 \documentclass{article}
 
+\usepackage{todonotes}
+
 \usepackage[xetex, colorlinks=true]{hyperref}
 \usepackage[
    backend=biber,
@@ -36,6 +38,9 @@
 		minimum width = 10mm
 	}
 }
+
+\newcommand\mod{\mathit{mod}}
+
 
 \title{Notes about \R}
 \author{Martin Bodin}
@@ -384,7 +389,8 @@ for rare cases.
 \subsection{FastR}
 
 The \R{} runtime can be slow.
-\cite{kalibera2014fast} propose a faster approach.
+\cite{kalibera2014fast} propose a faster approach,
+based on a Java implementation.
 
 \todo{A note about their testing architecture that we might use?}
 
@@ -535,6 +541,35 @@ the \Cn{} source code with the low-level \Coq{} formalisation.
 It has thus been added in the formalisation as it is in \Cn{}.
 The structured formalisation then formalises it out.
 
+
+\subsubsection{Simplified Items}
+
+Contexts are large \Cn{} structures in \R{} source code.
+They are used to represent the \R{} stack.
+The structure contains low-level information,
+such as long-jumps
+(used in \Cn{} to jump to an arbitrary assembly code).
+These low-level information have not been modeled.
+The structure also features some \R{} structures
+(that are basic language elements).
+For instance, the \mintinline{C}{conexit} field
+is an optional basic language element executed when
+the context is ended
+(typically at a function return,
+using the \mintinline{R}{on.exit} feature).
+These fields about features of \R{} have been modeled.
+
+Contexts also carry information about errors,
+enabling to catch errors.
+As the control flow has been modelled as a simple
+success-or-error monad,
+errors are not properly modelled in the formalisation.
+The fields of contexts describing informations about
+the current error
+(such as line number and error type)
+have thus not been modelled.
+
+
 \subsubsection{Miscellaneous Unformalised Items}
 
 The hash of environment has not been formalised.
@@ -542,7 +577,7 @@ We considered it to be an optimisation and did not wanted to bother
 with the complex associated proofs.
 
 The \mintinline{R}{truelength} field of vectors has also been
-removed in the \Cog{} formalisation.
+removed in the \Coq{} formalisation.
 It can be seen as a general choice not to model the \Cn{} memory in details.
 Similarly, the vector following a vector is considered to be part
 of the vector (represented as a list).
