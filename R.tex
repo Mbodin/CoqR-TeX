@@ -448,7 +448,7 @@ A \Coq{} version of these \Cn{} definitions is defined,
 with the aim to be the closest possible to the \Cn{} definition.
 Some parts of the functions are dropped at this level,
 such as error management.
-At term, it is planned to use CompCert to prove that the \Coq{}
+At term, it is planned to use CompCert~\parencite{Leroy-Compcert-CACM} to prove that the \Coq{}
 version is indeed identical to the chosen parts of the \Cn{} definition.
 
 A structured \Coq{} formalisation is then defined.
@@ -679,6 +679,58 @@ but may be cumbersome.
 This way of defining the interpreter avoids
 having to deal with explicit fuels all along the computation.
 It also make definitions easier to read.
+
+
+\subsubsection{Global Variables}
+
+The source code of \R{} uses a large number of global variables.
+We categorize these global variables into two distinct types:
+global variables that are initialised when \R{} starts, then never changed,
+and global variables that may change at any point during the execution.
+
+The first kind can then be separated into two subcategories:
+either it is simply a constant, either it needs some complex initialisation.
+If the value is simply a constant
+(for instance, the value \mintinline{C}{R_NilValue},
+which is just an alias for \mintinline{C}{NULL}),
+it is directly translated to a \Coq{} value.
+
+The case in which the function needs an initialisation is complex.
+Such values (for instance \mintinline{C}{R_BaseEnv})
+need to call to complex \R{} function
+(such as \mintinline{C}{NewEnvironment} or \mintinline{C}{defineVars}),
+whose type does not guarantee success or termination
+(they return a \mintinline{Coq}{result T}),
+but indeed terminates without failing in practise.
+However, the function they use to initialise themselves
+do not use global variables (expect to set their values).
+The chosen solution has been to declare a structure for
+constant global variables:
+\begin{minted}{Coq}
+Record Globals := {
+  R_DotsSymbol : SExpRec_pointer ;
+  R_UnboundValue : SExpRec_pointer ;
+  R_MissingArg : SExpRec_pointer ;
+  (* ... *)
+}.
+\end{minted}
+Each function using one of these global variables
+(for instance, \mintinline{Coq}{forcePromise}
+uses \mintinline{Coq}{R_UnboundValue})
+is parameterised by such a \mintinline{Coq}{Globals}
+objects.
+Such an instance of this object is then defined at the end,
+once every function has been defined,
+all parameterised by a \mintinline{Coq}{runs} structure,
+and some parameterised by a \mintinline{Coq}{Globals} structure.
+The initialisation of the heap is thus done after
+the definition of the interpreter.
+
+The second kind of global variables,
+that may change at any place during the execution of an \R{} program,
+have been incorporated into the state.
+
+\todo{A note about initialisation.}
 
 
 \subsubsection{Code Rewriting}
@@ -1035,6 +1087,24 @@ In essence, the \Coq{} formalisation is executable.
 Waiting to relate the formalisation to CompCert’s interpretation
 of the \Cn{} source code, we can thus test the formal interpreter
 on benchmarks.
+
+The \Coq{} formalisation has been designed to be as closed as
+possible to the \Cn{} code.
+This means that each line of the \Coq{} can be compared to its
+\Cn{} counterpart.
+The \Coq{} monadic style is heavier—%
+making a lot of behaviors explicit—,
+but closely matches the \Cn{} source code.
+This way of validating the formalisation is called “eyeball-closeness”
+in \cite{bodin2014trusted}.
+
+Later, we plan to relate the \Coq{} formalisation
+to the \Cn{} source code using CompCert~\parencite{Leroy-Compcert-CACM},
+by relating in \Coq{} the CompCert interpretation of the source code of \R{}
+to the low-level formalisation.
+We expect this relation to be heavy because of the complex \Cn{} semantics,
+but we hope that the closeness between the monadic interpreter and the \Cn{}
+source code will greatly help the proof.
 
 
 \subsection{Application}
