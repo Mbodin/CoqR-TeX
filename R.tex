@@ -585,6 +585,15 @@ We believe it to closely follow the intuition and the comments from the \Cn{} co
 the only reason why it was not done as-is in \Cn{} is because \Cn{} types
 are not expressive enough.
 
+Character encodings are not formalised.
+
+The function \mintinline{C}{R_PreserveObject} is used to tell the garbage collector
+not to free the given object.
+It internally works by creating a dummy list,
+whose head is never checked by the garbage collector.
+As we do not model the garbage collector,
+we do not model this function.
+
 
 \subsection{The Low-Level Formalisation}
 
@@ -653,11 +662,12 @@ Errors are propagated.
 Definition if_success (A B : Type)
     (r : result A) (f : state -> A -> result B) : result B :=
   match r with
-  | result_success S0 a => f S0 a
-  | result_error S0 => result_error S0
+  | result_success S a => f S a
+  | result_error S => result_error S
   (* ... *)
   end.
 \end{minted}
+\todo{Added notation to have a readable \Coq{} program.}
 
 Functions in \Coq{} must terminate.
 This makes programming in \Coq{} complex as we must explicitly
@@ -1030,6 +1040,27 @@ SEXP eval(SEXP e, SEXP rho)
 }
 \end{minted}
 The \Coq{} translation is shown below.
+\begin{minted}{Coq}
+Definition eval runs (S : state) (e rho : SExpRec_pointer) : result SExpRec_pointer :=
+  read%defined e_ := e using S in
+  match type e_ with
+  | NilSxp
+  | ListSxp
+  (* ... *)
+  | ExprSxp =>
+    write%defined e := set_named_plural e_ using S in
+    result_success S e
+  | _ =>
+    read%defined rho_ := rho using S in
+    ifb type rho_ <> EnvSxp then
+      result_error S "[eval] ‘rho’ must be an environment."
+    else
+      (* ... *)
+  end.
+\end{minted}
+To ease the readability of the \Coq{} formalisation,
+each monad have been associated a monadic notation.
+Here follows a version without these notations.
 \begin{minted}{Coq}
 Definition eval runs (S : state) (e rho : SExpRec_pointer) : result SExpRec_pointer :=
   if_defined S (read_SExp S e) (fun e_ =>
