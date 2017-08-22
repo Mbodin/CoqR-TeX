@@ -18,6 +18,7 @@
 \addbibresource{biblio.bib}
 
 \newcommand\Coq{Coq}
+\newcommand\OCaml{OCaml}
 \newcommand\R{R}
 \newcommand\Cn{C}
 
@@ -102,8 +103,8 @@ If \R{} needs the result of promise,
 it will check the optional value.
 If it is present, the promise already has been computed
 and the value is directly reused.
-Otherwise, the promise’s expression is evaluated,
-and the promise’s value is set to the returned value.
+Otherwise, the promise's expression is evaluated,
+and the promise's value is set to the returned value.
 The evaluation of the expression might raises side effects.
 %
 A typical place where promises are defined
@@ -127,7 +128,7 @@ to be considered as \emph{functions}.
 There are thus very few cases in the evaluation function
 of \R{}, corresponding to the atomic types.
 This also enables libraries to drastically change
-the language’s syntax.
+the language's syntax.
 
 Function arguments can have default argument,
 but in this case, it is still a promise.
@@ -386,6 +387,14 @@ and exceptions providing more behaviours
 (or more precise behaviours) to the \R{} interpreter
 for rare cases.
 
+\subsubsection{Optimisations}
+
+The main \R{} interpreter is written with various optimisations in mind.
+This section lists some of them.
+
+\todo{symbols as pointers.}
+
+
 \subsection{FastR}
 
 The \R{} runtime can be slow.
@@ -454,7 +463,7 @@ version is indeed identical to the chosen parts of the \Cn{} definition.
 A structured \Coq{} formalisation is then defined.
 This formalisation abstracts some low-level constructs,
 such as pointers to basic language element
-(which are heavily used in \R{}’s source code).
+(which are heavily used in \R{}'s source code).
 The expressions are also given a proper inductive at this stage,
 although it is only weakly typed.
 This inductive merely emphases with flag uses which pointers
@@ -504,7 +513,7 @@ I thus decided to include in the formalisation the \mintinline{C}{named}
 field of the language element.
 A explained in the documentation file \texttt{R-ints.pdf}
 (Section~1.1.2),
-which describes some of \R{}’s internal structures,
+which describes some of \R{}'s internal structures,
 this field can take three values:
 \(0\) for temporary objects,
 \(1\) for objects bounds to at least one variable,
@@ -517,7 +526,7 @@ which is only used when debugging \R{} programs,
 or the fields reserved for the garbage collector.
 These fields are not difficult to later add in the formalisation,
 as basic language elements are very rarely built explicitly:
-they are usually defined or edited (following \Cn{}’s imperative style)
+they are usually defined or edited (following \Cn{}'s imperative style)
 field by field using constructors.
 In the \Coq{} formalisation, these accessors are defined in the file
 \texttt{low/RinternalsAux.v}.
@@ -594,6 +603,8 @@ whose head is never checked by the garbage collector.
 As we do not model the garbage collector,
 we do not model this function.
 
+\todo{hash table for symbols.}
+
 
 \subsection{The Low-Level Formalisation}
 
@@ -656,8 +667,11 @@ Inductive result (A : Type) :=
 
 We can then define a monad for this type.
 Any call to a procedure that may fail
-is done through this function.
-Errors are propagated.
+is done through this function
+propagating errors.
+A notation has been added
+(following the monadic usage)
+to avoid to many nested parentheses.
 \begin{minted}{coq}
 Definition if_success (A B : Type)
     (r : result A) (f : state -> A -> result B) : result B :=
@@ -666,8 +680,11 @@ Definition if_success (A B : Type)
   | result_error S => result_error S
   (* ... *)
   end.
+
+Notation "'let%success' a ':=' r 'using' S 'in' cont" :=
+  (if_success r (fun S a => cont))
+  (at level 50, left associativity) : monad_scope.
 \end{minted}
-\todo{Added notation to have a readable \Coq{} program.}
 
 Functions in \Coq{} must terminate.
 This makes programming in \Coq{} complex as we must explicitly
@@ -701,9 +718,10 @@ and global variables that may change at any point during the execution.
 The first kind can then be separated into two subcategories:
 either it is simply a constant, either it needs some complex initialisation.
 If the value is simply a constant
-(for instance, the value \mintinline{C}{R_NilValue},
-which is just an alias for \mintinline{C}{NULL}),
-it is directly translated to a \Coq{} value.
+(for instance, the value \mintinline{C}{R_NaInt},
+is just an alias for \mintinline{C}{INT_MIN}),
+it is directly translated to a \Coq{} value,
+at the beginning of the file \texttt{low/Reval.v}.
 
 The case in which the function needs an initialisation is complex.
 Such values (for instance \mintinline{C}{R_BaseEnv})
@@ -715,22 +733,21 @@ but indeed terminates without failing in practise.
 However, the function they use to initialise themselves
 do not use global variables (expect to set their values).
 The chosen solution has been to declare a structure for
-constant global variables:
+constant global variables that need initialisation:
 \begin{minted}{Coq}
 Record Globals := {
-  R_DotsSymbol : SExpRec_pointer ;
-  R_UnboundValue : SExpRec_pointer ;
-  R_MissingArg : SExpRec_pointer ;
-  (* ... *)
-}.
+    R_AsCharacterSymbol : SExpRec_pointer ;
+    R_BaseEnv : SExpRec_pointer ;
+    R_BaseNamespaceName : SExpRec_pointer ;
+    (* ... *)
+  }.
 \end{minted}
 Each function using one of these global variables
 (for instance, \mintinline{Coq}{forcePromise}
 uses \mintinline{Coq}{R_UnboundValue})
 is parameterised by such a \mintinline{Coq}{Globals}
 objects.
-Such an instance of this object is then defined at the end,
-once every function has been defined,
+An instance of this object is defined once every function has been defined,
 all parameterised by a \mintinline{Coq}{runs} structure,
 and some parameterised by a \mintinline{Coq}{Globals} structure.
 The initialisation of the heap is thus done after
@@ -739,8 +756,146 @@ the definition of the interpreter.
 The second kind of global variables,
 that may change at any place during the execution of an \R{} program,
 have been incorporated into the state.
+For instance, the global variable \mintinline{C}{R_SymbolTable}
+is updated every time that the function
+\mintinline{C}{install} is called.
+Such a call can occur in the initialisation,
+but also in the middle of an \R{} session,
+to dynamically add new symbols to the set of known symbols.
+The definition of \mintinline{Coq}{state} is shown below.
+\begin{minted}{Coq}
+Record state := make_state {
+    state_memory :> memory ;
+    state_context : context ;
+    R_SymbolTable : SExpRec_pointer ;
+    (* ... *)
+  }.
 
-\todo{A note about initialisation.}
+Definition update_R_SymbolTable S p := {|
+    state_memory := state_memory S ;
+    state_context := state_context S ;
+    R_SymbolTable := p ;
+    (* ... *)
+  |}.
+\end{minted}
+
+The definition of \mintinline{Coq}{Globals}
+is more complex than what it may seem.
+In practise, this structure is very large,
+and the initialisation procedure is subtle.
+To understand this, let us consider one particular
+global variable: \mintinline{C}{R_NilValue}.
+The \Cn{} source code of \R{} very rarely uses
+the \mintinline{C}{NULL} pointer.
+Instead, it uses a special \R{} value: \mintinline{C}{R_NilValue}.
+This value points to a simple object:
+a list whose first and next elements both point
+to \mintinline{C}{R_NilValue},
+but whose type
+(see the definition of \mintinline{Coq}{SExpType} in Section~\ref{sec:closeness})
+is \mintinline{Coq}{NilSxp};
+it is the only element with such a type.
+%
+Not-yet-initialised fields of \R{} structures,
+are usually pre-initialised to this specific pointer.
+Lists are terminated by this special pointer.
+Changing the value of \mintinline{C}{R_NilValue}
+during the execution of an \R{} program,
+or getting its value wrong,
+will thus probably lead to \R{} looping or crashing
+(looking for a \mintinline{C}{R_NilValue} pointer but never finding it).
+It is one of the first global variable to be set,
+in the function \mintinline{C}{InitMemory}.
+
+This example illustrates that the initialisation has to be done
+in a specific order, but also that the next initialisation functions
+usually needs the global variables defined before.
+But updating each fields of the large record \mintinline{Coq}{Globals}
+in \Coq{} is quite complicated:
+one has to either define an updating function for each of its projection,
+or write a large definition of the form shown below.
+\begin{minted}{Coq}
+  {| R_NilValue := (* new value *) ;
+     R_TrueValue := (* old value *) ;
+     (* ... *) |}
+\end{minted}
+The first solution is not a realistic option:
+when adding a field,
+this solution requires to update \emph{all} already defined updating functions
+to add the new field,
+then add one new function.
+The \mintinline{Coq}{Globals} structure has approximately an hundred fields,
+which would result in an hundred definitions to be updated at each changed,
+and resulting in about ten thousands (the square) of \Coq{} lines.
+It is too easy to make a mistake in such a number of lines.
+The second solution is unfortunately also not an option:
+this would require to define similarly large definitions
+in the initialising function,
+resulting in large use of copy/pasting.
+The trust of such a formalisation would be far too weak.
+Here is the code of the initialising function in \Coq:
+\begin{minted}{Coq}
+Definition setup_Rmainloop max_step S : result Globals :=
+  let globals := empty_globals in
+  let%success (NilValue, TrueValue, FalseValue, LogicalNAValue) :=
+    InitMemory globals S using S in
+  let globals := {{ globals with [(R_NilValue, NilValue) ;
+                                  (R_TrueValue, TrueValue) ;
+                                  (R_FalseValue, FalseValue) ;
+                                  (R_LogicalNAValue, LogicalNAValue)] }} in
+  let%success (EmptyEnv, BaseEnv) :=
+    InitBaseEnv globals (runs globals max_step) S using S in
+  let globals := {{ globals with [(R_EmptyEnv, EmptyEnv) ;
+                                  (R_BaseEnv, BaseEnv)] }} in
+  (* ... *)
+  result_success S globals.
+\end{minted}
+As can be seen, we have used neither of both solution.
+Instead, we have developed a notation (similar to \OCaml{}'s)
+to update the \mintinline{Coq}{Globals} structure.
+The signature of this notation is shown below.
+In a nutshell, it builds using tactics
+an object of the form \mintinline{Coq}/{ g' | globals_with_list g L g' }/,
+then takes its projection \mintinline{Coq}{proj1_sig}.
+This guarantees, whatever the trust we have on these tactics,
+that the constructed object \mintinline{Coq}{g'} verifies
+the property \mintinline{Coq}{globals_with_list g L g'}.
+This property is defined exactly as expected:
+for each projection in the given list \mintinline{Coq}{L},
+the value of \mintinline{Coq}{g'} has been updated to the given value;
+for all other projections, the value has not been changed.
+\begin{minted}{Coq}
+Record globals_with_list g
+  (L : list ((Globals -> SExpRec_pointer) * SExpRec_pointer)) g' := {
+    globals_with_list_in : forall C p,
+      Mem (C, p) L ->
+      C g' = p ;
+    globals_with_list_out : forall C,
+      (forall p, ~ Mem (C, p) L) ->
+      Mem C Globals_projections ->
+      C g' = C g ;
+  }.
+
+Definition Globals_with_list (g : Globals)
+  (L : list ((Globals -> SExpRec_pointer) * SExpRec_pointer)) :
+    (forall C v, Mem (C, v) L -> Mem C Globals_projections) ->
+    No_duplicates (map fst L) ->
+    { g' | globals_with_list g L g' }.
+  (* ... *)
+Defined.
+
+Notation "'{{' g 'with' L '}}'" :=
+  (proj1_sig (Globals_with_list g L
+              ltac:(prove_mem_Globals_projections),
+              ltac:(prove_no_duplicate_projections)}})) : globals_scope.
+\end{minted}
+These tactics are fairly complicated,
+and a great care has been done to have them run in an acceptable
+amount of time and memory:
+\Coq{} tactics can be pretty slow,
+and the first implementations only worked for few number of fields
+(less than ten) given our computer's memory.
+The implementation of these tactics can be found in the file \texttt{low/Globals.v}
 
 
 \subsubsection{Code Rewriting}
@@ -792,6 +947,7 @@ I do not expect it to yield more complexity for the proof of correctness.
 
 
 \subsubsection{Closeness to the \Cn{} source code}
+\label{sec:closeness}
 
 The goal of the low-level formalisation is to be close as possible
 from the \Cn{} source code of \R{}.
@@ -1034,7 +1190,7 @@ SEXP eval(SEXP e, SEXP rho)
     }
 
     if (!isEnvironment(rho))
-        error("'rho' must be an environment")
+        error("`rho' must be an environment")
 
     /* ... */
 }
@@ -1053,7 +1209,7 @@ Definition eval runs (S : state) (e rho : SExpRec_pointer) : result SExpRec_poin
   | _ =>
     read%defined rho_ := rho using S in
     ifb type rho_ <> EnvSxp then
-      result_error S "[eval] ‘rho’ must be an environment."
+      result_error S "[eval] `rho' must be an environment."
     else
       (* ... *)
   end.
@@ -1074,7 +1230,7 @@ Definition eval runs (S : state) (e rho : SExpRec_pointer) : result SExpRec_poin
     | _ =>
       if_defined S (read_SExp S rho) (fun rho_ =>
         ifb type rho_ <> EnvSxp then
-          result_error S "[eval] ‘rho’ must be an environment."
+          result_error S "[eval] `rho' must be an environment."
         else
           (* ... *))
     end).
@@ -1115,7 +1271,7 @@ we believe these two programs snippets to be sufficiently close one to each othe
 \subsubsection{Validation}
 
 In essence, the \Coq{} formalisation is executable.
-Waiting to relate the formalisation to CompCert’s interpretation
+Waiting to relate the formalisation to CompCert's interpretation
 of the \Cn{} source code, we can thus test the formal interpreter
 on benchmarks.
 
