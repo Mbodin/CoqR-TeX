@@ -713,48 +713,40 @@ It also make definitions easier to read.
 The source code of \R{} uses a large number of global variables.
 We categorize these global variables into two distinct types:
 global variables that are initialised when \R{} starts, then never changed,
-and global variables that may change at any point during the execution.
+and global variables that may change at any point during execution.
 
-The first kind can then be separated into two subcategories:
+The first kind can be separated into two subcategories:
 either it is simply a constant, either it needs some complex initialisation.
 If the value is simply a constant
-(for instance, the value \mintinline{C}{R_NaInt},
-is just an alias for \mintinline{C}{INT_MIN}),
 it is directly translated to a \Coq{} value,
 at the beginning of the file \texttt{low/Reval.v}.
+For instance, the value \mintinline{C}{R_NaInt},
+is just an alias for \mintinline{C}{INT_MIN}.
 
 The case in which the function needs an initialisation is complex.
 Such values (for instance \mintinline{C}{R_BaseEnv})
 need to call to complex \R{} function
-(such as \mintinline{C}{NewEnvironment} or \mintinline{C}{defineVars}),
-whose type does not guarantee success or termination
-(they return a \mintinline{Coq}{result T}),
-but indeed terminates without failing in practise.
-However, the function they use to initialise themselves
-do not use global variables (expect to set their values).
-The chosen solution has been to declare a structure for
-constant global variables that need initialisation:
-\begin{minted}{Coq}
-Record Globals := {
-    R_AsCharacterSymbol : SExpRec_pointer ;
-    R_BaseEnv : SExpRec_pointer ;
-    R_BaseNamespaceName : SExpRec_pointer ;
-    (* ... *)
-  }.
-\end{minted}
+(such as \mintinline{C}{NewEnvironment} or \mintinline{C}{defineVars})
+to be initialised.
+The types of the called functions do not guarantee success or termination:
+they return a \mintinline{Coq}{result T}—%
+see Section~\ref{sec:monadic:style}.
+
+To model such global variables,
+we added a global context \mintinline{Coq}{Globals} to our formalisation.
 Each function using one of these global variables
 (for instance, \mintinline{Coq}{forcePromise}
 uses \mintinline{Coq}{R_UnboundValue})
-is parameterised by such a \mintinline{Coq}{Globals}
-objects.
-An instance of this object is defined once every function has been defined,
-all parameterised by a \mintinline{Coq}{runs} structure,
-and some parameterised by a \mintinline{Coq}{Globals} structure.
-The initialisation of the heap is thus done after
-the definition of the interpreter.
+is parameterised by this context.
+An instance of this context is defined after the \mintinline{Coq}{runs}
+fixed point (see Section~\ref{sec:monadic:style}),
+using the defined functions.
+This enables to define the global interpreter:
+first, the \mintinline{Coq}{Globals} context is defined,
+then the evaluation function is run in this context.
 
-The second kind of global variables,
-that may change at any place during the execution of an \R{} program,
+The second kind of global variables—%
+that may change at any place during the execution of an \R{} program—%
 have been incorporated into the state.
 For instance, the global variable \mintinline{C}{R_SymbolTable}
 is updated every time that the function
@@ -779,10 +771,11 @@ Definition update_R_SymbolTable S p := {|
   |}.
 \end{minted}
 
-The definition of \mintinline{Coq}{Globals}
-is more complex than what it may seem.
-In practise, this structure is very large,
-and the initialisation procedure is subtle.
+There is a large number of global variables of the first kind
+(that are initialised once, then never changed).
+Furthermore, the initialisation procedure is subtle.
+It was thus necessary to find an easily extendable definition:
+adding global variables to the formalisation should not be a difficult task.
 To understand this, let us consider one particular
 global variable: \mintinline{C}{R_NilValue}.
 The \Cn{} source code of \R{} very rarely uses
@@ -810,30 +803,36 @@ in the function \mintinline{C}{InitMemory}.
 This example illustrates that the initialisation has to be done
 in a specific order, but also that the next initialisation functions
 usually needs the global variables defined before.
-But updating each fields of the large record \mintinline{Coq}{Globals}
-in \Coq{} is quite complicated:
-one has to either define an updating function for each of its projection,
-or write a large definition of the form shown below.
+The definition of \mintinline{Coq}{Globals} is shown below.
 \begin{minted}{Coq}
-  {| R_NilValue := (* new value *) ;
-     R_TrueValue := (* old value *) ;
-     (* ... *) |}
+Inductive GlobalVariable :=
+  | R_AsCharacterSymbol
+  | R_BaseEnv
+  | R_BaseNamespaceName
+  | R_BaseNamespace
+  (* ... *).
+
+Definition Globals : Type := GlobalVariable -> SExpRec_pointer.
+
+Definition empty_globals : Globals :=
+  fun _ => NULL.
+
+Definition GlobalsWith (g : Globals) (C : GlobalVariable) (p : SExpRec_pointer) : Globals :=
+  fun C' =>
+    ifb C = C' then p
+    else g C'.
+
+Definition GlobalsWith_list :=
+  fold_left (fun C_p g => GlobalsWith g (fst C_p) (snd C_p)).
+
+Notation "'{{' g 'with' L '}}'" :=
+  (GlobalsWith_list g L) : globals_scope.
 \end{minted}
-The first solution is not a realistic option:
-when adding a field,
-this solution requires to update \emph{all} already defined updating functions
-to add the new field,
-then add one new function.
-The \mintinline{Coq}{Globals} structure has approximately an hundred fields,
-which would result in an hundred definitions to be updated at each changed,
-and resulting in about ten thousands (the square) of \Coq{} lines.
-It is too easy to make a mistake in such a number of lines.
-The second solution is unfortunately also not an option:
-this would require to define similarly large definitions
-in the initialising function,
-resulting in large use of copy/pasting.
-The trust of such a formalisation would be far too weak.
-Here is the code of the initialising function in \Coq:
+Contexts are functions from global variable identifiers to pointers.
+These identifiers are proven (decidably) comparable,
+which enables us to define a function to update global variables independently.
+A \OCaml{}’s style notation has been given to this update.
+This feature is crucial in the initialising function, as shown below.
 \begin{minted}{Coq}
 Definition setup_Rmainloop max_step S : result Globals :=
   let globals := empty_globals in
@@ -850,52 +849,6 @@ Definition setup_Rmainloop max_step S : result Globals :=
   (* ... *)
   result_success S globals.
 \end{minted}
-As can be seen, we have used neither of both solution.
-Instead, we have developed a notation (similar to \OCaml{}'s)
-to update the \mintinline{Coq}{Globals} structure.
-The signature of this notation is shown below.
-In a nutshell, it builds using tactics
-an object of the form \mintinline{Coq}/{ g' | globals_with_list g L g' }/,
-then takes its projection \mintinline{Coq}{proj1_sig}.
-This guarantees, whatever the trust we have on these tactics,
-that the constructed object \mintinline{Coq}{g'} verifies
-the property \mintinline{Coq}{globals_with_list g L g'}.
-This property is defined exactly as expected:
-for each projection in the given list \mintinline{Coq}{L},
-the value of \mintinline{Coq}{g'} has been updated to the given value;
-for all other projections, the value has not been changed.
-\begin{minted}{Coq}
-Record globals_with_list g
-  (L : list ((Globals -> SExpRec_pointer) * SExpRec_pointer)) g' := {
-    globals_with_list_in : forall C p,
-      Mem (C, p) L ->
-      C g' = p ;
-    globals_with_list_out : forall C,
-      (forall p, ~ Mem (C, p) L) ->
-      Mem C Globals_projections ->
-      C g' = C g ;
-  }.
-
-Definition Globals_with_list (g : Globals)
-  (L : list ((Globals -> SExpRec_pointer) * SExpRec_pointer)) :
-    (forall C v, Mem (C, v) L -> Mem C Globals_projections) ->
-    No_duplicates (map fst L) ->
-    { g' | globals_with_list g L g' }.
-  (* ... *)
-Defined.
-
-Notation "'{{' g 'with' L '}}'" :=
-  (proj1_sig (Globals_with_list g L
-              ltac:(prove_mem_Globals_projections),
-              ltac:(prove_no_duplicate_projections)}})) : globals_scope.
-\end{minted}
-These tactics are fairly complicated,
-and a great care has been done to have them run in an acceptable
-amount of time and memory:
-\Coq{} tactics can be pretty slow,
-and the first implementations only worked for few number of fields
-(less than ten) given our computer's memory.
-The implementation of these tactics can be found in the file \texttt{low/Globals.v}
 
 
 \subsubsection{Code Rewriting}
