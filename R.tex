@@ -1,5 +1,7 @@
 \documentclass{article}
 
+\usepackage{fontspec}
+
 \usepackage{todonotes}
 
 \usepackage[xetex, colorlinks=true]{hyperref}
@@ -58,20 +60,27 @@ but it is also possible to write programs in it.
 % The language enables easy integration of \Cn{} functions.
 The language presents itself as a weakly typed programming language
 manipulating different types of arrays.
-The language is dynamic,
-in the sense that most programs have a semantics.
+The syntax of the language contains numerous exceptions,
+leading to a high number of programs with a semantics.
 
 \subsection{History}
 
 \R{} is a programming language designed for statistics.
-Its specification~\parencite{team2000r} is not precise:
+Its specification~\parencite{team2000r}\footnote{
+    This specification is also given directly in \R{} itself,
+    by typing \mintinline{R}{help.search ()},
+    and clicking of the “\R{} Language Definition” link
+    on the webpage then opened.
+} is not precise (but really helps understand \R{} source code):
 in practise, it is specified by its main implementation~\parencite{Rwebsite}.
 
 The original authors of \R{}~\parencite{ihaka1996r}
 describe \R{} as a programming language similar to Scheme
-which has been mutated to get a programming language similar to S.
+which has been mutated to get a programming language similar
+in appearance and features to S.
 In particular, \R{} features scoping and first-class functions
-as Scheme.
+as Scheme
+(whereas in S, nested functions are not lexically scoped).
 Similarly to S, however, it is a lazy programming language.
 
 It is a community driven programming language.
@@ -79,6 +88,19 @@ This means that most of what is used in a \R{} program comes from various librar
 which can change the way the programming language behaves.
 This can be compared with JavaScript,
 and how libraries like jQuery changes the way programs look.
+However, not all of these libraries are written in \R{}:
+some are written in \Cn{} or Fortran
+with an interface in \R{}.
+
+One of the reasons of the success of \R{}
+is its built-in help system.
+Each functions are documented with examples
+and can be accessed by typing in \R{}
+a question mark followed by the corresponding feature.
+For instance \mintinline{R}{?c} displays
+the documentation of the \mintinline{R}{c} function,
+and \mintinline{R}{?'<-'} displays the documentation
+of the \mintinline{R}{<-} feature.
 
 \subsection{Features}
 
@@ -91,8 +113,8 @@ of it as a programming language.
 
 The \R{} programming language is lazy.
 This was a design choice:
-it occurs often in \R{} to define a large array,
-but then filter it to only consider a small number of cells.
+it is frequent in \R{} to define a large array,
+but then filter it to only consider a small number of its cells.
 Lazyness enables the programming language to focus on these cells
 and only compute what is needed to display their content.
 
@@ -117,7 +139,7 @@ f (1, 2 + 2) # The expression “2 + 2” becomes here a promise.
 # The function “f” uses this promise, and it thus reduces to “4”.
 f (1, a <- 1) # This promise has a side effect.
 a # Returns 1. Note that the promise kept the initial environment:
-  # Variable “a” has been defined in the initial environment.
+  # the variable “a” has been defined in the initial environment.
 f (0, b <- 1) # This promise has a side effect, but is not evaluated.
 b # Returns an error.
 \end{minted}
@@ -133,14 +155,14 @@ the language's syntax.
 Function arguments can have default argument,
 but in this case, it is still a promise.
 In the following example,
-Variable \mintinline{R}{y} is associated with
-the promise \mintinline{R}{x} and the environment
-created during the call (not the initial one).
+the variable \mintinline{R}{y} is associated with
+the promise \mintinline{R}{x} and the local environment
+of the call (not the one from the calling point).
 But this environment may change during the function evaluation.
 \begin{minted}{R}
 x <- 1 # A global variable.
-f <- function (x, y = x) { # Variable “y” receives the promise “x”.
-       x <- 3 # We update Variable “x”.
+f <- function (x, y = x) { # The variable “y” receives the promise “x”.
+       x <- 3 # We update the variable “x”.
        y      # Evaluates the promise.
        x <- 4 # We update again “x”.
        y      # The promise has already been evaluated.
@@ -149,10 +171,11 @@ f (2) # The local variable “x” is set to 2.
 # Returns 3.
 \end{minted}
 
-One of the goals of the \R{} programming language
-is to enable easy graphical drawings,
-through functions such as \mintinline{R}{plot}.
-To express equations, \R{} uses promises.
+One of the initial goals of the \R{} programming language
+was to provide easy visualisation tools,
+through functions like \mintinline{R}{plot},
+drawing a graph.
+To express equations, we can in \R{} uses promises.
 Here is an example taken from the original paper~\parencite{ihaka1996r}.
 \begin{minted}{R}
 curve <- function (expr, from, to) {
@@ -161,13 +184,13 @@ curve <- function (expr, from, to) {
            plot (x, y)
          }
 \end{minted}
-This function can then be invoked as
+This function can be invoked as
 \mintinline{R}{curve (x^2 - 1, -2, 2)}
 to draw the function \(f(x) = x^2 - 1\)
 over the interval \([-2, 2]\).
-Let us now understand what happens during
-such a call.
-First, Variable \mintinline{R}{expr}
+We now describe what happens during
+this call.
+First, the variable \mintinline{R}{expr}
 is associated with he promise \mintinline{R}{x^2 - 1}
 in the initial environment.
 This may be seen strange as the initial environment
@@ -187,16 +210,16 @@ and the promise can be evaluated.
 \subsubsection{Vectors}
 
 In the previous example,
-Variable \mintinline{R}{x} was associated the result
+the variable \mintinline{R}{x} was associated the result
 of \mintinline{R}{seq}, which is a numerical vector.
-It can be surprising that we were able to compute
+It can be surprising be able to compute
 the expression \mintinline{R}{x^2 - 1},
 as \mintinline{R}{x} is not a number.
 The reason is that the operators \mintinline{R}{^} and \mintinline{R}{-}
 applies on vectors, component by component.
 The numbers \mintinline{R}{2} and \mintinline{R}{1}
-in the expression are seen as vectors with only one component.
-We cannot assign a variable with a number,
+in the expression are seen as vectors with only one cell.
+We cannot assign a variable to a number,
 but we can assign it a numerical vector of size one,
 and \R{} does it all the time.
 As the vectors \mintinline{R}{2} and \mintinline{R}{1}
@@ -229,7 +252,7 @@ depending on the nature of \mintinline{R}{i}.
       by the \mintinline{R}{NA} of the expected type.
     \item If \mintinline{R}{i} is a numerical vector,
       and that all its elements are positive, zero, or \mintinline{R}{NA},
-      then the corresponding indexes of \mintinline{R}
+      then the corresponding indices of \mintinline{R}
       are taken in the given order, resulting in an array
       that can be thought of the same size than \mintinline{R}{i}.
       Indexes of \mintinline{R}{v} are however counted from
@@ -238,8 +261,10 @@ depending on the nature of \mintinline{R}{i}.
       they yield \mintinline{R}{NA} in the resulting array.
       Values of \mintinline{R}{i} greater than the size of \mintinline{R}{v}
       results in \mintinline{R}{NA}.
-      Note that a special case of this case is \mintinline{R}{v[1]},
-      which returns an array with only one cell.
+        Note that a special case of this case is when the size of \mintinline{R}{i}
+      is one (as in \mintinline{R}{v[18]}),
+      \R{} then returns an array with only one cell,
+      which looks like a base value.
     \item If \mintinline{R}{i} is a non-empty numerical vector
       whose elements are all negative or zero,
       then the result is the array \mintinline{R}{v}
@@ -257,19 +282,33 @@ depending on the nature of \mintinline{R}{i}.
       by their names.
 \end{itemize}
 
+As an example, if \mintinline{R}{x} is a vector of numbers,
+then \mintinline{R}{x < 0} is a vector of booleans
+(\mintinline{R}{<} is an operation applying on the components
+of a vector, and the vector \mintinline{R}{0} is repeated).
+As a consequence, \mintinline{R}{x[x < 0]} is the subvector of
+\mintinline{R}{x} containing only its negative values.
+This is often used in the left-side of an assignment\footnote{
+    The left side of expression can be a variety of things,
+    not just variables.
+    It is however a complex operation with a lot of corner cases,
+    and I prefer not to explain it in detail in this document.
+}, as in \mintinline{R}{x[x < 0] <- 0} which replaces all
+negative values of \mintinline{R}{x} by \mintinline{R}{0}.
+
 \subsubsection{Function Calls}
 
 The part of \R{} source code dealing with function application,
-and in particular in the part matching given argument to expected arguments,
-is surprisingly long.
+and in particular in the part matching the given argument to the
+expected (formal) arguments, is surprisingly long.
 The reason is that there are several, separately simple, ways to call
 a function.
-Each of these ways then interoperate during the call,
-making it quite complex.
+Each of these ways then interoperate in each call,
+making them sometimes quite complex.
 
 We have seen in Section~\ref{sec:promises} that default arguments can be given
 to a function argument:
-if the argument is not provided, a promise is associated with the default value.
+if the argument is not provided, a promise is associated with the default expression.
 Arguments can also be given by name,
 as in the \mintinline{R}{curve} example of the same section:
 the function \mintinline{R}{seq} is given its argument named \mintinline{R}{length}
@@ -286,7 +325,7 @@ to a function definition.
 When called, all additional arguments will be packed in a special array.
 
 Surprisingly, named arguments are matched by prefix
-(called “partial match” in \R{} source code) and not by exact name,
+(called “partial match” in \R{} source code) and not only by exact name,
 unless they are after a \mintinline{R}{...} formal argument.
 For instance, in the example below,
 we can refer to the argument \mintinline{R}{cd} as just \mintinline{R}{c}.
@@ -296,13 +335,14 @@ as it exactly corresponds to the name of a formal argument,
 \R{} do not mix them.
 Also, exact matches are checked first, and partial matches second:
 this is the reason why the call \mintinline{R}{f (ab = 2, a = 1, 3)}
-below succeeds, assigning \mintinline{R}{abs} to \(1\).
+below succeeds, assigning \mintinline{R}{abc}
+(and not \mintinline{R}{ab}) to \(1\).
 \begin{minted}{R}
-f <- function (abc, ab, cd) c(abc, ab, cd)
+f <- function (abc, ab, de) c (abc, ab, de)
 # All the expressions below returns the array 1 2 3.
 f (1, 2, 3)
-f (cd = 3, 1, 2)
-f (c = 3, 1, 2)
+f (de = 3, 1, 2)
+f (d = 3, 1, 2)
 f (ab = 2, 1, 2)
 f (ab = 2, a = 1, 3)
 f (a = 3, 1, 2) # Returns an error, as “a” is the prefix of several formal arguments.
@@ -311,7 +351,9 @@ f (a = 3, 1, 2) # Returns an error, as “a” is the prefix of several formal a
 
 \section{\R{} Interpreters}
 
-There are several variants of \R{} interpreters.
+There are several interpreters of \R{}.
+One is the official implementation,
+but others exist (mainly to provide more speed).
 
 \subsection{The Main \R{} Interpreter}
 
@@ -320,7 +362,7 @@ There are several variants of \R{} interpreters.
 
 Most \R{} objects are in the form of a \emph{basic language element}.
 This is a \Cn{} structure composed of a tag and four pointers.
-The tag precises the kind of the basic language element;
+The tag indicates the kind of the basic language element;
 it can be for instance an integer vector, an environment, an expression, or an external pointer.
 The first pointer is used to associate \emph{attributes} to the basic language element.
 Attributes are additional fields that can be added to almost any \R{} object;
@@ -338,11 +380,14 @@ the second, to the rest of the list,
 and the third, to an optional name for the first element.
 
 Vectors are specials.
-They are associated with the same tag and attribute pointer,
+They are associated with the same tag and attribute pointer
+than other basic language elements,
 then two integers follow.
 Lastly, a raw array of data directly follows the basic language element in the \Cn{} memory.
-The two integers store the size of this array as well as its allocated size.
-The kind of array following the basic language element depends on what it stores:
+The two integers store the size of this array as well as its allocated size
+(which is usually the same than its current size).
+The size of this array’s cells depend on what it stores
+(indicated by its tag):
 for a character vector, it will be an array of characters,
 for an integer vector, an array of integers, etc.
 
@@ -392,7 +437,25 @@ for rare cases.
 The main \R{} interpreter is written with various optimisations in mind.
 This section lists some of them.
 
-\todo{symbols as pointers.}
+\paragraph{Symbols as Pointers}
+%
+Comparing strings is costly,
+and variables are inherently stored as strings.
+The main \R{} implementation,
+fixes this costly operation by comparing pointers
+instead of strings.
+First, any symbol must be installed using the \mintinline{C}{install}
+function, defined in \texttt{src/main/names.c}.
+This function allocates a basic language element
+of type “symbol”.
+One of its pointer points to the associated string.
+Then the pointer to this basic language element
+is always used instead of the initial string.
+%
+Symbols are stored in a global hash table:
+when “installing” a new symbol, it is first checked
+that the symbol did not already exist:
+if so, we have to return the previously allocated pointer.
 
 
 \subsection{FastR}
