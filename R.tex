@@ -463,8 +463,32 @@ if so, we have to return the previously allocated pointer.
 The \R{} runtime can be slow.
 \cite{kalibera2014fast} propose a faster approach,
 based on a Java implementation.
+This implementation is itself based on the Truffle
+framework~\parencite{wimmer2012truffle}.
+This framework aims to build an optimised virtual machine
+from an unoptimised interpreter in Java.
+It is based on code specialisation,
+compiling each functions into several versions,
+depending on the types of its arguments.
 
-\todo{A note about their testing architecture that we might use?}
+Due to the framework (as well as the Java virtual machine),
+FastR needs some time to “warm-up” and get to its full speed.
+During this initialisation, it can be slower than the main
+\R{} interpreter.
+However, once it gets to a critical loop,
+it is usually much faster than the main \R{} interpreter.
+
+\subsection{TestR}
+
+TestR is a framework to generate and execute unit tests.
+It also aims at measuring the coverage of the generated tests
+in the main interpreter source code,
+as well as in its various \R{} libraries.
+
+Although not an interpreter,
+this test suite can be considered as a trust source
+for my \Coq{} formalisation of the \R{} programming language.
+
 
 \section{Formalisation}
 
@@ -475,8 +499,8 @@ This section describes my approach to formalise \R{} in \Coq{}.
 Following my experience with JSCert~\parencite{bodin2014trusted},
 I think that it is important to have a specification
 the closest possible to \R{} internals.
-Indeed, JavaScript possesses structures in some way similar
-to the basic language elements (see Section~\ref{sec:concepts}),
+Indeed, JavaScript manipulates structures somehow similar
+to the basic language elements of \R{} (see Section~\ref{sec:concepts}),
 called completion triples.
 In JSCert, we initially choose to represent these completion triples
 as a \Coq{} inductive,
@@ -485,14 +509,15 @@ For instance, a basic language element whose tag is “symbol”
 will probably only use one pointer to represent the string of the symbol.
 By we discovered later that a construct of JavaScript % The sequence
 broke what we thought were invariants:
-the standard manipulated the structure as is it was a \Cn{} structure,
+the standard manipulated the structure as if it was a \Cn{} structure
+(and not as a usual pseudo-code structure),
 breaking our type assumptions.
 We were forced to start the formalisation again with a structure
 closer to the standard.
 
 I thus propose a formalisation based on the structure below.
 Arrows represent trust relations,
-those which are dashed are planned but not yet there.
+those which are dashed are planned but not yet implemented.
 It is inspired by the refinement methodology~\parencite{cohen2013refinements}:
 produce several implementations,
 one easier to specify and one easier (or more efficient) to implement,
@@ -520,18 +545,28 @@ A \Coq{} version of these \Cn{} definitions is defined,
 with the aim to be the closest possible to the \Cn{} definition.
 Some parts of the functions are dropped at this level,
 such as error management.
-At term, it is planned to use CompCert~\parencite{Leroy-Compcert-CACM} to prove that the \Coq{}
+At term, it is planned to use CompCert~\parencite{Leroy-Compcert-CACM}
+(or any other \Coq{} semantics of \Cn{}~\parencite{formalin})
+to prove that the \Coq{}
 version is indeed identical to the chosen parts of the \Cn{} definition.
 
 A structured \Coq{} formalisation is then defined.
 This formalisation abstracts some low-level constructs,
-such as pointers to basic language element
+such as pointers to basic language elements
 (which are heavily used in \R{}'s source code).
-The expressions are also given a proper inductive at this stage,
+In particular, this version should abstract all what can be abstracted
+about the memory model:
+most pointers to basic language elements
+will be replaced by a \Coq{} inductive representing
+the corresponding basic language element.
+As \R{} semantics is mostly functional
+(with the exception of environments),
+this step should not raise too much difficulty.
+The basic language elements are also given a proper
+inductive at this stage (representing \R{} expressions),
 although it is only weakly typed.
-This inductive merely emphases with flag uses which pointers
-of the basic language element structure.
-It also makes explicit a subtlety of \Cn{} pointers,
+Abstracting the memory enables to make explicit
+a subtlety of \Cn{} pointers,
 which can be used for two distinct usages:
 a pointer to one object,
 or a pointer to an array of this object.
@@ -540,10 +575,72 @@ are replaced by a list,
 which is much easier to manipulate in \Coq{}.
 
 The last step of the process aims to fit
-the intuition that the original had in mind when defining
-the \R{} programming language~\parencite{ihaka1996r}.
-Some advanced \R{} constructs may not fit such a high-level formalisation,
-as they might break the underlying assumptions.
+the intuition that the original authors had in mind when defining
+the \R{} programming language~\parencite{ihaka1996r},
+which hopefully fits the intuition of programmers.
+As such, this third formalisation can also be considered to be a trust source.
+
+These formalisations are chosen to be interpretable.
+This enables to add another trust source
+by running these interpreters against \R{} test suites.
+Code coverage can also be applied on the extracted \OCaml{} interpreters
+using tools such as Bisect.
+
+One of the reasons why \R{} is so accurate for such a formalisation choice
+is its modularity:
+these three formalisations focus on the core of \R{}.
+Most of the additional features of \R{} can then be iteratively be added.
+For instance, the assignment feature \mintinline{R}{<-} is not
+strictly speaking in the core of \R{} and can be later added.
+These additional features can be limited to the ones needed to analyse
+a given program:
+it is not needed to formalise the entire \R{} programming language to start
+using these formalisations.
+In this aspect, \R{} is modular.
+%
+This also means that some features of \R{} can be formalised
+in less details than others
+without altering the trust of the code formalisation.
+
+We now discuss the proofs of equivalence between \Coq{} formalisations.
+%
+The first proof is between the low-level formalisation
+and the structured level one.
+The main change between the two formalisation is the memory model.
+As such, there are no semantic changes,
+and they can (at least in theory)
+be proven equivalent.
+However, the deterministic aspect of the formalisation
+(as both are \Coq{} interpreters)
+simplifies the equivalence proof:
+only one direction\footnote{
+    That is, that if one formalisation results in something,
+    then so does the other.
+} is needed to get the equivalence.
+%
+The second proof, between the structured formalisation
+and the high-level is more complex.
+Indeed, the high-level formalisation manipulates
+different structures than the structured one.
+Furthermore, the high-level structures carry assumptions:
+some advanced \R{} constructs may not fit such a high-level formalisation,
+for instance because they manipulate low-level bits or fields.
+If the assumptions underlying the high-level formalisation
+are broken, no result is given in the high-level semantics;
+but this doesn’t mean that there is no accepted results in the
+structured formalisation, which assumes less.
+The proof of correctness between these two formalisation
+is thus bound to be in only one direction:
+if the high-level returns a given result,
+so does the structured formalisation.
+
+I think that the structured formalisation
+is at the right level of reasoning to prove properties
+about \R{} programs.
+However, in places where the program to be proven does
+not use low-level features,
+it is possible to switch to the high-level formalisation,
+thanks to its proof of correctness.
 
 
 \subsection{What is Formalised}
@@ -556,9 +653,12 @@ This includes in particular the \Cn{} structures used to represent
 \R{} expressions,
 as well as a large parts of the files presented in Section~\ref{sec:files}.
 
+I later added simple features used in some sample \R{} programs.
+This includes assignments and some array manipulation functions.
+
 \subsubsection{Structures}
 
-The memory management are ignored in this formalisation.
+The memory management is completely ignored in this formalisation.
 In particular, the garbage collector and its special reserved bits in the
 basic element structure are completely ignored.
 Instead, we consider that the interpreter allocates new basic language element
@@ -566,22 +666,38 @@ without reusing them.
 The memory is thus formalised as a partial map from pointers
 (which we defined to be natural numbers)
 to basic language elements.
-We think that this part of \R{} is sufficiently local to not be an issue
-to not formalise it.
+We think that this part of \R{} is sufficiently local
+to not be formalised.
+This also means that the extracted interpreter
+(from the low-level formalisation)
+is not able to release its simulated memory,
+making it quite impractical to run on large programs.
 
 \R{} implementation is done in a strong imperative style,
 as well as using pointers.
 Tracking whether two objects are aliases in the heap is thus important.
 I thus decided to include in the formalisation the \mintinline{C}{named}
 field of the language element.
+This may seem to contradict the previous statement of not formalising
+memory management.
+The idea is here to formalise pointers and aliases,
+but not tracking whether a pointer is actually used is not.
+%
 A explained in the documentation file \texttt{R-ints.pdf}
 (Section~1.1.2),
 which describes some of \R{}'s internal structures,
 this field can take three values:
-\(0\) for temporary objects,
-\(1\) for objects bounds to at least one variable,
-as \(2\) for objects that may be bound to more than one variable.
-I formalised this part as a \Coq{} inductive.
+\(0\)~for temporary objects,
+\(1\)~for objects bounds to at least one variable,
+as \(2\)~for objects that may be bound to more than one variable.
+I formalised this part as a \Coq{} inductive, shown below.
+\begin{minted}{Coq}
+Inductive named_field :=
+  | named_temporary
+  | named_unique
+  | named_plural
+  .
+\end{minted}
 
 Other fields of the basic language elements were not formalised.
 For instance, the \mintinline{C}{debug} field,
@@ -590,7 +706,10 @@ or the fields reserved for the garbage collector.
 These fields are not difficult to later add in the formalisation,
 as basic language elements are very rarely built explicitly:
 they are usually defined or edited (following \Cn{}'s imperative style)
-field by field using constructors.
+using constructors.
+This means that only these constructors need to be updated
+when adding new fields,
+which is not a difficult operation.
 In the \Coq{} formalisation, these accessors are defined in the file
 \texttt{low/RinternalsAux.v}.
 
@@ -610,7 +729,8 @@ Formalising out these constructs would however make the \Coq{}
 formalisation away from the \Cn{} source code.
 Such a choice would thus lead to further complexities to relate
 the \Cn{} source code with the low-level \Coq{} formalisation.
-It has thus been added in the formalisation as it is in \Cn{}.
+It has thus been added in the formalisation as it is in \Cn{},
+as an array of \(16\)~booleans.
 The structured formalisation then formalises it out.
 
 
@@ -621,7 +741,7 @@ They are used to represent the \R{} stack.
 The structure contains low-level information,
 such as long-jumps
 (used in \Cn{} to jump to an arbitrary assembly code).
-These low-level information have not been modeled.
+These low-level informations have not been modeled.
 The structure also features some \R{} structures
 (that are basic language elements).
 For instance, the \mintinline{C}{conexit} field
