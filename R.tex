@@ -893,35 +893,54 @@ to increase the eyeball closeness between \Coq{} and \Cn{}.
 \subsubsection{Monadic Style}
 \label{sec:monadic:style}
 
-A \Cn{} program manipulates a global state
-(which is a partial mapping from pointers to values).
+A \Cn{} program manipulates a global state.
+This states contains the heap
+(a partial mapping from pointers to values),
+but also stores global variables.
 To represent this in \Coq{}, we use a monadic construct, defined below.
 The main constructor \mintinline{Coq}{result_success}
 carries the global state and an object.
-If a construct fails,
-the construct \mintinline{Coq}{result_error}
-is called with the error message.
-The other constructors enable to precisely describe
-the reason why a result was not given:
-because of places of the \R{} semantics that we do not catch,
+This object is the result returned by the considered function.
+If a function call fails,
+the constructor \mintinline{Coq}{result_error}
+is called with the corresponding error message.
+We could have chosen to add informations
+such that the line number of the error
+(to be closer than \R{} source code),
+but we chose not to precisely formalise errors.
+The other constructors of \mintinline{Coq}{result}
+describe other reasons why a result was not given:
+because of places of the \R{} semantics that we do not catch yet,
 because of lack of fuel (see below),
 or because of an assertion failure
 (which should not happen,
 and is thus important to declare if they happen).
+The first point of this last list
+(not-yet-implemented features) is not of great importance
+in the formalisation
+(we could remove it once the entire project will be finished),
+but greatly helps having a working interpreter early
+in the development.
+Having an interpreter this early enables to quickly catch
+bugs before starting any proof.
 \begin{minted}{Coq}
 Inductive result (A : Type) :=
   | result_success : state -> A -> result A
   | result_error : state -> string -> result A
-  (* ... *).
+  | result_not_implemented : string -> result A
+  | result_bottom : state -> result A
+  | result_impossible : state -> string -> result A
+  .
 \end{minted}
 
-We can then define a monad for this type.
+We can then define a monad for this type
+through a bind function, shown below.
 Any call to a procedure that may fail
 is done through this function
 propagating errors.
 A notation has been added
 (following the monadic usage)
-to avoid to many nested parentheses.
+to avoid difficult-to-read nested parentheses.
 \begin{minted}{coq}
 Definition if_success (A B : Type)
     (r : result A) (f : state -> A -> result B) : result B :=
@@ -938,31 +957,47 @@ Notation "'let%success' a ':=' r 'using' S 'in' cont" :=
 
 Functions in \Coq{} must terminate.
 This makes programming in \Coq{} complex as we must explicitly
-mention what argument terminate in a recursive call.
-Co-recursive calls are common in the source code of \R{},
-so we used the same solution than in JSCert:
-the potentially looping construct are packed into a \Coq{}
+mention what argument decreases in a recursive call.
+Mutually recursive calls are common in the source code of \R{},
+and it is not always clear what measure is decreasing in all function call.
+The common solution to this problem is to add an artificial
+argument—called “fuel”—and make it decrease at each step.
+When the fuel reaches \(0\), the computation ends,
+returning a dummy result
+(in this case \mintinline{Coq}{result_bottom}).
+This additional argument adds some code
+everywhere in \Coq{} programs,
+making it cumbersome,
+which is problematic for the eyeball closeness.
+We solved this problem with the same solution than JSCert:
+the potentially looping constructs are packed into a \Coq{}
 structure, which is given to the argument of any function.
 There is no recursive call in such a programming pattern:
-all recursive calls are replaced by a call to one element
-of the structure (which may have the same name than the
-current function).
-Once any function has been defined,
+all calls are replaced by a call to one field
+of the structure.
+If this is a recursive call,
+the field of the \Coq{} structure have the same name than
+the current function:
+each field represents a function.
+
+Once all functions have been defined
 with such a structure as a parameter,
-we define the interpreter as being this structure of functions
-parameterised with a fuel (an artificially decreasing argument).
-The fuel solution is common in \Coq{},
-but may be cumbersome.
+we can build such a structure using fuel
+(an artificially decreasing argument),
+calling all the corresponding functions
+with a new structure as argument,
+with less fuel available.
+The interpreter is then defined using this structure of functions.
 This way of defining the interpreter avoids
 having to deal with explicit fuels all along the computation.
-It also make definitions easier to read.
+It also makes definitions easier to read.
 
 
 \subsubsection{Global Variables}
 \label{sec:global:variables}
 
 The source code of \R{} uses a large number of global variables.
-We categorize these global variables into two distinct types:
+We categorize these global variables into two distinct categories:
 global variables that are initialised when \R{} starts, then never changed,
 and global variables that may change at any point during execution.
 
@@ -970,18 +1005,21 @@ The first kind can be separated into two subcategories:
 either it is simply a constant, either it needs some complex initialisation.
 If the value is simply a constant
 it is directly translated to a \Coq{} value,
-at the beginning of the file \texttt{low/Reval.v}.
+usually at the beginning of the file \texttt{low/Reval.v}.
 For instance, the value \mintinline{C}{R_NaInt},
 is just an alias for \mintinline{C}{INT_MIN}.
 
 The case in which the function needs an initialisation is complex.
 Such values (for instance \mintinline{C}{R_BaseEnv})
-need to call to complex \R{} function
+need to call to non-trivial \R{} function
 (such as \mintinline{C}{NewEnvironment} or \mintinline{C}{defineVars})
 to be initialised.
-The types of the called functions do not guarantee success or termination:
+These calls will usually allocate pointers,
+changing the heap.
+Furthermore, the called functions do not guarantee success or termination
+(at least, not within their types:
 they return a \mintinline{Coq}{result T}—%
-see Section~\ref{sec:monadic:style}.
+see Section~\ref{sec:monadic:style}).
 
 To model such global variables,
 we added a global context \mintinline{Coq}{Globals} to our formalisation.
@@ -989,9 +1027,9 @@ Each function using one of these global variables
 (for instance, \mintinline{Coq}{forcePromise}
 uses \mintinline{Coq}{R_UnboundValue})
 is parameterised by this context.
-An instance of this context is defined after the \mintinline{Coq}{runs}
-fixed point (see Section~\ref{sec:monadic:style}),
-using the defined functions.
+This context is defined
+(initialising the state)
+in the file \texttt{low/Globals.v}.
 This enables to define the global interpreter:
 first, the \mintinline{Coq}{Globals} context is defined,
 then the evaluation function is run in this context.
@@ -1024,10 +1062,11 @@ Definition update_R_SymbolTable S p := {|
 
 There is a large number of global variables of the first kind
 (that are initialised once, then never changed).
-Furthermore, the initialisation procedure is subtle.
+Furthermore, the initialisation procedure is subtle:
+global variables must be initialised in a specific order.
 It was thus necessary to find an easily extendable definition:
 adding global variables to the formalisation should not be a difficult task.
-To understand this, let us consider one particular
+To illustrate this, let us consider one particular
 global variable: \mintinline{C}{R_NilValue}.
 The \Cn{} source code of \R{} very rarely uses
 the \mintinline{C}{NULL} pointer.
@@ -1037,8 +1076,8 @@ a list whose first and next elements both point
 to \mintinline{C}{R_NilValue},
 but whose type
 (see the definition of \mintinline{Coq}{SExpType} in Section~\ref{sec:closeness})
-is \mintinline{Coq}{NilSxp};
-it is the only element with such a type.
+is \mintinline{Coq}{NilSxp}—%
+it is the only element of such a type in \R{}.
 %
 Not-yet-initialised fields of \R{} structures,
 are usually pre-initialised to this specific pointer.
@@ -1048,6 +1087,9 @@ during the execution of an \R{} program,
 or getting its value wrong,
 will thus probably lead to \R{} looping or crashing
 (looking for a \mintinline{C}{R_NilValue} pointer but never finding it).
+This actually happened in the first version of the interpreter,
+the value of \mintinline{C}{R_NilValue} being written
+in the global state after a particular \R{} list being unfolded.
 It is one of the first global variable to be set,
 in the function \mintinline{C}{InitMemory}.
 
@@ -1055,6 +1097,11 @@ This example illustrates that the initialisation has to be done
 in a specific order, but also that the next initialisation functions
 usually needs the global variables defined before.
 The definition of \mintinline{Coq}{Globals} is shown below.
+We first define symbols,
+one for each global variables.
+We prove that these symbols are (decidably) comparable—%
+this part is automatically done using tactics,
+but may take some time to complete.
 \begin{minted}{Coq}
 Inductive GlobalVariable :=
   | R_AsCharacterSymbol
@@ -1062,13 +1109,29 @@ Inductive GlobalVariable :=
   | R_BaseNamespaceName
   | R_BaseNamespace
   (* ... *).
-
+\end{minted}
+The global context is then defined as a complete function
+from these symbols to pointers.
+These pointers are initialised,
+as done in \Cn{},
+by the \mintinline{C}{NULL} pointer.
+\begin{minted}{Coq}
 Definition Globals : Type := GlobalVariable -> SExpRec_pointer.
 
 Definition empty_globals : Globals :=
   fun _ => NULL.
-
-Definition GlobalsWith (g : Globals) (C : GlobalVariable) (p : SExpRec_pointer) : Globals :=
+\end{minted}
+Reading such a context is trivial:
+we just has to apply the corresponding symbol to the context.
+Writing is done using the following function.
+The \mintinline{Coq}{ifb} construct is part of the TLC library~\parencite{TLC}.
+It looks for type-classes deciding the following predicate,
+replacing them with the corresponding decidability procedure.
+In this case, it uses the proof that symbols are comparable.
+A notation similar to \OCaml{}’s field update is given to this function.
+\begin{minted}{Coq}
+Definition GlobalsWith (g : Globals)
+    (C : GlobalVariable) (p : SExpRec_pointer) : Globals :=
   fun C' =>
     ifb C = C' then p
     else g C'.
@@ -1079,11 +1142,11 @@ Definition GlobalsWith_list :=
 Notation "'{{' g 'with' L '}}'" :=
   (GlobalsWith_list g L) : globals_scope.
 \end{minted}
-Contexts are functions from global variable identifiers to pointers.
-These identifiers are proven (decidably) comparable,
-which enables us to define a function to update global variables independently.
-A \OCaml{}’s style notation has been given to this update.
-This feature is crucial in the initialising function, as shown below.
+We can now define the initialisation procedure
+as the \Coq{} equivalent of the \mintinline{C}{setup_Rmainloop}
+\Cn{} function.
+Each calls returns some values to be written in the global context,
+and the global context is updated accordingly.
 \begin{minted}{Coq}
 Definition setup_Rmainloop max_step S : result Globals :=
   let globals := empty_globals in
@@ -1107,7 +1170,7 @@ Definition setup_Rmainloop max_step S : result Globals :=
 
 Even using monadic style,
 translating a \Cn{} program into \Coq{} can be complex.
-I tried to do it the most closely possible to the original
+I tried to stay the closest possible from the original
 \Cn{} source code,
 but there were places in which direct translation was difficult.
 For instance, in function \mintinline{C}{matchArgs},
@@ -1124,14 +1187,19 @@ memset(fargused, 0, sizeof(fargused));
 
 One solution would be to define \mintinline{coq}{fargused}
 as a list of integers, as below.
-Such a list would then be updated through the monadic style.
+The \Cn{} code defines an array of length at least one,
+as an empty array is considered undefined behaviour
+(that is, the program can do whatever it wants,
+including sending an email or other unexpected behaviour).
+Declaring an empty list is not an issue in \Coq{}.
+Such a list would then be updated using monadic style.
 \begin{minted}{coq}
 let fargused : list nat :=
   let fargused : list nat :=
-    let fix aux i :=
+    let fix zeros i :=
       match i with
       | 0 => nil
-      | S n => 0 :: aux n in
+      | S n => 0 :: zeros n in
     in aux argi in
     (* ... *)
 \end{minted}
@@ -1140,26 +1208,36 @@ However, when observing in practise what the \Cn{} program
 does, it does not fully use the fact that it is an array:
 the \(i\)th cell of the array is only accessed in the \(i\)th
 iteration of the loop.
-As the loop was translated into a fold on the given list,
-it was not a issue to push the array into the fold.
-One way to see this formalisation choice
+As the loop was translated as an application of the fold function
+on the given list,
+it was not a issue to push the array into the fold function.
+One possible interpretation of this formalisation choice
 is that we have locally rewritten the original \Cn{} program
 to an equivalent program.
 I only did such a program rewriting when the style of the \Cn{}
 program was difficult to directly translate into \Coq{},
 and the change were all local:
-I do not expect it to yield more complexity for the proof of correctness.
+I do not expect it to yield a lot of complexity in the proof of correctness.
 
 
-\subsubsection{Closeness to the \Cn{} source code}
+\subsubsection{Closeness to the \Cn{} Source Code}
 \label{sec:closeness}
 
-The goal of the low-level formalisation is to be close as possible
+The goal of the low-level formalisation is to be as close as possible
 from the \Cn{} source code of \R{}.
-In this section, we evaluate how close it is.
+This eyeball closeness has two purposes.
+First, anyone with basic \Coq{} and \Cn{} training
+can check that the translation from \Cn{} to \Coq{} yielded
+a similar behaviour.
+Second, close programs are easier to prove correct one with another:
+this closeness will help relating the low-level formalisation
+to the interpretation of the original \Cn{} code in a \Cn{} semantics.
+In this section, we evaluate how close the low-level formalisation
+is to the original \R{} source code.
 
 Let us start by structure definitions.
-In the \Cn{} source code, types are defined by an enumeration.
+In the \Cn{} source code, the different types of basic language elements
+are defined by an enumeration.
 \begin{minted}{C}
 typedef enum {
     NILSXP  = 0,    /* nil = NULL */
@@ -1173,6 +1251,8 @@ typedef enum {
 } SEXPTYPE;
 \end{minted}
 This enumeration is naturally translated into an inductive in \Coq{}.
+In this case,
+the \Coq{} translation even appears more natural than the original \Cn{}.
 \begin{minted}{Coq}
 (** SEXPTYPE **)
 Inductive SExpType :=
@@ -1186,26 +1266,36 @@ Inductive SExpType :=
   | FunSxp
   .
 \end{minted}
-This seems very natural.
 However, there are some places in which the \mintinline{C}{SEXPTYPE}
-enumeration is stored in only \(5\) digits.
+enumeration is stored in only \(5\)~digits.
 This is an issue as the last item of the enumeration
-is associated the value \(99\)—%
-note that the one before is associated the value \(31\):
+is associated the value~\(99\)—%
+the one before is associated the value \(31\) and fits the \(5\)~digits:
 there are holes in the enumeration.
 This makes the constructor \mintinline{C}{FUNSXP} coerced
 to the constructor \mintinline{C}{CLOSXP} in such places
-(as \(99 \mod 2^5 = 3\)).
-This behaviour was wanted by the developers,
-and it is up to us to be careful when storing a \mintinline{Coq}{SExpType}
-into a place that can not hold the value \mintinline{C}{FUNSXP}.
+(as \(99 \bmod 2^5 = 3\)).
+This behaviour was wanted by the developers.
+To translate this effect,
+we need to be careful when storing a \mintinline{Coq}{SExpType}
+into a place that can not hold the value \mintinline{C}{FUNSXP} in \Cn{}.
+To this end, we define a function
+\mintinline{Coq}{SExpType_restrict} to map the value
+\mintinline{Coq}{FunSxp} to \mintinline{Coq}{CloSxp} when needed.
+This may seem like something easily forgettable,
+but as said earlier, most of the time a basic language element is built,
+it is built using constructors:
+in practise, the function \mintinline{Coq}{SExpType_restrict}
+only appears in these few constructors.
 
 The \Cn{} structure below is attached to any
 basic language element.
 We can recognise the small number of bits reserved for the type field.
 Some fields are currently unused by the \Cn{} interpreter,
-and have not been formalised;
-it will not be difficult to add them afterwards if needed.
+and have not been formalised.
+It will not be difficult to add these fields afterwards if needed,
+as only the small number of generic function building
+basic language elements need to be updated for such a change.
 Some fields are about garbage collection
 and have been removed from the \Coq{} formalisation.
 \begin{minted}{C}
@@ -1224,14 +1314,24 @@ struct sxpinfo_struct {
 \end{minted}
 Below is the \Coq{} translation of this structure.
 The field \mintinline{C}{named} can only take three distinct values
-(and not four, as its type seems to indicate).
-It has been formalised as an inductive,
+(and not \(2^2 = 4\), as its type seems to indicate):
+one value for temporary variables,
+one value to indicate that a variable is unique
+and can be deallocated once used,
+and one indicated that a variable is used at several places of the memory.
+It has thus naturally been formalised as an inductive \mintinline{Coq}{named_field},
 associating each value with a more understandable constructor.
-For instance, the value \(0\) of the field \mintinline{C}{named}
-has been translated into a \Coq{} constructor \mintinline{Coq}{named_temporary}.
+%
 The \mintinline{C}{gp} is used to store various informations,
 and is not used consistently along the program.
-We thus choose to represent it at the lowest level possible,
+It is for instance sometimes used to mark already seen nodes
+when exploring a graph,
+or to stored some specific information in some basic language elements.
+In a functional programming language,
+such a field would probably be a type parameter of the type
+\mintinline{C}{sxpinfo_struct}, enabling a program to associate
+it a value of any needed type.
+We choose to represent it at the lowest level possible,
 as a bit vector.
 \begin{minted}{Coq}
 (** sxpinfo_struct **)
@@ -1264,7 +1364,8 @@ are associated with the \mintinline{C}{listsxp_struct} structure.
     struct SEXPREC *attrib; \
     struct SEXPREC *gengc_next_node, *gengc_prev_node
 
-/* The standard node structure consists of a header followed by the node data. */
+/* The standard node structure consists of a header followed by
+  the node data. */
 typedef struct SEXPREC {
     SEXPREC_HEADER;
     union {
@@ -1276,15 +1377,16 @@ typedef struct SEXPREC {
 } SEXPREC, *SEXP;
 \end{minted}
 Below is the \Coq{} translation of these structures.
-The union has been translated into an inductive type.
+The union has been translated as an inductive type.
 In \Cn{}, accesses to this union are untyped:
 there are no control performed by the compiler to check that
 is was explicitly defined as such a variant of the union.
-In \Coq{}, this checks are bound:
+In \Coq{}, these checks are guarded:
 the only way to access a particular field of the structure
 \mintinline{Coq}{ListSxp_struct} is to first coerce
 the union into this type.
-This coercion might fail, and is performed using a monad.
+This coercion might fail:
+it is naturally performed by a monad.
 \begin{minted}{Coq}
 Inductive SExpRec_union :=
   | primSxp : PrimSxp_struct -> SExpRec_union
@@ -1324,7 +1426,8 @@ is given by the type.
 For instance, the size of the cells of a complex number array
 (of type \mintinline{C}{CPLXSXP}) are twice as large
 as those of a real number array (of type \mintinline{C}{REALSXP}).
-This structure is this very delicate to manipulate in \Cn{}.
+This structure can be very delicate to manipulate in \Cn{}
+due to the lack of guards.
 \begin{minted}{C}
 struct vecsxp_struct {
     R_len_t length;
@@ -1337,8 +1440,7 @@ typedef struct VECTOR_SEXPREC {
 } VECTOR_SEXPREC, *VECSEXP;
 \end{minted}
 To represent such a structure in \Coq{},
-we are forced to parameterise the type of data stored
-in the type:
+we are forced to parameterise the type of data stored:
 we have to explicitly incorporate the array in the structure.
 As we do not model garbage collection,
 we here ignore the allocated size.
@@ -1401,8 +1503,13 @@ SEXP eval(SEXP e, SEXP rho)
 }
 \end{minted}
 The \Coq{} translation is shown below.
+Note that it does not return a \mintinline{Coq}{SExpRec_pointer},
+as could be expected from the initial \Cn{} function,
+but a \mintinline{Coq}{result SExpRec_pointer},
+due to the monadic style.
 \begin{minted}{Coq}
-Definition eval runs (S : state) (e rho : SExpRec_pointer) : result SExpRec_pointer :=
+Definition eval runs (S : state) (e rho : SExpRec_pointer)
+    : result SExpRec_pointer :=
   read%defined e_ := e using S in
   match type e_ with
   | NilSxp
@@ -1420,10 +1527,11 @@ Definition eval runs (S : state) (e rho : SExpRec_pointer) : result SExpRec_poin
   end.
 \end{minted}
 To ease the readability of the \Coq{} formalisation,
-each monad have been associated a monadic notation.
+each monad have been associated with a monadic notation.
 Here follows a version without these notations.
 \begin{minted}{Coq}
-Definition eval runs (S : state) (e rho : SExpRec_pointer) : result SExpRec_pointer :=
+Definition eval runs (S : state) (e rho : SExpRec_pointer)
+    : result SExpRec_pointer :=
   if_defined S (read_SExp S e) (fun e_ =>
     match type e_ with
     | NilSxp
@@ -1448,6 +1556,13 @@ are packed into this structure.
 The \mintinline{Coq}{S} argument is the state.
 There is no global variable or side effects in \Coq{}:
 we are thus forced to pass the state along all functions.
+The state in also included in the result of the function,
+hidden in the monadic style
+(see Section~\ref{sec:monadic:style} for the definition
+of the \mintinline{Coq}{result T} type).
+Notice how the function output \mintinline{C}{return e}
+has been translated into \mintinline{Coq}{result_success S e}:
+the state \mintinline{Coq}{S} has been included in the result.
 
 Then, the \Cn{} program directly accesses the pointer \mintinline{C}{e}.
 We can not do that in \Coq{}:
@@ -1458,19 +1573,103 @@ We do this dereferencing through a monad,
 making the failing case transparent.
 The \Cn{} style \mintinline{C}{switch} statement then naturally translates
 into a \Coq{} style pattern-matching.
-The \mintinline{C}{default} case in the \Cn{} code can be progblematic, though.
+The \mintinline{C}{default} case in the \Cn{} code can be problematic, though.
 We are indeed forced in \Coq{} to continue the program in this case.
 We do not think this difference to be an issue.
 In the non-\mintinline{C}{default} case,
 the \mintinline{C}{named} field is set to \(2\)
 (as it can only take three values, the test is just there to potentially avoid a write).
 In \Coq{}, we have to rewrite the entire object.
-Not that \(2\) is given a more readable name in \Coq{}:
-\mintinline{Coq}{named_plural}.
+Note that \(2\) is given a more readable name in \Coq{}:
+\mintinline{Coq}{named_plural}
+(see the definition of \mintinline{Coq}{named_field} above).
 
 Apart from these style differences,
 mostly due to the different programming styles associated with both languages,
 we believe these two programs snippets to be sufficiently close one to each others.
+Let us consider another \Cn{} snippets.
+\begin{minted}{C}
+SEXP applyClosure (SEXP call, SEXP op, SEXP arglist, SEXP rho,
+                   SEXP suppliedvars)
+{
+  SEXP formals, actuals, savedrho, newrho;
+
+  if (rho->type != ENVSXP)
+    errorcall (call, "'rho' must be an environment.");
+
+  formals = op->clo.formals;
+  savedrho = op->clo.env;
+  actuals = matchArgs (formals, arglist, call);
+  PROTECT (newrho = NewEnvironment (formals, actuals, savedrho));
+
+  /* ... */
+  return v;
+}
+\end{minted}
+The \Coq{} translation is shown below.
+\begin{minted}{Coq}
+Definition applyClosure S
+    (call op arglist rho suppliedvars : SExpRec_pointer)
+    : result SExpRec_pointer :=
+  read%defined rho_ := rho using S in
+  ifb type rho_ <> EnvSxp then
+    result_error S "‘rho’ must be an environment."
+  else
+    read%clo op_clo := op using S in
+    let formals := clo_formals op_clo in
+    let savedrho := clo_env op_clo in
+    let%success actuals :=
+      matchArgs S formals arglist call using S in
+    let%success newrho :=
+      NewEnvironment S formals actuals savedrho using S in
+    (* ... *)
+    result_success S v.
+\end{minted}
+The beginning of these two functions is close as previously seen.
+Let us focus on the part of the function following the error case.
+In the \Cn{} code, we simply consider \mintinline{C}{op->clo}.
+There are two ways for this read to fail:
+either the pointer \mintinline{C}{op} is unbound,
+and we are deferencing an unbound pointer, which has an undefined behaviour,
+or \mintinline{C}{op} is indeed bound,
+but to something else than a closure.
+As \mintinline{C}{op} points to a union, there is no guards
+chacking that it is effectively a closure.
+Of course, as programmers, we know that if the type of a basic language element
+is \mintinline{C}{ENVSXP}, then the associated union is indeed a closure,
+but there is no guard in the type of this object.
+In \Coq{}, we have thus to first deallocate the pointer
+(which may fail),
+then checking the kind of returned object,
+failing if we have not a closure.
+This has been translated by the monad notation
+\mintinline{Coq}|read%clo op_clo := op using S in|.
+
+Let us now consider the two function calls.
+Both takes in \Coq{} the state \mintinline{Coq}{S} as addition argument.
+Both of these function may also fail.
+We have thus to pass their result to a monad
+(in this case through the monad notation \mintinline{Coq}|let%success|%
+).
+The \Cn{} code featured a macro \mintinline{C}{PROTECT}.
+This macro temporary disables the guarbage manager,
+preventing it to recycle the newly allocated environment,
+which is not yet used.
+As we do not model guarbage collection in \Coq{},
+this macro has been removed.
+
+As a conclusion,
+we have seen several translations of \Cn{} function into \Coq{}.
+In each of these translation,
+we have seen that each one or two lines of \Cn{}
+have been translated into one or two lines of \Coq{}.
+Furthermore, these lines are farily similar
+thanks to the monadic notations.
+There are still some differences, but we beleive these differences
+not to hinder the eyeball closeness.
+in particular, we expect that a basic train is enough for anyone
+to convince themselves that the \Coq{} translation has a similar behaviour
+than the original \Cn{} program.
 
 
 \subsubsection{Validation}
@@ -1478,22 +1677,25 @@ we believe these two programs snippets to be sufficiently close one to each othe
 
 In essence, the \Coq{} formalisation is executable.
 Waiting to relate the formalisation to CompCert's interpretation
-of the \Cn{} source code, we can thus test the formal interpreter
-on benchmarks.
+of the \Cn{} source code, we can test the formal interpreter
+on benchmarks,
+such as TestR (see Section~\ref{sec:TestR}).
 
-The \Coq{} formalisation has been designed to be as closed as
+The \Coq{} formalisation has been designed to be as close as
 possible to the \Cn{} code.
 This means that each line of the \Coq{} can be compared to its
 \Cn{} counterpart.
 The \Coq{} monadic style is heavier—%
 making a lot of behaviors explicit—,
 but closely matches the \Cn{} source code.
-This way of validating the formalisation is called “eyeball closeness”
-in \cite{bodin2014trusted}.
+This way of validating the formalisation
+is called “eyeball closeness”~\parencite{bodin2014trusted}.
 
 Later, we plan to relate the \Coq{} formalisation
-to the \Cn{} source code using CompCert~\parencite{Leroy-Compcert-CACM},
-by relating in \Coq{} the CompCert interpretation of the source code of \R{}
+to the \Cn{} source code using CompCert~\parencite{Leroy-Compcert-CACM}
+or Formalin~\parencite{formalin},
+by relating in \Coq{} the CompCert or Formalin interpretation
+of the source code of \R{}
 to the low-level formalisation.
 We expect this relation to be heavy because of the complex \Cn{} semantics,
 but we hope that the closeness between the monadic interpreter and the \Cn{}
