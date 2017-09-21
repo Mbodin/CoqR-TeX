@@ -53,6 +53,7 @@
 \maketitle
 
 \section{Presentation of the Language}
+\label{sec:presentation}
 
 \R{} is now a trending programming language for mathematicians.
 In practise, it is presented as a read-eval-print-loop,
@@ -64,6 +65,7 @@ The syntax of the language contains numerous exceptions,
 leading to a high number of programs with a semantics.
 
 \subsection{History}
+\label{sec:history}
 
 \R{} is a programming language designed for statistics.
 Its specification~\parencite{team2000r}\footnote{
@@ -103,6 +105,7 @@ and \mintinline{R}{?'<-'} displays the documentation
 of the \mintinline{R}{<-} feature.
 
 \subsection{Features}
+\label{sec:features}
 
 \R{} is accompanied with a lot of features.
 We detail here the ones relevant from the point of view
@@ -208,6 +211,7 @@ and the promise can be evaluated.
 
 
 \subsubsection{Vectors}
+\label{sec:vectors}
 
 In the previous example,
 the variable \mintinline{R}{x} was associated the result
@@ -297,6 +301,7 @@ This is often used in the left-side of an assignment\footnote{
 negative values of \mintinline{R}{x} by \mintinline{R}{0}.
 
 \subsubsection{Function Calls}
+\label{sec:function:calls}
 
 The part of \R{} source code dealing with function application,
 and in particular in the part matching the given argument to the
@@ -350,12 +355,14 @@ f (a = 3, 1, 2) # Returns an error, as “a” is the prefix of several formal a
 
 
 \section{\R{} Interpreters}
+\label{sec:interpreters}
 
 There are several interpreters of \R{}.
 One is the official implementation,
 but others exist (mainly to provide more speed).
 
 \subsection{The Main \R{} Interpreter}
+\label{sec:main:interpreter}
 
 \subsubsection{Concepts}
 \label{sec:concepts}
@@ -433,6 +440,7 @@ and exceptions providing more behaviours
 for rare cases.
 
 \subsubsection{Optimisations}
+\label{sec:optimisations}
 
 The main \R{} interpreter is written with various optimisations in mind.
 This section lists some of them.
@@ -459,6 +467,7 @@ if so, we have to return the previously allocated pointer.
 
 
 \subsection{FastR}
+\label{sec:FastR}
 
 The \R{} runtime can be slow.
 \cite{kalibera2014fast} propose a faster approach,
@@ -479,6 +488,7 @@ However, once it gets to a critical loop,
 it is usually much faster than the main \R{} interpreter.
 
 \subsection{TestR}
+\label{sec:TestR}
 
 TestR is a framework to generate and execute unit tests.
 It also aims at measuring the coverage of the generated tests
@@ -491,10 +501,12 @@ for my \Coq{} formalisation of the \R{} programming language.
 
 
 \section{Formalisation}
+\label{sec:formalisation}
 
 This section describes my approach to formalise \R{} in \Coq{}.
 
 \subsection{Language Formalisation}
+\label{sec:language:formalisation}
 
 Following my experience with JSCert~\parencite{bodin2014trusted},
 I think that it is important to have a specification
@@ -644,6 +656,7 @@ thanks to its proof of correctness.
 
 
 \subsection{What is Formalised}
+\label{sec:formalisation:coverage}
 
 The \Cn{} source code of \R{} is large.
 It is thus out of the question to translate every \Cn{} function to \Coq{}.
@@ -657,6 +670,7 @@ I later added simple features used in some sample \R{} programs.
 This includes assignments and some array manipulation functions.
 
 \subsubsection{Structures}
+\label{sec:coverage:structures}
 
 The memory management is completely ignored in this formalisation.
 In particular, the garbage collector and its special reserved bits in the
@@ -735,6 +749,7 @@ The structured formalisation then formalises it out.
 
 
 \subsubsection{Simplified Items}
+\label{sec:coverage:simplifications}
 
 Contexts are large \Cn{} structures in \R{} source code.
 They are used to represent the \R{} stack.
@@ -743,41 +758,63 @@ such as long-jumps
 (used in \Cn{} to jump to an arbitrary assembly code).
 These low-level informations have not been modeled.
 The structure also features some \R{} structures
-(that are basic language elements).
+in the form of basic language elements.
 For instance, the \mintinline{C}{conexit} field
 is an optional basic language element executed when
-the context is ended
-(typically at a function return,
-using the \mintinline{R}{on.exit} feature).
+the context is ended.
+The end of a context typically at a function return.
+The \mintinline{C}{conexit} field can be set
+using the \mintinline{R}{on.exit} \R{} function.
 These fields about features of \R{} have been modeled.
+There are \(6\) of them:
+\mintinline{R}{promargs},
+\mintinline{R}{callfun},
+\mintinline{R}{sysparent},
+\mintinline{R}{call},
+\mintinline{R}{cloenv}, and
+\mintinline{R}{conexit}.
 
 Contexts also carry information about errors,
-enabling to catch errors.
-As the control flow has been modelled as a simple
+enabling to catch them directly in \R{}.
+However,  the control flow has been modelled as a simple
 success-or-error monad,
+providing very few information in case of an error:
 errors are not properly modelled in the formalisation.
 The fields of contexts describing informations about
 the current error
 (such as line number and error type)
 have thus not been modelled.
+We think that this is not a major issue,
+as errors are usually unwanted behaviour:
+if we prove that a program has a semantics
+in our low-level formalisation,
+then no error can appear during its execution.
 
 
 \subsubsection{Miscellaneous Unformalised Items}
+\label{sec:coverage:unformalised}
 
 The hash of environment has not been formalised.
+In \R{}, this hash enables faster comparisons of environments.
 We considered it to be an optimisation and did not wanted to bother
 with the complex associated proofs.
 
-The \mintinline{R}{truelength} field of vectors has also been
-removed in the \Coq{} formalisation.
+The \mintinline{R}{truelength} field of vectors
+(indicated the length of the allocated memory
+instead of the data length of the vector)
+has also been removed in the \Coq{} formalisation.
 It can be seen as a general choice not to model the \Cn{} memory in details.
 Similarly, the vector following a vector is considered to be part
 of the vector (represented as a list).
 We believe it to closely follow the intuition and the comments from the \Cn{} code:
 the only reason why it was not done as-is in \Cn{} is because \Cn{} types
-are not expressive enough.
+are not expressive enough for this.
 
-Character encodings are not formalised.
+Character encodings has not been formalised.
+In particular, we consider variables to be simple
+\Coq{} strings (that is, limited to ASCII).
+This greatly simplifies functions like \mintinline{C}{install}
+without removing much expressivity.
 
 The function \mintinline{C}{R_PreserveObject} is used to tell the garbage collector
 not to free the given object.
@@ -786,23 +823,50 @@ whose head is never checked by the garbage collector.
 As we do not model the garbage collector,
 we do not model this function.
 
-\todo{hash table for symbols.}
+As described in Section~\ref{sec:optimisations},
+symbols are not stored as strings,
+but as pointers.
+As a consequence, when looking for a symbol
+from its string (for instance when parsing a program),
+it is important not to allocate a new symbol if the
+symbol already exists.
+In order to make this check faster,
+\R{} source code uses a global array \mintinline{C}{R_SymbolTable}.
+When a symbol is looked for, it is first hashed,
+then \R{} looks at the specific cell
+of the array \mintinline{C}{R_SymbolTable}.
+This cell should points to a \R{} list with all the corresponding symbols.
+This is quite a complex algorithm for making proofs.
+Instead, we chose to model it as a simple \R{} list.
+This is equivalent to chose the size of the array to be only~\(1\)
+and not computing the hash of input strings
+(as there is only one list).
 
 
 \subsection{The Low-Level Formalisation}
+\label{sec:low:level}
 
-A lot is inspired from the interpreter of the JSCert project~\parencite{bodin2014trusted}.
+This formalisation is mainly inspired from the interpreter
+of the JSCert project~\parencite{bodin2014trusted}.
 In contrary to JSCert, the semantics is only given in the form
 of an interpreter.
 As illustrated by the JSExplain project~\parencite{JSExplain},
 such a form is enough to describe an operational semantics.
+More precisely, the JSExplain project illustrates
+how the other forms can be \emph{generated} from a monadic interpreter.
 
 \subsubsection{Notations}
+\label{sec:notations}
 
 When starting such a large project,
 having consistent notations is crucial.
-We try to be conservative with the variable names from
+In particular,
+we tried to be conservative with the variable names from
 \R{} source code as much as possible.
+This greatly increases the eyeball closeness between
+the \Coq{} code and the \Cn{} code.
+However, keeping the same names between the two
+is not always possible.
 
 The \Cn{} language manipulates a lot of pointers,
 and the seemingly similar \Cn{} notations \mintinline{C}{p},
@@ -812,15 +876,18 @@ represent different objects in \Coq{}.
 In particular, whilst \mintinline{C}{p} is always defined,
 \mintinline{C}{*p} may not.
 To catch this, we use monads (see next section),
-returning if defined the pointed structure:
+returning the pointed structure if defined:
 the pointed structure and the pointer are thus not
 syntactically related in \Coq{}.
 Similarly, when a field of \mintinline{C}{p} is actually an union,
 it is represented as an inductive type in \Coq{}:
-although \Cn{} access is always possible,
+although \Cn{} access is unguarded
+(and thus seemingly always possible),
 we have to go through a monad in \Coq{}.
 We chose to write \mintinline{C}{*p} as \mintinline{coq}{p_}
 and \mintinline{C}{p->f} as \mintinline{coq}{p_f} in \Coq{}.
+We tried to use this notation as consistently as possible
+to increase the eyeball closeness between \Coq{} and \Cn{}.
 
 
 \subsubsection{Monadic Style}
@@ -892,6 +959,7 @@ It also make definitions easier to read.
 
 
 \subsubsection{Global Variables}
+\label{sec:global:variables}
 
 The source code of \R{} uses a large number of global variables.
 We categorize these global variables into two distinct types:
@@ -1035,6 +1103,7 @@ Definition setup_Rmainloop max_step S : result Globals :=
 
 
 \subsubsection{Code Rewriting}
+\label{sec:code:rewriting}
 
 Even using monadic style,
 translating a \Cn{} program into \Coq{} can be complex.
@@ -1405,6 +1474,7 @@ we believe these two programs snippets to be sufficiently close one to each othe
 
 
 \subsubsection{Validation}
+\label{sec:validation}
 
 In essence, the \Coq{} formalisation is executable.
 Waiting to relate the formalisation to CompCert's interpretation
@@ -1418,7 +1488,7 @@ This means that each line of the \Coq{} can be compared to its
 The \Coq{} monadic style is heavier—%
 making a lot of behaviors explicit—,
 but closely matches the \Cn{} source code.
-This way of validating the formalisation is called “eyeball-closeness”
+This way of validating the formalisation is called “eyeball closeness”
 in \cite{bodin2014trusted}.
 
 Later, we plan to relate the \Coq{} formalisation
@@ -1431,6 +1501,7 @@ source code will greatly help the proof.
 
 
 \subsection{Application}
+\label{sec:application}
 
 Once a solid \Coq{} formalisation will be finished,
 we aim to apply it by proving some properties on a \R{} program.
