@@ -884,8 +884,8 @@ it is represented as an inductive type in \Coq{}:
 although \Cn{} access is unguarded
 (and thus seemingly always possible),
 we have to go through a monad in \Coq{}.
-We chose to write \mintinline{C}{*p} as \mintinline{coq}{p_}
-and \mintinline{C}{p->f} as \mintinline{coq}{p_f} in \Coq{}.
+We chose to write \mintinline{C}{*p} as \mintinline{Coq}{p_}
+and \mintinline{C}{p->f} as \mintinline{Coq}{p_f} in \Coq{}.
 We tried to use this notation as consistently as possible
 to increase the eyeball closeness between \Coq{} and \Cn{}.
 
@@ -941,7 +941,7 @@ propagating errors.
 A notation has been added
 (following the monadic usage)
 to avoid difficult-to-read nested parentheses.
-\begin{minted}{coq}
+\begin{minted}{Coq}
 Definition if_success (A B : Type)
     (r : result A) (f : state -> A -> result B) : result B :=
   match r with
@@ -1000,6 +1000,9 @@ The source code of \R{} uses a large number of global variables.
 We categorize these global variables into two distinct categories:
 global variables that are initialised when \R{} starts, then never changed,
 and global variables that may change at any point during execution.
+Note that \mintinline{C}{static} variables declared inside a function in \Cn{}
+behave as global variables,
+in the sense that the global state has to store their values.
 
 The first kind can be separated into two subcategories:
 either it is simply a constant, either it needs some complex initialisation.
@@ -1165,6 +1168,70 @@ Definition setup_Rmainloop max_step S : result Globals :=
 \end{minted}
 
 
+\subsubsection{Primitives and Internals}
+\label{sec:primitives:internals}
+
+\R{} defines a large number of variables present in the initial heap.
+These fall into two categories:
+the ones defined in the global environment, called \emph{primitives},
+and the ones defined in \texttt{.Internals}, called \emph{internals}.
+Primitives are usually considered to be the basic language features of \R{}.
+Primitives includes usual arithmetical operators,
+but also language features such as \mintinline{R}{if} or \mintinline{R}{while},
+as well as common functions like \mintinline{R}{c} or \mintinline{R}{sin}.
+
+In the \Cn{} code of the main interpreter,
+these primitives are defined in the file \texttt{src/main/names.c}.
+First, an array \mintinline{C}{R_FunTab} is defined (see below).
+This array contains informations about each functions,
+such as its name, a pointer to the \Cn{} function implementing it,
+its arity, as well as various other informations.
+The \Cn{} function associated with a construct
+(for instance the function \mintinline{C}{do_if} used below)
+have exactly four arguments:
+\mintinline{C}{call}, \mintinline{C}{op}, \mintinline{C}{args}, and \mintinline{C}{rho}.
+The arguments are passed in the form of a \R{} list structure
+through the \mintinline{C}{args} argument.
+\begin{minted}{C}
+FUNTAB R_FunTab[] =
+{
+/* printname  c-entry  offset  eval  arity  pp-kind  precedence  rightassoc */
+  { "if",      do_if,    0,    200,   -1,  { PP_IF,    PREC_FN,   1 } },
+  { "while",   do_while, 0,    100,   2,   { PP_WHILE, PREC_FN,   0 } },
+  { "for",     do_for,   0,    100,   3,   { PP_FOR,   PREC_FN,   0 } },
+  /* ... */
+  { NULL,      NULL,     0,    0,     0,   { PP_INVALID, PREC_FN, 0} },
+};
+\end{minted}
+
+During the initialisation,
+each of these primitive and internals are associated with a symbol
+(see Section~\ref{sec:optimisations}),
+as well as added into the right environment:
+the top environment for primitives,
+and the \mintinline{R}{.Internals} array for internals.
+\begin{minted}{C}
+void attribute_hidden InitNames()
+{
+    /* ... */
+    for (int i = 0; R_FunTab[i].name; i++) installFunTab(i);
+}
+\end{minted}
+
+The array \mintinline{C}{R_FunTab} naturally translates
+into a \Coq{} list,
+and the initialisation of the array in \mintinline{C}{InitNames}
+by a list folding.
+However, there is an issue with this approach:
+the functions in the array may call look in the array
+for other functions,
+introducing new ways to loop in the interpreter.
+Because of this, the functions of the \Coq{} version
+of the \mintinline{C}{R_FunTab} array have to be parametrised
+by an additional \mintinline{Coq}{runs} argument
+(see Section~\ref{sec:monadic:style}).
+
+
 \subsubsection{Code Rewriting}
 \label{sec:code:rewriting}
 
@@ -1185,7 +1252,7 @@ int fargused[arg_i ? arg_i : 1]; // avoid undefined behaviour
 memset(fargused, 0, sizeof(fargused));
 \end{minted}
 
-One solution would be to define \mintinline{coq}{fargused}
+One solution would be to define \mintinline{Coq}{fargused}
 as a list of integers, as below.
 The \Cn{} code defines an array of length at least one,
 as an empty array is considered undefined behaviour
@@ -1193,7 +1260,7 @@ as an empty array is considered undefined behaviour
 including sending an email or other unexpected behaviour).
 Declaring an empty list is not an issue in \Coq{}.
 Such a list would then be updated using monadic style.
-\begin{minted}{coq}
+\begin{minted}{Coq}
 let fargused : list nat :=
   let fargused : list nat :=
     let fix zeros i :=
