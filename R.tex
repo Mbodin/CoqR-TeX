@@ -1226,10 +1226,23 @@ However, there is an issue with this approach:
 the functions in the array may call look in the array
 for other functions,
 introducing new ways to loop in the interpreter.
-Because of this, the functions of the \Coq{} version
+Because of this, the definition of the \Coq{} version
 of the \mintinline{C}{R_FunTab} array have to be parametrised
-by an additional \mintinline{Coq}{runs} argument
+by an additional fuel argument,
+similar to the \mintinline{Coq}{runs} argument of most functions
 (see Section~\ref{sec:monadic:style}).
+I could have added an argument to store \mintinline{C}{R_FunTab}
+in the \mintinline{Coq}{runs} structure,
+but I found more practical to define it using a separate fuel:
+the \Coq{} files have been organised with a clear separation
+between the “core features” of \R{}
+(in \texttt{low/Reval.v})
+and the additional features
+(in \texttt{low/Rfeatures.v}).
+In particular,
+the file \texttt{low/Reval.v} ends with a definition of \mintinline{Coq}{runs} using fuel,
+and \texttt{low/Rfeatures.v} with a definition of \mintinline{Coq}{R_FunTab} using fuel.
+This organisation of the development seems sufficiently modular.
 
 
 \subsubsection{Code Rewriting}
