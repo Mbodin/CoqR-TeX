@@ -2,6 +2,16 @@
 \documentclass[9pt, sigplan, natbib=false]{acmart}
 \let\citename\relax
 
+%\settopmatter{printacmref=false}
+\renewcommand\footnotetextcopyrightpermission[1]{}
+%\pagestyle{plain}
+
+\acmConference[CoqPL'18]{The Fourth International Workshop on Coq for Programming Languages}{January 2018}{Los Angeles, United States}
+\acmYear{2018}
+\copyrightyear{2018}
+
+\usepackage{balance}
+
 %\usepackage{fontspec}
 
 \usepackage[
@@ -41,11 +51,87 @@
 	}
 }
 
-\title{Trusting an \R{} Formalisation in \Coq{}}
+\setcopyright{none}
+
+\title{Building and Trusting \R{} Using \Coq{}}
+\author{Martin Bodin}
+\email{mbodin@dim.uchile.cl}
+\affiliation{
+    \institution{Center of Mathematical Modeling}
+    \streetaddress{Beauchef 851}
+    \city{Santiago}
+    \country{Chile}
+}
 
 \begin{document}
 
-    \maketitle
+\begin{abstract}
+Real-world programming languages have subtil behaviours.
+In particular, their semantics is often associated with
+various exceptions.
+Not all programmers are aware of these exceptions,
+which can yield to serious bugs.
+This is an opportunity for our community
+as \Coq{} provides a way to certify the behaviour of a program.
+But if the certified program is not written in \Coq{},
+such a certification relies on a formal semantics of its programming language.
+In the case of a real-world language, such a semantics
+can be as difficult to trust as the original program.
+Some previous work proposed ways to trust such large semantics.
+This work evaluates the feasibility of such a large-scale formalisation
+in the case of the \R{} programming language—%
+a trending programming language specialised for statistics computations.
+\end{abstract}
+
+\maketitle
+
+\section{Introduction}
+
+Quick presentation of \R{}
+Very diverse usage: from Big Data to finance or biology.
+See the list of \R{} views (categories of packages available for \R{}):
+\url{https://cran.r-project.org/web/views/}.
+
+\R{} subtleties.
+
+\mintinline{R}{i:j}
+
+\begin{minted}{R}
+v[i]
+\end{minted}
+
+None of these semantic exceptions are inherently complex to deal with:
+it is the large amount of such exceptions that makes the language complex.
+
+We need a semantics.
+We want to trust it (reuse abstract).
+
+Discussion about trust sources.
+
+\section{Related Work}
+
+Formalin.
+CompCert.
+
+JSCert.
+
+K and its \Coq{} extraction.
+K-Java.
+
+\section{Formalisation}
+
+Trust source used: eyeball closeness.
+
+Description of the closeness.
+
+\section{Conclusion and Further Work}
+
+The full project graph.
+Show that other trust sources are possible.
+
+Say that this approach may be scalable to other projects.
+
+\printbibliography
 
 \end{document}
 
