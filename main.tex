@@ -1,6 +1,22 @@
-\documentclass[9pt, sigplan]{acmart}
+\newcommand{\citestyle}[1]{}
+\documentclass[9pt, sigplan, natbib=false]{acmart}
+\let\citename\relax
 
-\usepackage{fontspec}
+%\usepackage{fontspec}
+
+\usepackage[
+   backend=biber,
+   bibencoding=utf8,
+   style=alphabetic,
+   hyperref=true,
+   % citestyle=authoryear-comp,
+   backref=false,
+   sortlocale=en,
+   url=true,
+   doi=false,
+   eprint=false
+ ]{biblatex}
+\addbibresource{biblio.bib}
 
 \newcommand\Coq{Coq}
 \newcommand\OCaml{OCaml}
