@@ -68,8 +68,8 @@
 \begin{abstract}
 Real-world programming languages have subtil behaviours.
 In particular, their semantics is often associated with
-various exceptions.
-Not all programmers are aware of these exceptions,
+various corner cases.
+Programmers are usually unaware of all these corner cases,
 which can yield to serious bugs.
 This is an opportunity for our community
 as \Coq{} provides a way to certify the behaviour of a program.
@@ -86,29 +86,52 @@ a trending programming language specialised for statistics computations.
 \maketitle
 
 \section{Introduction}
+\label{sec:introduction}
 
-Quick presentation of \R{}
-Very diverse usage: from Big Data to finance or biology.
-See the list of \R{} views (categories of packages available for \R{}):
-\url{https://cran.r-project.org/web/views/}.
+\R{}~\parencite{Rwebsite} is a trending programming language for mathematicians.
+Its usages range from statistics to finance, biology,
+as well as big data analyses
+(this can be illustrated by the various groups of available packages:
+\url{https://cran.r-project.org/web/views/}).
+Such a diversity of usages makes \R{} unlikely to disappear
+in the following years.
+As a consequence of this diversity,
+\R{} programmers come from very different fields of study,
+resulting in largely different programming styles.
 
-\R{} subtleties.
+The \R{} programming language presents itself
+as an expressive and powerful language,
+able to express complex notions with few keystrokes.
+This powerfulness comes with the cost of readability:
+given an \R{} program, it can be difficult to fully
+understand what it exactly does.
+Furthermore, the semantics of \R{} is subtle
+and contains numerous corner cases
+(as shown in Section~\ref{sec:presentation}).
+%
+As a consequence, bugs are frequent when programming in \R{},
+and trusting an \R{} program can be difficult.
+Formal methods in general and the \Coq{} proof assistant in particular
+offer an interesting answer to this trust issue.
+But to formally prove that an \R{} program meets its specification,
+we need a \Coq{} semantics of \R{}.
+Such a semantics needs to be trustworthy.
+In particular, it should capture all the corner cases
+with which a proven program can cope.
 
-\mintinline{R}{i:j}
-
-\begin{minted}{R}
-v[i]
-\end{minted}
-
-None of these semantic exceptions are inherently complex to deal with:
-it is the large amount of such exceptions that makes the language complex.
-
-We need a semantics.
-We want to trust it (reuse abstract).
-
-Discussion about trust sources.
+A semantics for the full \R{} language will invariably
+be quite complex because of all the corner cases
+of the language.
+The question of trusting such a semantics
+then naturally arises.
+%
+TODO: Discussion about trust sources.
 
 \section{Related Work}
+\label{sec:related:work}
+
+There already have been a large amount of \Coq{} formalisations
+of real-world languages.
 
 Formalin.
 CompCert.
@@ -118,13 +141,31 @@ JSCert.
 K and its \Coq{} extraction.
 K-Java.
 
+\section{Quick Presentation of \R{}}
+\label{sec:presentation}
+
+Let us now show some of the corner cases of the \R{} semantics.
+
+\R{} subtleties.
+
+\mintinline{R}{i:j}
+
+\begin{minted}{R}
+v[i]
+\end{minted}
+
+None of these corner cases are inherently complex to deal with:
+it is the large amount of such exceptions that makes the language complex.
+
 \section{Formalisation}
+\label{sec:formalisation}
 
 Trust source used: eyeball closeness.
 
 Description of the closeness.
 
 \section{Conclusion and Further Work}
+\label{sec:conclusion}
 
 The full project graph.
 Show that other trust sources are possible.
