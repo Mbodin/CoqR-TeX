@@ -1,8 +1,8 @@
 \newcommand{\citestyle}[1]{}
-\documentclass[9pt, sigplan, natbib=false]{acmart}
+\documentclass[9pt, sigplan, natbib=false, screen=true]{acmart}
 \let\citename\relax
 
-%\settopmatter{printacmref=false}
+\settopmatter{printacmref=false}
 \renewcommand\footnotetextcopyrightpermission[1]{}
 %\pagestyle{plain}
 
@@ -81,6 +81,8 @@ Some previous work proposed ways to trust such large semantics.
 This work evaluates the feasibility of such a large-scale formalisation
 in the case of the \R{} programming language—%
 a trending programming language specialised for statistics computations.
+We introduces ProveR, a formalisation of the core of \R{}
+related to the reference \R{} interpreter.
 \end{abstract}
 
 \maketitle
@@ -88,11 +90,11 @@ a trending programming language specialised for statistics computations.
 \section{Introduction}
 \label{sec:introduction}
 
-\R{}~\parencite{Rwebsite} is a trending programming language for mathematicians.
-Its usages range from statistics to finance, biology,
-as well as big data analyses
-(this can be illustrated by the various groups of available packages:
-\url{https://cran.r-project.org/web/views/}).
+\R{}~\parencite{ihaka1996r, Rwebsite} is a trending
+programming language for statisticians.
+Its usages range from finance, biology,
+as well as big data analyses,
+as illustrated by the list of available packages categories~\parencite{rviews}.
 Such a diversity of usages makes \R{} unlikely to disappear
 in the following years.
 As a consequence of this diversity,
@@ -119,27 +121,64 @@ Such a semantics needs to be trustworthy.
 In particular, it should capture all the corner cases
 with which a proven program can cope.
 
-A semantics for the full \R{} language will invariably
-be quite complex because of all the corner cases
-of the language.
+A semantics for the full \R{} language will inevitably
+be complex, as all corner cases has to be taken into account.
 The question of trusting such a semantics
 then naturally arises.
 %
-TODO: Discussion about trust sources.
+To be able to trust such a formalisation,
+it is important to identify \emph{trust sources}.
+These can be language specification,
+test suites,
+or reference interpreters.
+In the case of \R{}, there is unfortunately
+no precise language specification.
+There are however some test suites~\parencite{2014testr, maj2013testr},
+as well as a reference interpreter~\parencite{team2000r}.
 
-\section{Related Work}
-\label{sec:related:work}
+When formalising a complex programming language such as \R{},
+defining the formal model itself
+is a relatively small part of the formalisation process:
+relating it to trust sources
+is as least as important as defining the model.
+This relation depends on the kind of available trust sources.
+%
+Specifications are the preferred trust source.
+They provide a non-ambigous description of the behaviour of the language constructs.
+A formalisation can relate to them by similarity:
+the constructs and operations of the formalisation should mimic the ones
+of the specification.
+Ideally, such a similarity should be a line-to-line closeness,
+each line of the formalisation referring to a line of the specification,
+and conversely.
+%
+Test suites provides a large number of programs and their expected result.
+When the formalisation is executable, it can be tested against such tests suites.
+This technique enables to then evaluate the quality of the test suite
+using code coverage.
+%
+Reference interpreters are particularly interesting as
+they can be used in methods similar to specifications and test suites.
+It is indeed possible to relate a formal semantics
+using the source code of the interpreter,
+using it as a specification.
+But it is also possible to compare the results of the reference interpreter
+and the formal semantics (if executable) on random programs,
+until the wanted code coverage is used.
 
-There already have been a large amount of \Coq{} formalisations
-of real-world languages.
+The \R{} language is a large language,
+but it contains an easy-to-identify core.
+We introduce ProveR, a full \Coq{} specification for this core.
+The formalisation presents itself as a monadic interpreter.
+This interpreter mimics the operations of the reference interpreter,
+using its \Cn{} source code as a specification.
+%
+The next section presents some of the subtleties of the \R{} programming language.
+Then Section~\ref{sec:formalisation} presents how our interpreter is defined,
+and in particular, how it is related to the \R{} source code.
+This project is still in development
+and is available at \url{https://github.com/Mbodin/proveR}.
 
-Formalin.
-CompCert.
-
-JSCert.
-
-K and its \Coq{} extraction.
-K-Java.
 
 \section{Quick Presentation of \R{}}
 \label{sec:presentation}
@@ -157,12 +196,14 @@ v[i]
 None of these corner cases are inherently complex to deal with:
 it is the large amount of such exceptions that makes the language complex.
 
+
 \section{Formalisation}
 \label{sec:formalisation}
 
 Trust source used: eyeball closeness.
 
 Description of the closeness.
+
 
 \section{Conclusion and Further Work}
 \label{sec:conclusion}
@@ -171,6 +212,22 @@ The full project graph.
 Show that other trust sources are possible.
 
 Say that this approach may be scalable to other projects.
+
+
+\section{Related Work}
+\label{sec:related:work}
+
+There already have been a large amount of \Coq{} formalisations
+of real-world languages.
+
+Formalin.
+CompCert.
+
+JSCert.
+
+K and its \Coq{} extraction.
+K-Java.
+
 
 \printbibliography
 
