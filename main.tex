@@ -92,82 +92,83 @@ related to the reference \R{} interpreter.
 
 \R{}~\parencite{ihaka1996r, Rwebsite} is a trending
 programming language for statisticians.
-Its usages range from finance, biology,
-as well as big data analyses,
+It has a large range of usages (biology, finance, etc.),
 as illustrated by the list of available packages categories~\parencite{rviews}.
-Such a diversity of usages makes \R{} unlikely to disappear
-in the following years.
 As a consequence of this diversity,
 \R{} programmers come from very different fields of study,
 resulting in largely different programming styles.
+This makes \R{} unlikely to disappear
+in the following years.
 
 The \R{} programming language presents itself
 as an expressive and powerful language,
-able to express complex notions with few keystrokes.
-This powerfulness comes with the cost of readability:
-given an \R{} program, it can be difficult to fully
-understand what it exactly does.
-Furthermore, the semantics of \R{} is subtle
-and contains numerous corner cases
-(as shown in Section~\ref{sec:presentation}).
+able to express complex notions in few keystrokes.
+This sometimes come with the cost of readability.
+% it can be difficult to fully understand what a given \R{} program exactly does.
+The semantics of \R{} is subtle
+and contains numerous corner cases,
+as shown in Section~\ref{sec:presentation}.
 %
-As a consequence, bugs are frequent when programming in \R{},
-and trusting an \R{} program can be difficult.
+As a consequence, bugs can be frequent in \R{} programs
+(as illustrated by the existence of various debugging tools~\parencite{mcpherson2014}),
+and trusting such programs can be difficult.
 Formal methods in general and the \Coq{} proof assistant in particular
 offer an interesting answer to this trust issue.
 But to formally prove that an \R{} program meets its specification,
-we need a \Coq{} semantics of \R{}.
-Such a semantics needs to be trustworthy.
-In particular, it should capture all the corner cases
-with which a proven program can cope.
+we need a semantics for \R{}.
+% Such a semantics needs to be trustworthy.
+% In particular, it should capture all the corner cases
+% with which a proven program can cope.
 
 A semantics for the full \R{} language will inevitably
 be complex, as all corner cases has to be taken into account.
-The question of trusting such a semantics
-then naturally arises.
+% The question of trusting such a semantics
+% then naturally arises.
 %
 To be able to trust such a formalisation,
 it is important to identify \emph{trust sources}.
-These can be language specification,
+These can be language specifications,
 test suites,
 or reference interpreters.
-In the case of \R{}, there is unfortunately
-no precise language specification.
-There are however some test suites~\parencite{2014testr, maj2013testr},
-as well as a reference interpreter~\parencite{team2000r}.
-
-When formalising a complex programming language such as \R{},
-defining the formal model itself
-is a relatively small part of the formalisation process:
-relating it to trust sources
-is as least as important as defining the model.
-This relation depends on the kind of available trust sources.
 %
+% When formalising a complex programming language such as \R{},
+Defining the formal model itself
+is actually a relatively small part of the formalisation process:
+relating it to trust sources
+is as important as defining the model.
+This relation depends on the kind of available trust sources.
+
 Specifications are the preferred trust source.
-They provide a non-ambigous description of the behaviour of the language constructs.
-A formalisation can relate to them by similarity:
-the constructs and operations of the formalisation should mimic the ones
+They provide a non-ambigous description of the language constructs's behaviours.
+A formalisation can be related by similarity:
+its constructs and operations should mimic the ones
 of the specification.
-Ideally, such a similarity should be a line-to-line closeness,
+Ideally, such a similarity would be a line-to-line closeness,
 each line of the formalisation referring to a line of the specification,
 and conversely.
-%
-Test suites provides a large number of programs and their expected result.
+
+Test suites provide a large number of programs and their expected result.
 When the formalisation is executable, it can be tested against such tests suites.
-This technique enables to then evaluate the quality of the test suite
-using code coverage.
-%
+This technique then enables to evaluate the quality of the test suite
+using its code coverage.
+
 Reference interpreters are particularly interesting as
-they can be used in methods similar to specifications and test suites.
+they can be used similarly to either specifications or test suites.
 It is indeed possible to relate a formal semantics
-using the source code of the interpreter,
+to the source code of the reference interpreter,
 using it as a specification.
 But it is also possible to compare the results of the reference interpreter
 and the formal semantics (if executable) on random programs,
-until the wanted code coverage is used.
+until the wanted code coverage is reached.
 
-The \R{} language is a large language,
-but it contains an easy-to-identify core.
+In the case of \R{}, there is unfortunately
+no precise language specification.
+There are however some test suites~\parencite{2014testr, maj2013testr},
+as well as a reference interpreter~\parencite{team2000r},
+from which alternative implementations of \R{} are related.
+
+The \R{} language is large,
+but it contains a core which is easy to identify.
 We introduce ProveR, a full \Coq{} specification for this core.
 The formalisation presents itself as a monadic interpreter.
 This interpreter mimics the operations of the reference interpreter,
@@ -183,14 +184,69 @@ and is available at \url{https://github.com/Mbodin/proveR}.
 \section{Quick Presentation of \R{}}
 \label{sec:presentation}
 
-Let us now show some of the corner cases of the \R{} semantics.
+\R{} is a weakly typed programming language.
+Its basic data types mainly consist of various kinds of arrays.
+It was originally defined a variant of Scheme
+which has been mutated in order to look like its predecessor,
+the S programming language~\parencite{ihaka1996r}.
+This construction has several implications.
+First, functions are first class in \R{}.
+Second, \R{} follows the code-is-data paradigm:
+it is possible to delay the evaluation of statements,
+and even to manipulate their inner structure
+(for instance using the \mintinline{R}{substitute} \R{} function).
 
-\R{} subtleties.
+Actually, almost all constructs of \R{} are treated
+as functions taking their subterms as arguments.
+This includes features like \mintinline{R}{if}, \mintinline{R}{while},
+assignments, etc.
+\R{} source code contains a table associating each construct
+to a \Cn{} function.
+We call this table the \emph{symbol table}.
+Some of these functions (like \mintinline{R}{if}, assignments, etc.)
+are special and directly manipulate the abstract syntax tree
+of their arguments.
+The other \Cn{} functions are called after the evaluation of the arguments,
+and thus receive a basic type of the language.
+%
+In this work,
+we consider that any feature present in this table
+is \emph{not} part of the core of \R{}.
+In other words, we define the core of \R{}
+as all which is needed to access this table
+and execute its \Cn{} functions.
 
-\mintinline{R}{i:j}
+Our definition of the core of \R{} enables us to focus
+our formalisation effort on a vary restricted part of the language.
+It includes the rules for function calls,
+environments, closures, \R{} internals,
+as well as all which is necessary to initialise the symbol table.
+Constructs like \mintinline{R}{if} and \mintinline{R}{while}
+are not part of the core,
+but (some kinds of) assignments are
+as these parts of the \Cn{} source code
+are used during function calls.
+
+We now show some of the corner cases of the \R{} semantics.
+Most \R{} constructs adapt themselves when given unusual arguments
+to, in some ways, ``guess'' what the programmer meant.
+For instance, the \mintinline{R}{i:j} construct
+builds a numerical array from the values \mintinline{R}{i}
+to \mintinline{R}{j}, which can be any expression.
+For instance \mintinline{R}{1:3} is the array containing
+the values \(1\), \(2\), and \(3\).
+But if the second argument if less than the first argument,
+\R{} builds a decreasing array instead of an empty one.
+This is a frequent bug pattern when such an expression is involved in a loop.
 
 \begin{minted}{R}
 v[i]
+\end{minted}
+
+\begin{minted}{R}
+f <- function (x, y) if (x == 1) y
+f (1, a <- 1); a # Returns 1.
+f (0, b <- 1); b # Raises an error.
 \end{minted}
 
 None of these corner cases are inherently complex to deal with:
@@ -203,15 +259,6 @@ it is the large amount of such exceptions that makes the language complex.
 Trust source used: eyeball closeness.
 
 Description of the closeness.
-
-
-\section{Conclusion and Further Work}
-\label{sec:conclusion}
-
-The full project graph.
-Show that other trust sources are possible.
-
-Say that this approach may be scalable to other projects.
 
 
 \section{Related Work}
@@ -227,6 +274,17 @@ JSCert.
 
 K and its \Coq{} extraction.
 K-Java.
+
+
+\section{Conclusion and Further Work}
+\label{sec:conclusion}
+
+The full project graph.
+Show that other trust sources are possible.
+
+Say that this approach may be scalable to other projects.
+Languages with reference interpreters:
+PHP, Python, etc.
 
 
 \printbibliography
