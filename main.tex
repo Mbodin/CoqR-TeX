@@ -69,7 +69,7 @@
 Real-world programming languages have subtil behaviours.
 In particular, their semantics is often associated with
 various corner cases.
-Programmers are usually unaware of all these corner cases,
+Programmers are sometimes unaware of all these corner cases,
 which can yield to serious bugs.
 This is an opportunity for our community
 as \Coq{} provides a way to certify the behaviour of a program.
@@ -79,9 +79,9 @@ In the case of a real-world language, such a semantics
 can be as difficult to trust as the original program.
 Some previous work proposed ways to trust such large semantics.
 This work evaluates the feasibility of such a large-scale formalisation
-in the case of the \R{} programming language—%
-a trending programming language specialised for statistics computations.
-We introduces a formalisation of the core of \R{}
+in the case of the \R{} programming language---%
+a trending programming language specialised in statistics.
+We introduce a formalisation of the core of \R{}
 related to the reference \R{} interpreter.
 \end{abstract}
 
@@ -133,55 +133,59 @@ or reference interpreters.
 %
 % When formalising a complex programming language such as \R{},
 Defining the formal model itself
-is actually a relatively small part of the formalisation process:
-relating it to trust sources
-is as important as defining the model.
-This relation depends on the kind of available trust sources.
+is actually a relatively small part of the formalisation process,
+given how difficult it can be to convince non-\Coq{} users
+that they can trust our formalisation~\parencite{leroy2014pip}.
 
-Specifications are the preferred trust source.
-They provide a non-ambigous description of the language constructs's behaviours.
-A formalisation can be related by similarity:
-its constructs and operations should mimic the ones
-of the specification.
-Ideally, such a similarity would be a line-to-line closeness,
-each line of the formalisation referring to a line of the specification,
-and conversely.
+% Specifications are the preferred trust source.
+% They provide a non-ambigous description of the language constructs's behaviours.
+% A formalisation can be related by similarity:
+% its constructs and operations should mimic the ones
+% of the specification.
+% Ideally, such a similarity would be a line-to-line closeness,
+% each line of the formalisation referring to a line of the specification,
+% and conversely.
 
-Test suites provide a large number of programs and their expected result.
-When the formalisation is executable, it can be tested against such tests suites.
-This technique then enables to evaluate the quality of the test suite
-using its code coverage.
+% Test suites provide a large number of programs and their expected result.
+% When the formalisation is executable, it can be tested against such tests suites.
+% This technique then enables to evaluate the quality of the test suite
+% using its code coverage.
 
-Reference interpreters are particularly interesting as
-they can be used similarly to either specifications or test suites.
-It is indeed possible to relate a formal semantics
-to the source code of the reference interpreter,
-using it as a specification.
-But it is also possible to compare the results of the reference interpreter
-and the formal semantics (if executable) on random programs,
-until the wanted code coverage is reached.
+% Reference interpreters are particularly interesting as
+% they can be used similarly to either specifications or test suites.
+% It is indeed possible to relate a formal semantics
+% to the source code of the reference interpreter,
+% using it as a specification.
+% But it is also possible to compare the results of the reference interpreter
+% and the formal semantics (if executable) on random programs,
+% until the wanted code coverage is reached.
 
 In the case of \R{}, there is unfortunately
 no precise language specification.
 There are however some test suites~\parencite{2014testr, maj2013testr},
 as well as a reference interpreter~\parencite{team2000r},
 from which alternative implementations of \R{} are related.
+%
+Our formalisation can thus be written in a similar
+way than the source code of the reference interpreter,
+as well as being executable to be able to run it on test suites.
+We believe that these two relation methods are enough
+to convince anyone that we closely capture all of \R{} behaviours.
 
 The \R{} language is large,
-but it contains a core which is easy to identify.
+but it contains a core which is both small and easy to identify.
 We introduce a full \Coq{} specification for this core.
 The formalisation presents itself as a monadic interpreter.
 This interpreter mimics the operations of the reference interpreter,
 using its \Cn{} source code as a specification.
 %
-The next section presents some of the subtleties of the \R{} programming language.
-Then Section~\ref{sec:formalisation} presents how our interpreter is defined,
+Section~\ref{sec:presentation} presents some of the subtleties of the \R{} programming language.
+Then Section~\ref{sec:formalisation} presents how our formalisation is defined,
 and in particular, how it is related to the \R{} source code.
-This project is still in development
-and is available at \url{https://github.com/Mbodin/proveR}.
+This project is available at \url{https://github.com/Mbodin/proveR/tree/CoqPL2018}.
 
 
-\section{Quick Presentation of \R{}}
+\section{Presentation of \R{} and its Core}
 \label{sec:presentation}
 
 \R{} is a weakly typed programming language.
@@ -196,40 +200,39 @@ it is possible to delay the evaluation of statements,
 and even to manipulate their inner structure
 (for instance using the \mintinline{R}{substitute} \R{} function).
 
-Actually, almost all constructs of \R{} are treated
-as functions taking their subterms as arguments.
+Almost all constructs of \R{} are treated as functions.
 This includes features like \mintinline{R}{if}, \mintinline{R}{while},
-assignments, etc.
-\R{} source code contains a table associating each construct
-to a \Cn{} function.
-We call this table the \emph{symbol table}.
+and assignments.
+\R{} source code contains a table,
+the \emph{symbol table},
+associating each construct to a \Cn{} function.
 Some of these functions (like \mintinline{R}{if}, assignments, etc.)
 are special and directly manipulate the abstract syntax tree
 of their arguments.
-The other \Cn{} functions are called after the evaluation of the arguments,
-and thus receive a basic type of the language.
+% The other \Cn{} functions are called after the evaluation of the arguments,
+% and thus receive a basic type of the language.
 %
 In this work,
 we consider that any feature present in this table
 is \emph{not} part of the core of \R{}.
 In other words, we define the core of \R{}
-as all which is needed to access this table
+as the parts of \R{} needed to access this table
 and execute its \Cn{} functions.
 
-Our definition of the core of \R{} enables us to focus
-our formalisation effort on a vary restricted part of the language.
+This definition of \R{}'s core enables us to focus
+our formalisation effort on a very restricted part of the language.
 It includes the rules for function calls,
-environments, closures, \R{} internals,
-as well as all which is necessary to initialise the symbol table.
+environments, closures, promises (delayed evaluation), \R{} internals,
+as well as the parts initialising the symbol table.
 Constructs like \mintinline{R}{if} and \mintinline{R}{while}
 are not part of the core,
-but (some kinds of) assignments are
-as these parts of the \Cn{} source code
-are used during function calls.
+but (some kinds of) assignments are,
+as they are used during function calls.
 
-We now show some of the corner cases of the \R{} semantics.
-Most \R{} constructs adapt themselves when given unusual arguments
-to, in some ways, ``guess'' what the programmer meant.
+We now present some corner cases in the \R{} semantics.
+Most \R{} constructs
+% adapt themselves when given unusual arguments to,
+try, in some ways, to ``guess'' what the programmer meant.
 % For instance, the \mintinline{R}{i:j} construct
 % builds a numerical array from the values \mintinline{R}{i}
 % to \mintinline{R}{j}, which can be any expression.
@@ -238,32 +241,33 @@ to, in some ways, ``guess'' what the programmer meant.
 % But if the second argument if less than the first argument,
 % \R{} builds a decreasing array instead of an empty one.
 % This is a frequent bug pattern when such an expression is involved in a loop.
-In practise, the same syntactic construct can have very different effects
-depending on its arguments.
+The same syntactic construct can thus be associated
+with very different behaviours.
 For instance, array look-up is written \mintinline{R}{a[i]}:
 if the variable \mintinline{R}{i} evaluates to an array of indices
 (a number is considered to be an array of size \(1\)),
 then \mintinline{R}{a[i]} returns an array with
-the corresponding elements of the array \mintinline{R}{a} in order.
+the corresponding elements of \mintinline{R}{a} in order.
 But if \mintinline{R}{i} evaluates to an array of negative integers,
 then the array \mintinline{R}{a} is copied,
-and all the elements whose (opposite) index is in the array \mintinline{R}{i}
+and all elements whose (opposite) index is in the array \mintinline{R}{i}
 are removed.
-For instance, \mintinline{R}{a[-3]} is the same as the array \mintinline{R}{a},
-but without its third element
-(the later elements being moved by one index).
+% For instance, \mintinline{R}{a[-3]} is the same as the array \mintinline{R}{a},
+% but without its third element
+% (the later elements being moved by one index).
 Other behaviours are also defined when \mintinline{R}{i}
 evaluated to a boolean array or a string array.
-As \R{} is untyped,
-the function \mintinline{R}{function (a, i) a[i]}
+Consequently,
+as \R{} is untyped,
+a function like \mintinline{R}{function (a, i) a[i]}
 is already complex to fully specify.
 
 Another source of subtlety of \R{} is that it lazily evaluates expressions.
 But expressions can have side effects.
 The following function \mintinline{R}{f} illustrates this effect:
 it only evaluates its second argument if the first is \(1\).
-In its second call, the variable \mintinline{R}{b}
-has not been defined because the assignment \mintinline{R}{b <- 1}
+Thus, in its second call, the variable \mintinline{R}{b}
+has confusingly not been defined because the assignment \mintinline{R}{b <- 1}
 was not evaluated.
 \begin{minted}{R}
 f <- function (x, y) if (x == 1) y
@@ -271,6 +275,7 @@ f (1, a <- 1); a # Returns 1.
 f (0, b <- 1); b # Raises an error.
 \end{minted}
 
+\R{} contains a large number of such semantic exceptions.
 None of these corner cases are inherently complex to deal with,
 but the large amount of such cases makes the language complex.
 
@@ -336,6 +341,8 @@ Definition applyClosure S (op arglist rho : SExpRec_pointer)
     \caption{The \Coq{} translation}
     \label{fig:coq}
 \end{figure}
+
+TODO: This closeness might help to relate to the source using semantics of \Cn{}.
 
 TODO: What is not formalised.
 
