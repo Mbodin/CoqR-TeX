@@ -10,7 +10,7 @@
 \acmYear{2018}
 \copyrightyear{2018}
 
-\usepackage{balance}
+%\usepackage{balance}
 
 %\usepackage{fontspec}
 
@@ -32,6 +32,11 @@
 \newcommand\OCaml{OCaml}
 \newcommand\R{R}
 \newcommand\Cn{C}
+
+% It seems to be needed to include minted properly…
+\makeatletter
+\def\mdseries@tt{m}
+\makeatother
 
 \usepackage{minted}
 \setminted{encoding=utf8}
@@ -206,15 +211,15 @@ and assignments.
 \R{} source code contains a table,
 the \emph{symbol table},
 associating each construct to a \Cn{} function.
-Some of these functions (like \mintinline{R}{if}, assignments, etc.)
+Some of these functions (\mintinline{R}{if}, assignments, etc.)
 are special and directly manipulate the abstract syntax tree
 of their arguments.
 % The other \Cn{} functions are called after the evaluation of the arguments,
 % and thus receive a basic type of the language.
 %
 In this work,
-we consider that any feature present in this table
-is \emph{not} part of the core of \R{}.
+we consider that the features of this table
+are \emph{not} part of the core of \R{}.
 In other words, we define the core of \R{}
 as the parts of \R{} needed to access this table
 and execute its \Cn{} functions.
@@ -242,7 +247,7 @@ try, in some ways, to ``guess'' what the programmer meant.
 % \R{} builds a decreasing array instead of an empty one.
 % This is a frequent bug pattern when such an expression is involved in a loop.
 The same syntactic construct can thus be associated
-with very different behaviours.
+with different behaviours.
 For instance, array look-up is written \mintinline{R}{a[i]}:
 if the variable \mintinline{R}{i} evaluates to an array of indices
 (a number is considered to be an array of size \(1\)),
@@ -256,14 +261,14 @@ are removed.
 % but without its third element
 % (the later elements being moved by one index).
 Other behaviours are also defined when \mintinline{R}{i}
-evaluated to a boolean array or a string array.
+evaluates to a boolean array or a string array.
 Consequently,
 as \R{} is untyped,
-a function like \mintinline{R}{function (a, i) a[i]}
+a simple function like \mintinline{R}{function (a, i) a[i]}
 is already complex to fully specify.
 
-Another source of subtlety of \R{} is that it lazily evaluates expressions.
-But expressions can have side effects.
+Another source of subtlety of \R{} is that it lazily evaluates expressions,
+including those with side effects.
 The following function \mintinline{R}{f} illustrates this effect:
 it only evaluates its second argument if the first is \(1\).
 Thus, in its second call, the variable \mintinline{R}{b}
@@ -284,26 +289,44 @@ but the large amount of such cases makes the language complex.
 \label{sec:formalisation}
 
 Our formal semantics is related to the \Cn{} source code
-of the reference interpreter of \R{}
+of the \R{} reference interpreter
 by a line-to-line correspondance:
 every one or two lines of our semantics
 correspond to one or two lines of the reference interpreter.
 Our formal semantics is presented as a monadic interpreter in \Coq{}.
-This interpreter is thus runnable,
-which may unable us in future work to test our semantics against
-\R{} test suites.
-As the core of \R{} is very limited,
-non-core will have to be added to make such a testing process possible.
+This interpreter is runnable,
+which unables us to test our semantics against
+\R{} test suites in future work.
+However, as the core of \R{} is very limited,
+non-core features will have to be added for testing.
+These features can be added following the same methodology than the one presented here.
 Figure~\ref{fig:coq} shows our \Coq{} translation
 of the \Cn{} function shown in Figure~\ref{fig:c}.
 
-We used monads very similar to the ones of JSRef~\parencite{popl14jscert}.
+We used monads very similar to the ones of JSRef~\parencite{popl14jscert}:
+a \mintinline{Coq}{result} is either a success---%
+it then transports the actual result and the resulting state
+\mintinline{Coq}{S} of the program---,
+an error, or \mintinline{Coq}{result_bottom}---%
+meaning that the interpreter ran out of fuel during the execution.
 These monads enable us to abstract most of the aspects
 of imperativity and memory handling from \Cn{}.
-\Coq{} notations are heavily used to ease
-the line-to-line closeness.
-
-TODO: Description of the closeness.
+Examples of monads includes
+\mintinline{Coq}|let%success|,
+to extract the result given by a function
+(it exactly corresponds to the monadic \emph{bind} operator),
+or \mintinline{Coq}|read%defined|, to read the content of a pointer.
+\Coq{} notations have heavily been used
+for the line-to-line correspondance.
+For instance, let us consider
+the line \mintinline{C}{if (rho->type != ENVSXP)}
+of Figure~\ref{fig:c}.
+It has been translated into two lines:
+a monad \mintinline{Coq}|read%defined|
+first dereferences the pointer \mintinline{C}{rho}
+(which may fail if the pointer is unbound),
+then the test is performed.
+Every line has been similarly translated.
 
 \begin{figure}
 \begin{minted}{C}
@@ -342,22 +365,37 @@ Definition applyClosure S (op arglist rho : SExpRec_pointer)
     \label{fig:coq}
 \end{figure}
 
-TODO: This closeness might help to relate to the source using semantics of \Cn{}.
+We chose to ignore some aspects of the original \Cn{} source code
+during the formalisation.
+For instance, the support for various locales and character encodings:
+our interpreter only considers ASCII strings.
+More importantly, the garbage collector of the reference interpreter
+has not been translated.
+We indeed consider that, as it is assumed not to change the final result,
+its formalisation is not needed to prove the functional correctness
+of \R{} programs.
+For instance,
+the \mintinline{C}{PROTECT} macro from Figure~\ref{fig:c}
+temporarily disables the garbage collector:
+it has thus been formalised out in Figure~\ref{fig:coq}.
+% We believe theses change not to affect the usability of the formalisation.
 
-TODO: What is not formalised.
-
-We could have used already existing semantics
-of \Cn{}~\parencite{formalin, Leroy-Compcert-CACM} in \Coq{}
-to directly define it.
-But these semantics can be quite complex to use
-to actually prove properties about an \R{} program.
-Furthermore, \R{} interpreter has been built
-around a very strong intuition~\parencite{ihaka1996r}
-that may have been lost if we attempted such a direct approach.
+Instead of defining such an interpreter,
+we could have used already existing \Coq{} semantics
+for \Cn{}~\parencite{formalin, Leroy-Compcert-CACM}
+to directly define a semantics for \R{}.
+But because of the abstraction layers of \Cn{},
+proving properties about a given \R{} program
+would then have been quite complex.
+Furthermore, the \R{} reference interpreter has been built
+with a strong intuition in mind~\parencite{ihaka1996r}.
+It would have been lost if we attempted such a direct approach.
+%
 As a future work, it would be a very valuable contribution
 to use these semantics to relate
 our formal model to the source code of \R{}.
-
+We furthermore believe that our line-to-line correspondance
+would greatly help such a proof.
 
 TODO: The next too sections may be merged. We can inline future work in the text.
 \section{Related Work}
