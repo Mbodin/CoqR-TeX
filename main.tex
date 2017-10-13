@@ -58,7 +58,7 @@
 
 \setcopyright{none}
 
-\title{Building and Trusting \R{} Using \Coq{}}
+\title{A \Coq{} Formalisation of a Core of \R{}}
 \author{Martin Bodin}
 \email{mbodin@dim.uchile.cl}
 \affiliation{
@@ -98,7 +98,9 @@ related to the reference \R{} interpreter.
 \R{}~\parencite{ihaka1996r, Rwebsite} is a trending
 programming language for statisticians.
 It has a large range of usages (biology, finance, etc.),
-as illustrated by the list of available packages categories~\parencite{rviews}.
+as illustrated by the list of available packages categories
+available at
+\url{https://cran.r-project.org/web/views/}.
 As a consequence of this diversity,
 \R{} programmers come from very different fields of study,
 resulting in largely different programming styles.
@@ -168,7 +170,7 @@ that they can trust our formalisation~\parencite{leroy2014pip}.
 In the case of \R{}, there is unfortunately
 no precise language specification.
 There are however some test suites~\parencite{2014testr, maj2013testr},
-as well as a reference interpreter~\parencite{team2000r},
+as well as a reference interpreter~\parencite{Rwebsite},
 from which alternative implementations of \R{} are related.
 %
 Our formalisation can thus be written in a similar
@@ -345,26 +347,6 @@ SEXP applyClosure (SEXP op, SEXP arglist, SEXP rho){
     \label{fig:c}
 \end{figure}
 
-\begin{figure}
-\begin{minted}{Coq}
-Definition applyClosure S (op arglist rho : SExpRec_pointer)
-    : result SExpRec_pointer :=
-  read%defined rho_ := rho using S in
-  ifb type rho_ <> EnvSxp then
-    result_error S "'rho' must be an environment."
-  else
-    read%clo op_clo := op using S in
-    let formals := clo_formals op_clo in
-    let savedrho := clo_env op_clo in
-    let%success actuals :=
-      matchArgs S formals arglist using S in
-    (* ... *)
-    result_success S res.
-\end{minted}
-    \caption{The \Coq{} translation}
-    \label{fig:coq}
-\end{figure}
-
 We chose to ignore some aspects of the original \Cn{} source code
 during the formalisation.
 For instance, the support for various locales and character encodings:
@@ -397,32 +379,64 @@ our formal model to the source code of \R{}.
 We furthermore believe that our line-to-line correspondance
 would greatly help such a proof.
 
-TODO: The next too sections may be merged. We can inline future work in the text.
-\section{Related Work}
-\label{sec:related:work}
+\begin{figure}
+\begin{minted}{Coq}
+Definition applyClosure S (op arglist rho : SExpRec_pointer)
+    : result SExpRec_pointer :=
+  read%defined rho_ := rho using S in
+  ifb type rho_ <> EnvSxp then
+    result_error S "'rho' must be an environment."
+  else
+    read%clo op_clo := op using S in
+    let formals := clo_formals op_clo in
+    let savedrho := clo_env op_clo in
+    let%success actuals :=
+      matchArgs S formals arglist using S in
+    (* ... *)
+    result_success S res.
+\end{minted}
+    \caption{The \Coq{} translation}
+    \label{fig:coq}
+\end{figure}
 
-There already have been a large amount of \Coq{} formalisations
-of real-world languages.
 
-Formalin.
-CompCert.
-
-JSCert.
-
-K and its \Coq{} extraction.
-K-Java.
-
-
-\section{Conclusion and Further Work}
+\section{Conclusion and Future Work}
 \label{sec:conclusion}
 
-The full project graph.
-Show that other trust sources are possible.
+In this work, we presented a \Coq{} monadic interpreter
+mimicking the behaviours of the \R{} reference interpreter.
+We believe that our approach provides a high level of trust
+for our formal semantics,
+on which new projects about \R{} can be based---%
+for instance,
+to prove that a given \R{} program meets its specification.
+We however think that the usability of this work can be improved.
+We plan to make another formalisation
+of \R{} proven correct with respect to the current one.
+In essence, this new formalisation should
+remove all the concepts of the current formalisation coming from \Cn{}:
+the semantics of \R{} being mainly functional,
+most usages of pointers could probably be removed.
+% We also plan to test our formalisation.
+% Adding non-core features is also planned.
 
-Say that this approach may be scalable to other projects.
-Languages with reference interpreters:
-PHP, Python, etc.
+% \section{Related Work}
+% \label{sec:related:work}
+%
+% There already have been a large amount of \Coq{} formalisations
+% of real-world languages.
+%
+% Formalin.
+% CompCert.
+%
+% JSCert.
+%
+% K and its \Coq{} extraction.
+% K-Java.
 
+% Say that this approach may be scalable to other projects.
+% Languages with reference interpreters:
+% PHP, Python, etc.
 
 \printbibliography
 
