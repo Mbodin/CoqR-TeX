@@ -186,7 +186,7 @@ The formalisation presents itself as a monadic interpreter.
 This interpreter mimics the operations of the reference interpreter,
 using its \Cn{} source code as a specification.
 %
-Section~\ref{sec:presentation} presents some of the subtleties of the \R{} programming language.
+Section~\ref{sec:presentation} presents some subtleties of the \R{} programming language.
 Then Section~\ref{sec:formalisation} presents how our formalisation is defined,
 and in particular, how it is related to the \R{} source code.
 This project is available at \url{https://github.com/Mbodin/proveR/tree/CoqPL2018}.
@@ -282,7 +282,7 @@ f (1, a <- 1); a # Returns 1.
 f (0, b <- 1); b # Raises an error.
 \end{minted}
 
-\R{} contains a large number of such semantic exceptions.
+\R{} contains numerous such semantic exceptions.
 None of these corner cases are inherently complex to deal with,
 but the large amount of such cases makes the language complex.
 
@@ -292,7 +292,7 @@ but the large amount of such cases makes the language complex.
 
 Our formal semantics is related to the \Cn{} source code
 of the \R{} reference interpreter
-by a line-to-line correspondance:
+by a line-to-line correspondence:
 every one or two lines of our semantics
 correspond to one or two lines of the reference interpreter.
 Our formal semantics is presented as a monadic interpreter in \Coq{}.
@@ -319,7 +319,7 @@ to extract the result given by a function
 (it exactly corresponds to the monadic \emph{bind} operator),
 or \mintinline{Coq}|read%defined|, to read the content of a pointer.
 \Coq{} notations have heavily been used
-for the line-to-line correspondance.
+for the line-to-line correspondence.
 For instance, let us consider
 the line \mintinline{C}{if (rho->type != ENVSXP)}
 of Figure~\ref{fig:c}.
@@ -377,7 +377,7 @@ which would have been hidden if we attempted such a direct approach.
 As a future work, it would be a very valuable contribution
 to use these semantics to relate
 our formal model to the source code of \R{}.
-We furthermore believe that our line-to-line correspondance
+We furthermore believe that our line-to-line correspondence
 would greatly help such a proof.
 
 \begin{figure}
@@ -411,8 +411,8 @@ for our formal semantics,
 on which new projects about \R{} can be based---%
 for instance
 proving that a given \R{} program meets its specification.
-We however think that the usability of this work can be improved.
-We plan to make another formalisation
+The usability of this work can be improved:
+to this end, we plan to make another formalisation
 of \R{} proven correct with respect to the current one.
 In essence, this new formalisation should
 remove all the concepts of the current formalisation coming from \Cn{}:
