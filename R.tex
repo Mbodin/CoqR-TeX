@@ -1330,7 +1330,8 @@ The main idea to trust parsing
 is to use Menhir with a file looking as much as possible
 from the original Bison grammar.
 But the \Coq{} backend of Menhir requires the grammar to be in a special
-form (without any declaration of precedence),
+form (conflict resolution resolved via priority and associativity declarations
+are not supported),
 but the \R{} reference grammar is not written in this form.
 We thus backtrack in the meantime to the usual \OCaml{} backend of Menhir.
 
@@ -1358,6 +1359,61 @@ to store this information,
 effectively mixing the usual roles of lexers and parsers.
 We chose to clearly separate lexer and parser.
 
+To get an idea of how the \Cn{} tokenizer is written, here is an extract from it.
+It uses \mintinline{C}{goto} statements and looks like
+what a code generator would produce.
+\begin{minted}{C}
+static int token(void)
+{
+    int c;
+    /* ... */
+    c = SkipSpace();
+    if (c == '#') c = SkipComment();
+    if (c == R_EOF) return END_OF_INPUT;
+    if (c == '.' && typeofnext() >= 2) goto symbol;
+    /* ... */
+ symbol:
+    if (c == '.') return SymbolValue(c);
+    switch (c) {
+    case '<':
+    if (nextchar('=')) {
+        yylval = install_and_save("<=");
+        return LE;
+    }
+    if (nextchar('-')) {
+        yylval = install_and_save("<-");
+        return LEFT_ASSIGN;
+    }
+    if (nextchar('<')) {
+        if (nextchar('-')) {
+        yylval = install_and_save("<<-");
+        return LEFT_ASSIGN;
+        }
+        else
+        return ERROR;
+    }
+    /* ... */
+}
+\end{minted}
+This is the corresponding \OCaml{} lexer.
+In contrary to the \Cn{} code,
+using \texttt{ocamllex} enables us to group operators
+by meaning rather than by characters.
+\begin{minted}{OCaml}
+rule lex = parse
+  (* ... *)
+  | "<-"    { LEFT_ASSIGN }
+  | "="     { EQ_ASSIGN }
+  | "->"    { RIGHT_ASSIGN }
+  (* ... *)
+  | "<="    { LE }
+  (* ... *)
+  | ('#' [^ '\n']*)? '\n'   { NEW_LINE }
+  | space+                  { lex lexbuf }
+  | _                       { ERROR }
+  | eof                     { END_OF_INPUT }
+\end{minted}
+
 \R{} lexer (or more precisely, the function \mintinline{C}{yylex})
 performs some side effects.
 Typically, it allocates new basic language elements.
@@ -1367,6 +1423,10 @@ when tokens stores a pointer to a basic language element in \Cn{},
 we change their associated type with a function allocating this pointer,
 and returning a \mintinline{Coq}{result}.
 This enables us to reuse the same allocating functions from \Coq{}.
+\begin{minted}{OCaml}
+%token<globals -> state -> sExpRec_pointer result>
+    STR_CONST NUM_CONST NULL_CONST SYMBOL FUNCTION
+\end{minted}
 
 
 \subsubsection{Closeness to the \Cn{} Source Code}
