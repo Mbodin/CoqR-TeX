@@ -45,7 +45,7 @@
 \newcommand\mod{\mathit{mod}}
 
 
-\title{Notes about \R}
+\title{Notes about \R{}}
 \author{Martin Bodin}
 
 \begin{document}
@@ -55,11 +55,18 @@
 \section{Presentation of the Language}
 \label{sec:presentation}
 
-\R{} is now a trending programming language for mathematicians.
-In practise, it is presented as a read-eval-print-loop,
-but it is also possible to write programs in it.
+\R{} is a trending programming language for mathematicians.
+Its usages, however, range from statistics to finance, biology,
+as well as big data analyses.
+A good way to have an idea of the diversity of the usage
+of \R{} is to look at the different “views” of \R{}
+(which group \R{} packages by type of analysis, fields, or methodologies):
+\url{https://cran.r-project.org/web/views/}.
+It is often presented as an interactive programming language
+(a read-eval-print-loop),
+but it is also possible to write programs in it and execute them directly.
 % The language enables easy integration of \Cn{} functions.
-The language presents itself as a weakly typed programming language
+The language is a weakly typed programming language
 manipulating different types of arrays.
 The syntax of the language contains numerous exceptions,
 leading to a high number of programs with a semantics.
@@ -144,7 +151,7 @@ f (1, a <- 1) # This promise has a side effect.
 a # Returns 1. Note that the promise kept the initial environment:
   # the variable “a” has been defined in the initial environment.
 f (0, b <- 1) # This promise has a side effect, but is not evaluated.
-b # Returns an error.
+b # Raises an error.
 \end{minted}
 
 This lazyness feature of \R{} enables
@@ -364,6 +371,18 @@ but others exist (mainly to provide more speed).
 \subsection{The Main \R{} Interpreter}
 \label{sec:main:interpreter}
 
+The main \R{} interpreter is a GNU project,
+to which most variants of \R{} are compared.
+It can thus be seen as a reference interpreter.
+However, this interpreter is not meant to be compiled
+with a specific compiler or within a specified system
+or compiling options.
+As a consequence, there might be minor differences
+of behaviour between each of its instances as a form
+of a compiled programs.
+The developpers of \R{}, however, made sure that these
+differences are not critical. % See R-internals.pdf for instance.
+
 \subsubsection{Concepts}
 \label{sec:concepts}
 
@@ -490,7 +509,7 @@ it is usually much faster than the main \R{} interpreter.
 \subsection{TestR}
 \label{sec:TestR}
 
-TestR is a framework to generate and execute unit tests.
+TestR~\parencite{maj2013testr, 2014testr} is a framework to generate and execute unit tests.
 It also aims at measuring the coverage of the generated tests
 in the main interpreter source code,
 as well as in its various \R{} libraries.
@@ -826,8 +845,8 @@ we do not model this function.
 As described in Section~\ref{sec:optimisations},
 symbols are not stored as strings,
 but as pointers.
-As a consequence, when looking for a symbol
-from its string (for instance when parsing a program),
+As a consequence, when looking for a symbol from its string
+(for instance when parsing a program, see Section~\ref{sec:parsing}),
 it is important not to allocate a new symbol if the
 symbol already exists.
 In order to make this check faster,
@@ -1298,6 +1317,56 @@ I only did such a program rewriting when the style of the \Cn{}
 program was difficult to directly translate into \Coq{},
 and the change were all local:
 I do not expect it to yield a lot of complexity in the proof of correctness.
+
+
+\subsubsection{Parsing}
+\label{sec:parsing}
+
+Parsing is currently not performed in \Coq{}, but in \OCaml{}.
+The reason is that the \Coq{} backend of Menhir~\parencite{jourdan2012validating}
+suffers some limitations hindering the approach proposed here.
+\R{} interpreter uses Bison~\parencite{Bison} to parse its input.
+The main idea to trust parsing
+is to use Menhir with a file looking as much as possible
+from the original Bison grammar.
+But the \Coq{} backend of Menhir requires the grammar to be in a special
+form (without any declaration of precedence),
+but the \R{} reference grammar is not written in this form.
+We thus backtrack in the meantime to the usual \OCaml{} backend of Menhir.
+
+The lexer of the \R{} reference interpreter is unfortunately
+written directly in \Cn{} as a \mintinline{C}{token}/\mintinline{C}{yylex} function
+(\mintinline{C}{token} parses simple tokens,
+whilst \mintinline{C}{yylex} parses more general tokens
+like the newline character).
+This is unpractical for several reasons.
+First, we consider that having a standard lexer helps to read our interpreter.
+Second, the \mintinline{C}{yylex} is admitted by its authors
+to be written in a “very messy fashion”
+(see File \texttt{src/main/gram.y}).
+For instance, \mintinline{R}{if}-statements in \R{} can interact with
+newline characters:
+when in interactive mode, parsing stops if the current input is valid
+when reaching a newline character.
+As the \mintinline{R}{else} clause of an \mintinline{R}{if}-statement
+is facultative,
+parsing may stop when the first clause of the \mintinline{R}{if}-statement
+ends if a newline appears.
+Such behaviour is usually defined in the parser.
+The authors of \R{} choose to make the lexer define a stack
+to store this information,
+effectively mixing the usual roles of lexers and parsers.
+We chose to clearly separate lexer and parser.
+
+\R{} lexer (or more precisely, the function \mintinline{C}{yylex})
+performs some side effects.
+Typically, it allocates new basic language elements.
+This behaviour is difficult to directly link with our monadic interpreter.
+To this end, we changed the associated type of some tokens:
+when tokens stores a pointer to a basic language element in \Cn{},
+we change their associated type with a function allocating this pointer,
+and returning a \mintinline{Coq}{result}.
+This enables us to reuse the same allocating functions from \Coq{}.
 
 
 \subsubsection{Closeness to the \Cn{} Source Code}
@@ -1793,7 +1862,8 @@ The first step will thus be to identify which constructs
 are crucial for the analysis of the targeted program,
 then provide them a specification
 (either from the source, or a high-level one, which will have
-to be tested against \R{}~\parencite{maj2013testr}).
+to be tested against \R{} using the testing architecture
+presented in Section~\ref{sec:TestR}).
 
 
 \printbibliography
