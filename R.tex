@@ -1329,8 +1329,16 @@ suffers some limitations hindering the approach proposed here.
 The main idea to trust parsing
 is to use Menhir with a file looking as much as possible
 from the original Bison grammar.
-But the \Coq{} backend of Menhir requires the grammar to be in a special
-form (conflict resolution resolved via priority and associativity declarations
+In particular, the grammar will not be improved to use the helpful
+additional features of Menhir,
+such as \mintinline{OCaml}|%inline|.
+Unfortunately, the \Coq{} backend of Menhir requires\footnote{
+    Actually, the it seems that the \Coq{} backend only requires
+    this when generating the proof of correctness of the generated parser.
+    It would thus be interesting to see whether we can move the parser
+    into \Coq{}.
+} the grammar to be in a special form
+(conflict resolution resolved via priority and associativity declarations
 are not supported),
 but the \R{} reference grammar is not written in this form.
 We thus backtrack in the meantime to the usual \OCaml{} backend of Menhir.
@@ -1424,9 +1432,103 @@ we change their associated type with a function allocating this pointer,
 and returning a \mintinline{Coq}{result}.
 This enables us to reuse the same allocating functions from \Coq{}.
 \begin{minted}{OCaml}
-%token<globals -> state -> sExpRec_pointer result>
+%token<globals -> runs_type -> state -> sExpRec_pointer result>
     STR_CONST NUM_CONST NULL_CONST SYMBOL FUNCTION
 \end{minted}
+
+As said above, we choose to focus on the similarity of the parser
+with respect to the original parser rather than efficiency or readability.
+In particular, we left unchanged some unexpected choices of the authors of \R{}.
+For instance, there exists several syntaxes to extract some elements from an array.
+One of them if \mintinline{R}{a[[i]]}, where \mintinline{R}{a} is an array
+and \mintinline{R}{i} an (array of) index(es).
+The lexer recognises the form \mintinline{R}|[[|, but no \mintinline{R}|]]|.
+Instead, the grammar expects a \mintinline{R}|[[| token,
+followed by an expression, followed by two successive closing brackets \mintinline{R}|]|.
+This means that space can be placed between these two last brackets,
+but not between the first two:
+\mintinline{R}|a[[i] ]| is valid, but \mintinline{R}|a[ [i]]| is not.
+We catch these behaviours, thanks to our code similarity.
+
+There is a place where our parser differs from the original parser, however.
+Indeed, \R{} parser uses imperatives side-effects during parsing,
+and these side-effects changes the behaviour of the lexer.
+We implemented these differently.
+In \R{} interactive mode, new lines are indeed treated in a special way:
+when a new line appears, if the current expression is a valid \R{} expression,
+then it is immediately executed, without parsing the next lines.
+To implement this, \R{}'s authors uses a global variable
+\mintinline{C}{EatLines}, which is \(1\) if the previous token
+expects something afterwards.
+For instance, if a new line appears after \mintinline{R}{if (cond)},
+we should wait for a statement first.
+But if a new line appears after \mintinline{R}{if (cond) stat},
+then the parsing stops, and the expression is executed
+(even if a \mintinline{R}{else} might appear afterwards).
+Below is the beginning of the \mintinline{C}{yylex} function
+implementing this behaviour.
+\begin{minted}{C}
+static int yylex (void){
+  int tok;
+again:
+  tok = token_ ();
+  if (tok == '\n'){
+    if (EatLines) goto again;
+    /* ... */
+  }
+  /* ... */
+}
+\end{minted}
+Many functions building \R{} terms update the global variable \mintinline{C}{EatLines},
+such as \mintinline{C}{xxcond}, \mintinline{C}{xxexprlist}, etc.
+But in partical, the grammar product \mintinline{C}{cr} is defined as shown below:
+\begin{minted}{C}
+cr:           { EatLines = 1; }
+  ;
+\end{minted}
+It is placed in the grammar when a new line might appear,
+but that the functions called to build the subterm of the current expression
+do not already set \mintinline{C}{EatLines} to \(1\).
+To translate this behaviour faithfully,
+we considered that \mintinline{C}{cr} is a sequence of newlines,
+as shown below.
+\begin{minted}{OCaml}
+cr:
+  | NEW_LINE cr { }
+  |             { }
+\end{minted}
+We then modified the grammar by adding \mintinline{C}{cr} whenever the corresponding \Cn{}
+function building \R{} expression sets \mintinline{C}{EatLines} to \(1\).
+For instance, the function \mintinline{C}{xxcond} sets \mintinline{C}{EatLines} to \(1\):
+\begin{minted}{C}
+cond: '(' expr ')'      { $$ = xxcond($2); }
+    ;
+\end{minted}
+%$$% Sorry, my syntax coloring doesn’t like this $$…
+We thus translated it to the following reduction rule,
+adding a \mintinline{OCaml}{cr} expression afterwards.
+This means that we accept any sequence of new line to appear after the closing parenthesis.
+\begin{minted}{OCaml}
+cond:
+  | LPAR; e = expr; RPAR; cr    { lift1 xxcond e }
+\end{minted}
+
+Not everything was formalised in the parser.
+The function \mintinline{C}{R_atof} was for instance not translated:
+the \OCaml{} function \mintinline{OCaml}{float_of_string}
+is used instead.
+There were a lot of additional informations computed by the parser
+(line numbers, identifiers, etc.):
+these informations were not translated.
+Finally, the entire \R{} parser seems to exist in two modes,
+controlled by the \mintinline{C}{GenerateCode} boolean.
+This boolean is able to disable the creation of \R{} structures
+(replacing every returned element by \mintinline{C}{R_NilValue}).
+This mode is probably enabled when one only wants to check
+that a given \R{} program is syntactically valid,
+but does not want to convert it to an abstract syntax tree.
+We do not model this mode:
+the parser always allocates the corresponding abstract syntax trees.
 
 
 \subsubsection{Closeness to the \Cn{} Source Code}
