@@ -360,6 +360,41 @@ f (ab = 2, a = 1, 3)
 f (a = 3, 1, 2) # Returns an error, as “a” is the prefix of several formal arguments.
 \end{minted}
 
+\R{} inherited a lot from its Scheme inspiration (see Section~\ref{sec:history}).
+In particular, most features in \R{} are implemented as functions.
+This includes common functions like vector concatenation \mintinline{R}{c},
+but also flow-controling features like \mintinline{R}{if}, \mintinline{R}{while},
+side-effect features like \mintinline{R}{<-}, or even parentheses.
+For instance, \R{} parser converts the syntactic element \mintinline{R}{(1 + 1)}
+to the function call \mintinline{R}{"(" ("+" (1, 1))}.%)
+These functions are not as special as they might be thought of.
+It is for instance possible to reassign them:
+\begin{minted}{R}
+"(" <- function (a) a + 1
+(1)     # Returns 2.
+\end{minted}
+
+A final unusual behaviour about function calls in \R{}
+is that the evaluation of \mintinline{R}{f (x)} is different
+than the evaluation of \mintinline{R}{e (x)} when \mintinline{R}{e}
+is an expression returning the function \mintinline{R}{f}:
+when performing a variable look-up when the variable is in the place
+of a function call, non-functions are ignored.
+In particular, if there exists a global function \mintinline{R}{f}
+which has been shadowed by a non-function \mintinline{R}{f},
+then \mintinline{R}{f (1)} will call the global function
+(ignoring the shadowing non-function),
+but \mintinline{R}{(f) (1)} will result in a type error:
+as \mintinline{R}{(f)} is not a literal function call,
+it is the usual evaluation (variable look-up) which is performed,
+resulting in the shadowing value,
+which then triggers a type error as it is applied to an argument.
+\begin{minted}{R}
+f <- function (x) "global"
+(function (f) f (1)) ("shadowing")      # Returns "global".
+(function (f) (f) (1)) ("shadowing")    # Type error: can not apply "shadowing" to 1.
+\end{minted}
+
 
 \section{\R{} Interpreters}
 \label{sec:interpreters}
@@ -1250,18 +1285,8 @@ of the \mintinline{C}{R_FunTab} array have to be parametrised
 by an additional fuel argument,
 similar to the \mintinline{Coq}{runs} argument of most functions
 (see Section~\ref{sec:monadic:style}).
-I could have added an argument to store \mintinline{C}{R_FunTab}
-in the \mintinline{Coq}{runs} structure,
-but I found more practical to define it using a separate fuel:
-the \Coq{} files have been organised with a clear separation
-between the “core features” of \R{}
-(in \texttt{low/Reval.v})
-and the additional features
-(in \texttt{low/Rfeatures.v}).
-In particular,
-the file \texttt{low/Reval.v} ends with a definition of \mintinline{Coq}{runs} using fuel,
-and \texttt{low/Rfeatures.v} with a definition of \mintinline{Coq}{R_FunTab} using fuel.
-This organisation of the development seems sufficiently modular.
+I have thus added an argument to store \mintinline{C}{R_FunTab}
+in the \mintinline{Coq}{runs} structure to deal with this.
 
 
 \subsubsection{Code Rewriting}
@@ -1332,7 +1357,11 @@ from the original Bison grammar.
 In particular, the grammar will not be improved to use the helpful
 additional features of Menhir,
 such as \mintinline{OCaml}|%inline|.
-Unfortunately, the \Coq{} backend of Menhir requires\footnote{
+This method has some issues, however.
+The most important one is that the original file \texttt{src/main/gram.y}
+produces \(81\) shift/reduce conflicts when run using Bison.
+%
+The \Coq{} backend of Menhir requires\footnote{
     Actually, the it seems that the \Coq{} backend only requires
     this when generating the proof of correctness of the generated parser.
     It would thus be interesting to see whether we can move the parser
@@ -1504,7 +1533,7 @@ For instance, the function \mintinline{C}{xxcond} sets \mintinline{C}{EatLines} 
 cond: '(' expr ')'      { $$ = xxcond($2); }
     ;
 \end{minted}
-%$$% Sorry, my syntax coloring doesn’t like this $$…
+%$$% Sorry: my syntax coloring doesn’t like the $$ in the code above…
 We thus translated it to the following reduction rule,
 adding a \mintinline{OCaml}{cr} expression afterwards.
 This means that we accept any sequence of new line to appear after the closing parenthesis.
