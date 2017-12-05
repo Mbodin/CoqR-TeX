@@ -5,6 +5,7 @@
 \settopmatter{printacmref=false}
 \renewcommand\footnotetextcopyrightpermission[1]{}
 %\pagestyle{plain}
+\settopmatter{printfolios=true}
 
 \acmConference[CoqPL'18]{The Fourth International Workshop on Coq for Programming Languages}{January 2018}{Los Angeles, United States}
 \acmYear{2018}
@@ -73,13 +74,13 @@
 \begin{abstract}
 Real-world programming languages have subtle behaviours.
 In particular, their semantics often contains various corner cases
-that programmers are unaware of.
-This can yield to serious bugs.
+that programmers are unaware of,
+possibly yielding to serious bugs.
 This is an opportunity for our community
-as \Coq{} provides a way to certify program behaviours.
-But if the certified program is not written in \Coq{},
-such a certification relies on a formal semantics of its programming language.
-Such a semantics can be as difficult to trust as the original program.
+as \Coq{} enables to certify program behaviours.
+Such certifications rely on a formal semantics,
+% of the programming language of the certified program,
+which can sometimes be as difficult to trust as the original program.
 Previous work proposed ways to trust such large semantics.
 This work evaluates the feasibility of such a formalisation
 in the case of the \R{} programming language---%
@@ -93,14 +94,12 @@ related to the reference \R{} interpreter.
 \section{Introduction}
 \label{sec:introduction}
 
-\R{}~\parencite{ihaka1996r, Rwebsite} is a trending
+\R{}~\parencite{R, ihaka1996r, Rwebsite} is a trending
 programming language for statisticians.
 It is used in a large range of fields (biology, finance, etc.),
-as illustrated by the list of available packages categories
-available at
+as illustrated by the list of available packages categories:
 \url{https://cran.r-project.org/web/views/}.
-As a consequence of this diversity,
-\R{} programmers come from very different fields of study,
+This diversity is reflected among \R{} programmers,
 resulting in largely different programming styles.
 This makes \R{} unlikely to disappear
 in the following years.
@@ -120,13 +119,13 @@ and trusting such programs can be difficult.
 Formal methods in general and the \Coq{} proof assistant in particular
 offer an interesting answer to this trust issue.
 But to formally prove that an \R{} program meets its specification,
-we need a semantics for \R{}.
+we need a semantics of \R{}.
 % Such a semantics needs to be trustworthy.
 % In particular, it should capture all the corner cases
 % with which a proven program can cope.
 
-A semantics for the full \R{} language will inevitably
-be complex, as all corner cases have to be taken into account.
+A semantics for the full \R{} language will inevitably be complex,
+as all corner cases need to be covered.
 % The question of trusting such a semantics
 % then naturally arises.
 %
@@ -137,12 +136,11 @@ test suites,
 or reference interpreters.
 %
 % When formalising a complex programming language such as \R{},
-Defining the formal model itself
-is actually a relatively small part of the formalisation process,
-given how difficult it can be to convince non-\Coq{} users
+It can be difficult to convince non-\Coq{}-users
 that they can trust our formalisation~\parencite{leroy2014pip}:
-the most time-consuming part of a formalisation is to
-relate the actual formalisation with its trust sources.
+the most time-consuming part of the formalisation process is to
+relate the formalisation with its trust sources,
+not actually defining the formal model itself.
 
 % Specifications are the preferred trust source.
 % They provide a non-ambigous description of the language constructs's behaviours.
@@ -168,16 +166,18 @@ relate the actual formalisation with its trust sources.
 % until the wanted code coverage is reached.
 
 In the case of \R{}, there is unfortunately
-no precise language specification.
-There are however some test suites~\parencite{2014testr, maj2013testr},
-as well as a reference interpreter~\parencite{Rwebsite},
-from which alternative implementations of \R{} are related.
+no precise language specification
+(there exists an ongoing effort to write one,
+but it is too early to base ourself on it).
+There are however test suites~\parencite{2014testr, maj2013testr},
+as well as a reference interpreter~\parencite{Rwebsite}
+against which alternative implementations of \R{} are tested.
 %
 To trust our formalisation, we wrote it in a similar
 way than the source code of the reference interpreter.
 We also made it executable to be able to run it on test suites.
 We believe that these two relating methods are enough
-to convince anyone that we closely captured all of \R{} behaviours.
+to convince anyone that we closely captured all corner cases of \R{}.
 
 The \R{} language is large,
 but it contains a core which is both small and easy to identify.
@@ -189,7 +189,7 @@ using its \Cn{} source code as a specification.
 Section~\ref{sec:presentation} presents some subtleties of the \R{} programming language.
 Then Section~\ref{sec:formalisation} presents how our formalisation is defined,
 and in particular, how it is related to the \R{} source code.
-This project is available at \url{https://github.com/Mbodin/proveR/tree/CoqPL2018}.
+The source of this project is available at \url{https://github.com/Mbodin/proveR/tree/CoqPL2018Final}.
 
 
 \section{Presentation of \R{} and its Core}
@@ -228,15 +228,20 @@ and execute its \Cn{} functions.
 
 This definition of \R{}'s core enables us to focus
 our formalisation effort on a very restricted part of the language.
-It includes the rules for function calls,
-environments, closures, promises (delayed evaluation), \R{} internals,
+It includes the execution rules for function calls,
+environments, closures, promises (delayed evaluation),
 as well as the parts initialising the symbol table.
 Constructs like \mintinline{R}{if} and \mintinline{R}{while}
 are not part of the core,
-but (some kinds of) assignments are
+but (some kinds of) assignments are,
 as they are used for function calls.
+This core is easily extendable:
+we can add any other feature by implementing
+its associated function
+and adding it to the symbol table.
 
-We now present some corner cases in the \R{} semantics.
+We now present some corner cases of the \R{} semantics.
+% A more detailed presentation can be found in~\parencite{stadler2016optimizing}.
 Most \R{} constructs
 % adapt themselves when given unusual arguments to,
 try, in some ways, to ``guess'' what the programmer meant.
@@ -248,13 +253,13 @@ try, in some ways, to ``guess'' what the programmer meant.
 % But if the second argument if less than the first argument,
 % \R{} builds a decreasing array instead of an empty one.
 % This is a frequent bug pattern when such an expression is involved in a loop.
-The same syntactic construct can thus be associated
+The same syntactic construct is thus often associated
 with different behaviours.
 For instance, array look-up is written \mintinline{R}{a[i]}:
-if the variable \mintinline{R}{i} evaluates to an array of indices
-(a number is considered to be an array of size \(1\)),
-then \mintinline{R}{a[i]} returns an array with
-the corresponding elements of \mintinline{R}{a} in order.
+if \mintinline{R}{i} evaluates to an array of indices
+(numbers are considered to be arrays of size \(1\)),
+then \mintinline{R}{a[i]} is the array with
+the corresponding elements of \mintinline{R}{a}.
 But if \mintinline{R}{i} evaluates to an array of negative integers,
 then the array \mintinline{R}{a} is copied,
 and all elements whose (opposite) index is in the array \mintinline{R}{i}
@@ -262,17 +267,16 @@ are removed.
 % For instance, \mintinline{R}{a[-3]} is the same as the array \mintinline{R}{a},
 % but without its third element
 % (the later elements being moved by one index).
-Other behaviours are also defined when \mintinline{R}{i}
+Other behaviours happen when \mintinline{R}{i}
 evaluates to a boolean array or a string array.
-Consequently,
-as \R{} is untyped,
-a simple function like \mintinline{R}{function (a, i) a[i]}
-is already complex to fully specify.
+As \R{} is untyped,
+a function like \mintinline{R}{function (a, i) a[i]}
+is already complex to specify.
 
-Another source of subtlety of \R{} is that it lazily evaluates expressions,
+Another source of subtleties of \R{} is that it lazily evaluates expressions,
 including those with side effects.
-The following function \mintinline{R}{f} illustrates this effect:
-it only evaluates its second argument if the first is \(1\).
+For instance, the following function \mintinline{R}{f}
+only evaluates its second argument if the first is \(1\).
 Thus, in its second call, the variable \mintinline{R}{b}
 has confusingly not been defined because the assignment \mintinline{R}{b <- 1}
 was not evaluated.
@@ -282,9 +286,9 @@ f (1, a <- 1); a # Returns 1.
 f (0, b <- 1); b # Raises an error.
 \end{minted}
 
-\R{} contains numerous such semantic exceptions.
-None of these corner cases are inherently complex to deal with,
-but the large amount of such cases makes the language complex.
+\R{} contains numerous semantic exceptions. %~\parencite{stadler2016optimizing}.
+None are inherently complex to deal with,
+but their quantity complexifies the language.
 
 
 \section{Formalisation}
@@ -313,7 +317,7 @@ an error, or \mintinline{Coq}{result_bottom}---%
 meaning that the interpreter ran out of fuel during the execution.
 These monads enable us to abstract most of the aspects
 of imperativity and memory handling from \Cn{}.
-Examples of monads includes
+Examples of monads include
 \mintinline{Coq}|let%success|,
 to extract the result given by a function
 (it exactly corresponds to the monadic \emph{bind} operator),
@@ -343,6 +347,8 @@ SEXP applyClosure (SEXP op, SEXP arglist, SEXP rho){
   return res;
 }
 \end{minted}
+    \vspace{-2mm} % There are too much blank in the last line of the code, leading
+                  % to too much space.
     \caption{The original \Cn{} function}
     \label{fig:c}
 \end{figure}

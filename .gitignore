@@ -9,6 +9,11 @@
 *.run.xml
 *.bbl
 *.blg
+*.dvi
+*.html
+*.idv
+*.lg
+
 
 _minted-*/
 

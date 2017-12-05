@@ -1,0 +1,102 @@
+
+----------------------- REVIEW 1 ---------------------
+PAPER: 2
+TITLE: A Coq Formalisation of a Core of R
+AUTHORS: Martin Bodin
+
+Overall evaluation: 2 (accept)
+
+----------- Overall evaluation -----------
+Summary:
+
+This abstract proposes the presentation of a Coq formalization of R, a
+dynamically-typed programming language for writing statistical
+applications. Although R currently has no formal semantics, there is a
+reference implementation written in C against which other
+implementations are validated. The proposed semantics is given via a
+definitional interpreter written as a fueled monadic function living
+in the state+error monad. The interpreter is (mostly) in 1-1
+correspondence with the reference implementation, although it uses
+notations to achieve this correspondence. The ultimate goal is to use
+the interpreter to verify R programs.
+
+Comments:
+
+The proposed talk falls under the "Reports on ongoing proof efforts"
+category of the proposal. While the formalization is relatively
+straightforward (and appears to be quite similar to the author's
+previous formalization of javascript), I believe the CoqPL audience
+would enjoy a fuller discussion of R's weird design decisions alluded
+to in the paper and the challenges they present to formalization. The
+paper mentions that much of the functionality of R is included via a
+symbol table mapping constructs to C implementations, and thus fall
+outside of the formalized core. There aren't enough details in the
+paper to appreciate the implications of this choice, and how much work
+would need to be done to model all of R-- the talk would benefit from
+a fuller description of how much functionality is included in the
+core, how much work would be required to include this symbol table,
+any anticipated challenges that stand in the way of doing so, and how
+much work would be required to have a interpreter for a reasonably
+complete subset of R.
+
+
+----------------------- REVIEW 2 ---------------------
+PAPER: 2
+TITLE: A Coq Formalisation of a Core of R
+AUTHORS: Martin Bodin
+
+Overall evaluation: 1 (weak accept)
+
+----------- Overall evaluation -----------
+This abstract introduces an interpreter for the R language written in a
+monadic, shallow embedding of C in Coq. The goal of this interpreter is
+to provide a formal semantics for R, that will be used to reason about R
+programs. The implementation in a shallow embedding of C allows one to
+convince itself that the interpreter faithfully mimics the R reference
+implementation, with (1) a one-to-one mapping of the source code and (2)
+the possibility to run it against the C implementation.
+
+The approach is interesting for programming language formalization in
+Coq, and fits well within the CoqPL workshop. I thus recommend to accept
+it.
+
+I do not completely agree with the author regarding the difficulty to
+link with formal semantics of C. I think it should be an interesting,
+complementary work to relate their shallow embedding with this
+semantics, using for instance a translation function from deep to
+shallow embedding.
+
+I would also like to see an example of application of this embedding of
+the R language.
+
+How do you handle non-terminating programs?
+
+Typo: "Examples of monads includes" (Sec. 3)
+
+
+----------------------- REVIEW 3 ---------------------
+PAPER: 2
+TITLE: A Coq Formalisation of a Core of R
+AUTHORS: Martin Bodin
+
+Overall evaluation: 2 (accept)
+
+----------- Overall evaluation -----------
+The abstract presents Coq formalisation of the semantics of R (only its small core, actually).
+R is indeed becoming one of the leading languages in statistics and machine learning, and thus the overall motivation of the paper is timely: it would indeed be of interest to verify R.
+
+It is also notable that semantics of R is "mostly functional".
+
+When reading the abstract, I was somewhat surprised that the main feature of R  --  its complex statistical libraries -- is not discussed. I understand the current formalisation only concerns the small core of R. This is ok, but I presume that any language for statisticians like R may contain bugs on the side of numerical / statistical manipulations -- and I presume that ensuring correctness there is a much bigger task?
+
+E.g. the work of Assia Mahboubi et al discovered many bugs in existing statistical software:
+@inproceedings{DBLP:conf/itp/MahboubiMS16,
+  author    = {Assia Mahboubi and
+               Guillaume Melquiond and
+               Thomas Sibut{-}Pinote},
+  title     = {Formally Verified Approximations of Definite Integrals},
+  booktitle = {Interactive Theorem Proving - 7th International Conference, {ITP}
+               2016, Nancy, France, August 22-25, 2016, Proceedings},
+  pages     = {274--289},
+  year      = {2016}}
+
