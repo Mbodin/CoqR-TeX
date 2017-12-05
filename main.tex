@@ -197,12 +197,12 @@ The source of this project is available at \url{https://github.com/Mbodin/proveR
 
 \R{} is a weakly typed programming language.
 Its basic data types mainly consist of various kinds of arrays.
-It was originally~\parencite{ihaka1996r} defined as a variant of Scheme
-which has been mutated in order to look like its predecessor,
-the S programming language.
-This construction has several implications.
-First, functions are first class in \R{}.
-Second, \R{} follows the code-is-data paradigm:
+It was originally~\parencite{ihaka1996r} defined as a mutation of Scheme
+designed to look like its predecessor,
+the S language.
+% This construction has several implications.
+As a consequence, functions are first class in \R{}.
+Furthermore, \R{} follows the code-is-data paradigm:
 it is possible to delay the evaluation of statements,
 and even to manipulate their inner structure
 (for instance using the \mintinline{R}{substitute} \R{} function).
@@ -294,24 +294,22 @@ but their quantity complexifies the language.
 \section{Formalisation}
 \label{sec:formalisation}
 
-Our formal semantics is related to the \Cn{} source code
-of the \R{} reference interpreter
-by a line-to-line correspondence:
-every one or two lines of our semantics
-correspond to one or two lines of the reference interpreter.
 Our formal semantics is presented as a monadic interpreter in \Coq{}.
-This interpreter is runnable,
-which shall unable us to test our semantics against
-\R{} test suites in future work.
+It is related to the \Cn{} source code of the \R{} reference interpreter
+by a line-to-line correspondence:
+every one or two lines of our interpreter
+correspond to one or two lines of the reference interpreter.
+Our semantics is runnable,
+which enables us to test it against \R{} test suites.
 However, as the core of \R{} is very limited,
-non-core features will have to be added for testing.
+non-core features have to be added for testing.
 These features can be added following the same methodology than the one presented here.
 Figure~\ref{fig:coq} shows our \Coq{} translation
 of the \Cn{} function shown in Figure~\ref{fig:c}.
 
 We used monads very similar to the ones of JSRef~\parencite{popl14jscert}:
 a \mintinline{Coq}{result} is either a success---%
-it then transports the actual result and the resulting state
+it then carries the actual result and the resulting state
 \mintinline{Coq}{S} of the program---,
 an error, or \mintinline{Coq}{result_bottom}---%
 meaning that the interpreter ran out of fuel during the execution.
@@ -320,7 +318,7 @@ of imperativity and memory handling from \Cn{}.
 Examples of monads include
 \mintinline{Coq}|let%success|,
 to extract the result given by a function
-(it exactly corresponds to the monadic \emph{bind} operator),
+(it corresponds to the monadic \emph{bind} operator),
 or \mintinline{Coq}|read%defined|, to read the content of a pointer.
 \Coq{} notations have heavily been used
 for the line-to-line correspondence.
@@ -336,8 +334,8 @@ Every line has been similarly translated.
 
 \begin{figure}
 \begin{minted}{C}
-SEXP applyClosure (SEXP op, SEXP arglist, SEXP rho){
-  SEXP formals, actuals, savedrho, newrho, res;
+EXP* applyClosure (EXP* op, EXP* arglist, EXP* rho){
+  EXP* formals, actuals, savedrho, newrho, res;
   if (rho->type != ENVSXP)
     error ("'rho' must be an environment.");
   formals = op->clo.formals;
@@ -372,24 +370,24 @@ Instead of defining such an interpreter,
 we could have used already existing \Coq{} semantics
 for \Cn{}~\parencite{formalin, Leroy-Compcert-CACM}
 to directly define a semantics for \R{}.
-But because of the abstraction layers of \Cn{},
-proving properties about a given \R{} program
-would then have been quite complex.
+We however believe that the abstraction layers of \Cn{}
+would provide a non-trivial additional complexity to the formalisation,
+making it more difficult to use.
 Furthermore, the \R{} reference interpreter has been built
 with a strong intuition in mind~\parencite{ihaka1996r}.
 This intuition is reflected in \R{} internals,
 which would have been hidden if we attempted such a direct approach.
 %
 As a future work, it would be a very valuable contribution
-to use these semantics to relate
+to use these semantics of \Cn{} to relate
 our formal model to the source code of \R{}.
 We furthermore believe that our line-to-line correspondence
 would greatly help such a proof.
 
 \begin{figure}
 \begin{minted}{Coq}
-Definition applyClosure S (op arglist rho : SExpRec_pointer)
-    : result SExpRec_pointer :=
+Definition applyClosure S (op arglist rho : EXP_pointer)
+    : result EXP_pointer :=
   read%defined rho_ := rho using S in
   ifb type rho_ <> EnvSxp then
     result_error S "'rho' must be an environment."
@@ -417,16 +415,23 @@ for our formal semantics,
 on which new projects about \R{} can be based---%
 for instance
 proving that a given \R{} program meets its specification.
-The usability of this work can be improved:
-to this end, we plan to make another formalisation
-of \R{} proven correct with respect to the current one.
-In essence, this new formalisation should
-remove all the concepts of the current formalisation coming from \Cn{}:
-the semantics of \R{} being mostly functional,
-most pointers can be removed in our semantics
-to make it more adapted to the \Coq{} paradigms.
-% We also plan to test our formalisation.
-% Adding non-core features is also planned.
+Our formalisation is easily extendable through the symbol table,
+and we aim to continue the formalisation process
+to cover new features of \R{}.
+
+We think that the usability of this work can be improved:
+the current formalisation is so close to the C source code
+that implementation details still appear in it.
+We plan to build a more abstract formalisation,
+more suitable to prove the functional correctness of real-world \R{} programs.
+In particular, we believe that most pointers
+can be formalised out,
+the semantics of \R{} being mostly functional.
+% In essence, this new formalisation should
+% remove all the concepts of the current formalisation coming from \Cn{}:
+% the semantics of \R{} being mostly functional,
+% most pointers can be removed in our semantics
+% to make it more adapted to the \Coq{} paradigms.
 
 % \section{Related Work}
 % \label{sec:related:work}
