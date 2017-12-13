@@ -1,0 +1,16 @@
+*.swp
+*~
+_minted-*/
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.listing
+*.log
+*.nav
+*.out
+*.pdf
+*.run.xml
+*.snm
+*.toc
+*.vrb

@@ -1,32 +1,114 @@
+\documentclass{beamer}
 
+\input{macros}
+\input{beamer-macros}
 
+\title{A Coq Formalisation of a Core of R}
+\author{Martin \textsc{Bodin}}
+\institute{CMM}
+\date{13\(^{th}\) of January}
+
+\begin{document}
 
 \begin{frame}
-    \frametitle{JSCert Overview}
-
+    \titlepage
 \end{frame}
 
-\sectionframe{R}
+\section{R}
 
 \begin{frame}
+    \begin{center}
+        \includegraphics[width=3cm]{images/Rlogo.png}
+    \end{center}
+
+    \vfill
+
+    \begin{itemize}
+        % http://blog.revolutionanalytics.com/2014/04/seven-quick-facts-about-r.html
+        \item Trending programming language;
+        \item More than 2~million users worldwide;
+        \item Used by 70\% of data miners (24\% as primary language).
+    \end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]
     \frametitle{R: A Programming Language About Vectors}
 
-% a[1], a[index], a[c(false, true, false)]…
+\begin{Rcode}
+v <- c(10, 12, 14, 11, 13)
+v[1]                          # Returns 10@\pause@
+indices <- c(3, 5, 1)
+v[indices]                    # Returns c(14, 13, 10)@\pause@
+v[-2]                         # Returns c(10, 14, 11, 13)@\pause@
+v[-indices]                   # Returns c(12, 11)@\pause@
+v[c(FALSE, TRUE, FALSE)]      # Returns c(12, 13)@\pause@
+f <- function (i, offset)
+       v[i + offset]          # ??
+\end{Rcode}
 
 \end{frame}
 
-\begin{frame}
+\begin{frame}[fragile]
     \frametitle{R: A Lazy Programming Language}
 
+\begin{Rcode}
+f <- function (x, y = x) {
+    x <- 1
+    y
+    x <- 2
+    y
+}
+f (3)                               @\pause@# Returns 1
+\end{Rcode}
+
+\begin{overlayarea}{\textwidth}{3cm}
+\begin{onlyenv}<3->
+\begin{Rcode}
+f <- function (x, y) if (x == 1) y
+f (1, a <- 1)
+a                                   # Returns 1
+f (0, b <- 1)
+b                                   # Raises an error
+\end{Rcode}
+\end{onlyenv}
+\end{overlayarea}
+
 \end{frame}
 
-\begin{frame}
+\begin{frame}[fragile]
     \frametitle{R: A Dynamic Programming Language}
 
-% Changing the meaning of parentheses.
-% The keyword “function” is… a function (working thanks to lazyness!).
+\begin{Rcode}
+f <- function (x, y) missing (y)
+f (1, 2)                            # Returns FALSE
+f (1)                               # Returns TRUE
+f ()                                # Returns TRUE
+\end{Rcode}
+
+\pause
+
+\begin{Rcode}
+f <- function (expr, s) {
+    x <- 2
+    y <- 3
+    eval (substitute (expr))        # Evaluates “expr” in the
+                                    # current environment
+  }
+f (x + y)                           # Returns 5
+x + y                               # Raises an error
+\end{Rcode}
+
+\pause
+
+\begin{Rcode}
+"(" <- function (x) 2 * x
+((9))                               # Returns 36
+\end{Rcode}
 
 \end{frame}
+
+\sectionframe{Specifying R}
 
 \begin{frame}
     \frametitle{R Trust Sources}
@@ -35,6 +117,72 @@
 % A reference interpreter.
 
 \end{frame}
+
+\begin{frame}
+    \frametitle{\jscert{} Overview
+        \hfill\hfill\hfill
+        \raisebox{-10mm}[0pt][0pt]{
+            \includegraphics[width = 15mm]{images/jscert.png} ;
+        }}
+
+\begin{centertikz}[node distance = 1.5cm]
+
+    \node (realworldleft) {};
+    \node [right of = realworldleft, node distance = 11cm] (realworldright) {} ;
+
+    \node [right of = realworldleft, node distance = 1cm] (semlim) {} ;
+    \node [left of = realworldright, node distance = 4cm] (testlim) {} ;
+
+    \draw [dashed] (realworldleft) to node[above, pos = 0.9] {\coqn{} definitions} node [below, pos = 0.9] {Industrial world} (realworldright) ;
+
+    % \node<2-> [below of = testlim, locnode] (ocaml) {\parbox{1.5cm}{\centering\camln{}\\extraction}} ;
+    % \node<2-> [right of = ocaml, node distance = 2cm, locnode] (parser) {Parser} ;
+
+\begin{pgfonlayer}{background}
+    % \node<2-> [fit = (ocaml) (parser), locnode yellow] (interp) {} ;
+\end{pgfonlayer}
+
+    \node [above of = testlim, locnode brown] (jsref) {\jsref} ;
+
+    \node [locnode blue, below of = jsref, node distance = 45mm] (tests) {\includegraphics[width = 4cm]{images/test262_small.png}} ;
+    \node [below = 0pt of tests] {Test suites} ;
+
+    % \draw<2-> [->, thick] (tests) to node (testing) {} (interp) ;
+
+    % \node<3> [locnode plum, left of = testing] (bisect) {\textsc{Bisect}} ;
+
+    % \draw<3> [->, thick, DarkPlum] (bisect) -- (testing) ;
+
+    % \draw<2-> [<->, thick] (ocaml) -- (jsref) ;
+
+    \draw<1> [<->, thick, Plum] (tests) --
+        node [sloped, above, fill = white] {Running tests}
+        (jsref) ;
+
+    \node [above of = semlim, locnode brown] (jscert) {\jscert} ;
+
+    \draw [->, thick, DarkPlum] (jsref) -- node [above] {Correctness} (jscert) ;
+
+%   \node [above of = jscert, node distance = 1cm] (next) {} ;
+%   \draw [dashed, ->] (jscert) -- (next) ;
+%   \node [above of = jscert, left = 3mm, node distance = 1cm] (nextl) {} ;
+%   \draw [dashed, ->] (jscert) -- (nextl) ;
+%   \node [above of = jscert, right = 3mm, node distance = 1cm] (nextr) {} ;
+%   \draw [dashed, ->] (jscert) -- (nextr) ;
+
+    \node [locnode orange, below of = semlim, node distance = 32mm] (ecma) {\includegraphics[width = 15mm]{images/ecmastandard.png}} ;
+
+    \draw [<->, thick, Plum] (ecma) --
+        node [sloped, above, fill = white] {Step / rule}
+        node [sloped, below, fill = white] {correspondence} (jscert) ;
+
+
+%    \node [right of = ecma, below, node distance = 3cm] {\texttt{jscert.org}} ;
+
+\end{centertikz}
+
+\end{frame}
+
 
 \begin{frame}
     \frametitle{Inside GNU R}
@@ -68,4 +216,278 @@
     % To be useful for the R community (RExplain?).
 
 \end{frame}
+
+\frame{\tableofcontents}
+
+\sectionframe*{Bonuses}
+
+\newcommand\questiontoc{
+    %\begin{multicols}{2}
+    \begin{enumerate}
+        \item \hyperlink{frame:jscert}{\jscert{}};
+        \item \hyperlink{frame:imperative:functional}{Representing imperativity in a functional setting};
+        \item \hyperlink{frame:semantics:coq}{Semantics in \coqn{}};
+        \item \hyperlink{frame:semantic:sizes}{Semantic sizes};
+    \end{enumerate}
+    %\end{multicols}
+}
+
+\frame{\questiontoc}
+
+\begin{frame}
+    \label{frame:jscert}
+    \frametitle{The \jscert{} Project
+        \hfill\hfill\hfill
+        \raisebox{-10mm}[0pt][0pt]{
+            \includegraphics[width = 15mm]{images/jscert.png} ;
+        }}
+
+\begin{centertikz}[node distance = 1.5cm]
+
+    \node (realworldleft) {};
+    \node [right of = realworldleft, node distance = 11cm] (realworldright) {} ;
+
+    \node [right of = realworldleft, node distance = 1cm] (semlim) {} ;
+    \node [left of = realworldright, node distance = 4cm] (testlim) {} ;
+
+    \draw [dashed] (realworldleft) to node[above, pos = 0.9] {\coqn{} definitions} node [below, pos = 0.9] {Industrial world} (realworldright) ;
+
+    % \node<2-> [below of = testlim, locnode] (ocaml) {\parbox{1.5cm}{\centering\camln{}\\extraction}} ;
+    % \node<2-> [right of = ocaml, node distance = 2cm, locnode] (parser) {Parser} ;
+
+\begin{pgfonlayer}{background}
+    % \node<2-> [fit = (ocaml) (parser), locnode yellow] (interp) {} ;
+\end{pgfonlayer}
+
+    \node [above of = testlim, locnode brown] (jsref) {\jsref} ;
+    \node [above = 0pt of jsref] {\(\sim{}3,000\)~lines of code} ;
+
+    \node [locnode blue, below of = jsref, node distance = 45mm] (tests) {\includegraphics[width = 4cm]{images/test262_small.png}} ;
+    \node [below = 0pt of tests] {\(5,126\)~tests passed} ; % out of~\(11,725\)} ;
+
+    % \draw<2-> [->, thick] (tests) to node (testing) {} (interp) ;
+
+    % \node<3> [locnode plum, left of = testing] (bisect) {\textsc{Bisect}} ;
+
+    % \draw<3> [->, thick, DarkPlum] (bisect) -- (testing) ;
+
+    % \draw<2-> [<->, thick] (ocaml) -- (jsref) ;
+
+    \draw<1> [<->, thick, Plum] (tests) --
+        node [sloped, above, fill = white] {Running tests}
+        (jsref) ;
+
+    \node [above of = semlim, locnode brown] (jscert) {\jscert} ;
+    \node [above = 0pt of jscert] {\(\sim{}900\)~rules} ;
+
+    \draw [->, thick, DarkPlum] (jsref) -- node [above] {Correctness}
+            node [below, Aluminium6] {\(\sim{}6,000\)~lines of proof} (jscert) ;
+
+%   \node [above of = jscert, node distance = 1cm] (next) {} ;
+%   \draw [dashed, ->] (jscert) -- (next) ;
+%   \node [above of = jscert, left = 3mm, node distance = 1cm] (nextl) {} ;
+%   \draw [dashed, ->] (jscert) -- (nextl) ;
+%   \node [above of = jscert, right = 3mm, node distance = 1cm] (nextr) {} ;
+%   \draw [dashed, ->] (jscert) -- (nextr) ;
+
+    \node [locnode orange, below of = semlim, node distance = 32mm] (ecma) {\includegraphics[width = 15mm]{images/ecmastandard.png}} ;
+    \node [below = 0pt of ecma] {\(\sim{}900\)~steps} ;
+
+    \draw [<->, thick, Plum] (ecma) --
+        node [sloped, above, fill = white] {Step / rule}
+        node [sloped, below, fill = white] {correspondence} (jscert) ;
+
+
+%    \node [right of = ecma, below, node distance = 3cm] {\texttt{jscert.org}} ;
+
+\end{centertikz}
+
+\end{frame}
+
+\frame{\questiontoc}
+
+\begin{frame}[fragile]
+    \label{frame:imperative:functional}
+    \frametitle{How to Represent Imperative Features in a Functional Setting}
+
+    \begin{itemize}
+        \item Structures like maps are easy to implement;
+        \item We can represent every element of the state of a program \\
+            (memory, outputs, etc.) in a data-structure;
+        \item We have to pass this structure along the program.
+    \end{itemize}
+
+    \begin{block}{Enter the monad}
+\begin{camlcode}
+if_success (run s1 p) (fun s2 =>
+  let s3 = write s2 x v in
+  if_success (run s3 p') (fun s4 =>
+    return_success s4))
+\end{camlcode}
+    \end{block}
+
+\end{frame}
+
+\frame{\questiontoc}
+
+\begin{frame}[fragile]
+    \label{frame:semantics:coq}
+    \frametitle{Formalisation of Semantics in \coqn{}}
+
+\begin{coqcode}
+Inductive semantics : state -> prog -> state -> Prop ->
+
+  | semantics_skip : forall s p, semantics s p s
+
+  | semantics_seq : forall s1 s2 s3 p1 p2,
+    semantics s1 p1 s2 ->
+    semantics s2 p2 s3 ->
+    semantics s1 (seq p1 p2) s3
+
+  | semantics_asgn : forall s x v,
+    semantics s (asgn x v) (write s x v)
+  .
+\end{coqcode}
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Sequence in \jscert{} (Paper Version)}
+
+    \begin{overlayarea}{\textwidth}{3cm}
+    \begin{block}{“\jsinline|s1 ; s2|” is evaluated as follows.}
+\begin{enumerate}
+    \item Let~\(o_1\) be the result of evaluating~\jsinline|s1|.
+    \item If~\(o_1\) is an exception, return~\(o_1\).
+    \item Let~\(o_2\) be the result of evaluating~\jsinline|s2|.
+    \only<1>{
+        \item If an exception~\(\mathit{V}\) was thrown, return \(\mpar{\jstthrow{}, \mathit{V}, \mathit{empty}}\). % where \(\mathit{V}\)~is the exception.
+            % (Execution now proceeds as if no exception were thrown.)
+        \item If~\(\mathit{o_2}.\mathit{value}\) is empty, let~\(\mathit{V} = \mathit{o_1}.\mathit{value}\),
+            otherwise let~\(\mathit{V} = \mathit{o_2}.\mathit{value}\).
+        \item Return \(\mpar{\mathit{o_2}.\mathit{type}, \mathit{V}, \mathit{o_2}.\mathit{target}}\).
+    }
+\end{enumerate}
+    \end{block}
+    \end{overlayarea}
+
+    \visible<3>{
+\begin{mathpar}
+    \inferrule[seq-1\(\fund{s_1}{s_2}\)]
+    { S, C, s_1 \evalr o_1 \\ o_1, \seqx{s_2} \evalr o }
+    { S, C, \seq{s_1}{s_2} \evalr o }
+    \and
+    \inferrule[seq-2\(\funu{s_2}\)]
+    { }
+    { o_1, \seqx{s_2} \evalr o_1 }
+    \quad { \abort{o_1} }
+    \and
+    \inferrule[seq-3\(\funu{s_2}\)]
+    { o_1, s_2 \evalr o_2 \\ o_1, o_2, \seqxx{} \evalr o }
+    { o_1, \seqx{s_2} \evalr o }
+    \quad { \neg\abort{o_1} }
+    \and
+    \ldots
+\end{mathpar}
+}
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \label{frame:seq:jscert}
+    \frametitle{Sequence in \jscert{}}
+
+%  | red_stat_abort : forall S C extt o,
+%    out_of_ext_stat extt = Some o →
+%    abort o ->
+%    ~ abort_intercepted_stat extt →
+%    red_stat S C extt o
+
+\begin{changemargin}{-5.5mm}{-9mm}
+\begin{coqcode}
+Inductive red_stat : state → scope → stat → out → Prop :=
+
+| red_stat_seq_1 : forall S C s1 s2 o1 o,
+  red_stat S C s1 o1 →
+  red_stat S C (seq_1 s2 o1) o →@\anchor{seq1}{}@
+  red_stat S C (seq s1 s2) o
+
+| red_stat_seq_2 : forall S C s2 o1,
+  abort o1 →@\anchor{seq2}{}@
+  red_stat S C (seq_1 s2 o1) o1
+
+| red_stat_seq_3 : forall S0 S C s2 o2 o,
+  red_stat S C s2 o2 →@\anchor{seq3}{}@
+  red_stat S C (seq_2 o2) o →
+  red_stat S0 C (seq_1 s2 (out_ter S)) o
+
+(* ... *).
+\end{coqcode}
+\end{changemargin}
+\begin{innertikz}[overlay, remember picture]
+    \def\distshift{35mm} % WTF: This looks like a TikZ bug: nodes appear this distance below their supposed location…
+    \node [right = 25mm of seq1, yshift = \distshift, scale = .8] {\(
+        \inferrule[seq-\raisebox{.6ex}{\bsphere{1}}\(\fund{s_1}{s_2}\)]
+        { S, C, s_1 \evalr o_1 \\ o_1, \seqx{s_2} \evalr o }
+        { S, C, \seq{s_1}{s_2} \evalr o }
+    \)} ;
+    \node [right = 64mm of seq2, yshift = \distshift, scale = .8] {\(
+        \inferrule[seq-\raisebox{.6ex}{\bsphere{2}}\(\funu{s_2}\)]
+        { }
+        { o_1, \seqx{s_2} \evalr o_1 }
+        \quad { \abort{o_1} }
+    \)} ;
+    \node [right = 34mm of seq3, yshift = \distshift, scale = .7] {\(
+        \inferrule[seq-\raisebox{.55ex}{\bsphere{3}}\(\funu{s_2}\)]
+        { o_1, s_2 \evalr o_2 \\ o_1, o_2, \seqxx{} \evalr o }
+        { o_1, \seqx{s_2} \evalr o }
+        \quad { \neg\abort{o_1} }
+    \)} ;
+\end{innertikz}
+
+\end{frame}
+
+\frame{\questiontoc}
+
+\begin{frame}
+    \label{frame:semantic:sizes}
+    \frametitle{Semantic Sizes}
+
+    \begin{centertikz}
+        \node (lambda) {\(\lambda\)-calculus} ;
+        \node [right = 5mm of lambda] (ml) {CoreML} ;
+        \node [right = 5mm of ml] (compcert) {\CompCert{} \Cn{}} ;
+        \node [right = 5mm of compcert] (jscert) {\jscert{}} ;
+
+        \draw [DarkPlum, fill = LightPlum] ($(lambda.north) + (-.5, .1)$) rectangle ++ (1, .003) ;
+        \node [above = 1mm of lambda] {\(3\)~rules} ; % 5 in pretty-big-step.
+
+        \draw [DarkPlum, fill = LightPlum] ($(ml.north) + (-.5, .1)$) rectangle ++ (1, .25) ;
+        \node [above = 3mm of ml] {\(\sim{}50\)~rules} ; % 61 in pretty-big-step.
+
+        \draw [DarkPlum, fill = LightPlum] ($(compcert.north) + (-.5, .1)$) rectangle ++ (1, 1) ;
+        \node [above = 11mm of compcert] {\(\sim{}200\)~rules} ; % 110 in big step + 77 in denotational.
+        % Source: http://compcert.inria.fr/doc/html/Csem.html and http://compcert.inria.fr/doc/html/Cop.html
+
+        \draw [DarkPlum, fill = LightPlum] ($(jscert.north) + (-.5, .1)$) rectangle ++ (1, 4.5) ;
+        \node [above = 46mm of jscert] {\(\sim{}900\)~rules} ; % ~900 in pretty-big-step.
+
+%        \draw [thick, dashed, ->] (compcert) to [bend right] ($(compcert) + (-1, -1)$) ;
+
+    \end{centertikz}
+%    \vspace{-5mm}
+
+%   \begin{refsection}
+%       \nocite{Verasco}
+%       \printbibliography{}
+%   \end{refsection}
+
+\end{frame}
+
+
+\frame{\questiontoc}
+
+\frame{\tableofcontents}
+
+\end{document}
 
