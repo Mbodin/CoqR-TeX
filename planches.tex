@@ -3,7 +3,7 @@
 \input{macros}
 \input{beamer-macros}
 
-\title{A Coq Formalisation of a Core of R}
+\title{A Coq Formalisation of a Core of \R{}}
 \author{Martin \textsc{Bodin}}
 \institute{CMM}
 \date{13\(^{th}\) of January}
@@ -14,7 +14,7 @@
     \titlepage
 \end{frame}
 
-\section{R}
+\section{\R{}}
 
 \begin{frame}
     \begin{center}
@@ -25,7 +25,7 @@
 
     \begin{itemize}
         % http://blog.revolutionanalytics.com/2014/04/seven-quick-facts-about-r.html
-        \item Trending programming language;
+        %\item Trending programming language;
         \item More than 2~million users worldwide;
         \item Used by 70\% of data miners (24\% as primary language).
     \end{itemize}
@@ -33,7 +33,7 @@
 
 
 \begin{frame}[fragile]
-    \frametitle{R: A Programming Language About Vectors}
+    \frametitle{\R{}: A Programming Language About Vectors}
 
 \begin{Rcode}
 v <- c(10, 12, 14, 11, 13)
@@ -50,7 +50,7 @@ f <- function (i, offset)
 \end{frame}
 
 \begin{frame}[fragile]
-    \frametitle{R: A Lazy Programming Language}
+    \frametitle{\R{}: A Lazy Programming Language}
 
 \begin{Rcode}
 f <- function (x, y = x) {
@@ -77,7 +77,7 @@ b                                   # Raises an error
 \end{frame}
 
 \begin{frame}[fragile]
-    \frametitle{R: A Dynamic Programming Language}
+    \frametitle{\R{}: A Dynamic Programming Language}
 
 \begin{Rcode}
 f <- function (x, y) missing (y)
@@ -105,16 +105,32 @@ x + y                               # Raises an error
 "(" <- function (x) 2 * x
 ((9))                               # Returns 36
 \end{Rcode}
+\ignore) % For syntax coloration.
 
 \end{frame}
 
-\sectionframe{Specifying R}
+\sectionframe*{Formalising \R{}}
+
+\section{\R{} Trust Sources}
 
 \begin{frame}
-    \frametitle{R Trust Sources}
+    \frametitle{\R{} Trust Sources}
 
 % No specification (yet).
 % A reference interpreter.
+
+    \begin{itemize}
+        \item Specification \hfill \xmark
+        \item Reference interpreter \hfill \cmark
+            \begin{itemize}
+                \item Related by code similarity.
+            \end{itemize}
+        \item Test suites \hfill \cmark
+            \begin{itemize}
+                \item Related by testing and comparing the results with the reference interpreter.
+            \end{itemize}
+        % \item Books and tutoriels (= programmers’s intuition) \hfill \cmark
+    \end{itemize}
 
 \end{frame}
 
@@ -183,9 +199,304 @@ x + y                               # Raises an error
 
 \end{frame}
 
+\section{Eyeball Closeness}
 
 \begin{frame}
-    \frametitle{Inside GNU R}
+    \frametitle{Eyeball Closeness}
+\begin{center}
+    \begin{tikzpicture}
+    \node [box] (C) {\Cn{} code} ;
+    \node [box, right = 3cm of C] (low) {\parbox{23mm}{\centering{}\Coq{} formalisation}} ;
+
+    \draw [DarkPlum, <->, thick] (low) to node [above] {Eyeball} node [below] {correspondance} (C) ;
+\end{tikzpicture}
+\end{center}
+    \begin{itemize}
+        \item \Cn{} is imperative, pointer-based;
+        \item \Coq{} is purely functional, value-based;
+        \item The translation is based on a monad \(\mathrm{state}+\mathrm{error}\).
+    \end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]
+    \frametitle{Eyeball Closeness: Enumeration}
+
+    \begin{minipage}{.45\textwidth}
+        \Cn{} code
+
+\begin{ccode}
+typedef enum {
+    NILSXP  = 0,
+    SYMSXP  = 1,
+    LISTSXP = 2,
+    CLOSXP  = 3,
+    ENVSXP  = 4,
+    PROMSXP = 5,
+    /* ... */
+} SEXPTYPE;
+\end{ccode}
+
+    \end{minipage}
+    \qquad
+    \begin{minipage}{.45\textwidth}
+        \Coq{} code
+
+\begin{coqcode}
+Inductive SExpType :=
+  | NilSxp
+  | SymSxp
+  | ListSxp
+  | CloSxp
+  | EnvSxp
+  | PromSxp
+  (* ... *)
+  .
+\end{coqcode}
+
+    \end{minipage}
+
+    %\begin{itemize}
+    %    \item Enumerations are actually more natural in \Coq{} than in \Cn{}.
+    %\end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Eyeball Closeness: Records}
+
+    \begin{minipage}{.45\textwidth}
+        \Cn{} code
+
+\begin{ccode}
+struct sxpinfo_struct {
+  SEXPTYPE type      :  5;
+  unsigned int obj   :  1;
+  unsigned int named :  2;
+  unsigned int gp    : 16;
+  unsigned int mark  :  1;
+  unsigned int debug :  1;
+  unsigned int trace :  1;
+  unsigned int spare :  1;
+  unsigned int gcgen :  1;
+  unsigned int gccls :  3;
+};
+/* Total: 32 bits */
+\end{ccode}
+
+    \end{minipage}
+    \qquad
+    \begin{minipage}{.45\textwidth}
+        \Coq{} code
+
+\begin{coqcode}
+Inductive named_field :=
+  | named_temporary
+  | named_unique
+  | named_plural
+  .
+
+Record SxpInfo :=
+  make_SxpInfo {
+    type : SExpType ;
+    obj : bool ;
+    named : named_field ;
+    gp : nbits 16
+  }.
+\end{coqcode}
+
+    \end{minipage}
+
+    %\begin{itemize}
+    %    \item We recognise some formalisation choices,
+    %        but still close enough.
+    %\end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Eyeball Closeness: Unions}
+
+    \begin{changemargin}{-5mm}{-5mm}
+\begin{minipage}{.75\textwidth}
+\begin{ccode}
+union {
+    struct primsxp_struct primsxp;
+    struct symsxp_struct symsxp;
+    struct listsxp_struct listsxp;
+    /* ... */
+};
+\end{ccode}
+\end{minipage}
+    \begin{minipage}{.3\textwidth}
+    {\Cn{} code}
+
+    \begin{itemize}
+        \item Accesses are unsafe.
+    \end{itemize}
+    \end{minipage}
+
+\begin{minipage}{.75\textwidth}
+\begin{coqcode}
+Inductive SExpRec_union :=
+  | primSxp : PrimSxp_struct -> SExpRec_union
+  | symSxp : SymSxp_struct -> SExpRec_union
+  | listSxp : ListSxp_struct -> SExpRec_union
+  (* ... *)
+  .
+\end{coqcode}
+\end{minipage}
+    \begin{minipage}{.3\textwidth}
+    {\Coq{} code}
+
+    \begin{itemize}
+        \item Accesses must be guarded.
+    \end{itemize}
+    \end{minipage}
+\end{changemargin}
+
+    %\begin{itemize}
+    %    \item Large conceptual differences,
+    %        but still an eyeball closeness in the definitions.
+    %\end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Eyeball Closeness: Reading Pointers}
+
+    \begin{changemargin}{-5mm}{-5mm}
+\begin{minipage}{.53\textwidth}
+    {\Cn{} code}
+\begin{ccode}
+symsxp_struct p_sym = p->symsxp;
+/* ... */
+\end{ccode}
+\end{minipage}\hspace{6mm}%
+\begin{minipage}{.50\textwidth}
+    {\Coq{} code}
+\begin{coqcode}
+read%sym p_sym := p using S in
+(* ... *)
+\end{coqcode}
+\end{minipage}
+
+\begin{coqcode}
+Inductive result (T : Type) :=
+  | result_success : state -> T -> result T
+  | result_error : result T.
+\end{coqcode}
+
+\begin{coqcode}
+Notation "'read%sym' p_sym ':=' p 'using' S 'in' cont" :=
+  (match read S p with
+   | Some p_ =>
+     match p_ with
+     | symSxp p_sym => cont
+     | _ => result_error
+     end
+   | None => result_error
+   end).
+\end{coqcode}
+    \end{changemargin}
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Eyeball Closeness: \Cn{} Code}
+
+\begin{changemargin}{-5mm}{-5mm}
+\begin{ccode}
+EXP* applyClosure (EXP* op, EXP* arglist, EXP* rho){
+
+  EXP* formals, actuals, savedrho, newrho, res;
+
+  if (rho->type != ENVSXP)
+    error ("'rho' must be an environment.");
+
+  formals = op->clo.formals;
+  savedrho = op->clo.env;
+
+  PROTECT (actuals = matchArgs (formals, arglist));
+
+  /* ... */
+
+  return res;
+}
+\end{ccode}
+\end{changemargin}
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Eyeball Closeness: \Coq{} Code}
+
+\begin{changemargin}{-5mm}{-5mm}
+\begin{coqcode}
+Definition applyClosure (S : state) (op arglist rho : EXP_pointer)
+    : result EXP_pointer :=
+
+  read%defined rho_ := rho using S in
+  ifb type rho_ <> EnvSxp then
+    result_error S "'rho' must be an environment."
+  else
+    read%clo op_clo := op using S in
+    let formals := clo_formals op_clo in
+    let savedrho := clo_env op_clo in
+
+    let%success actuals := matchArgs S formals arglist using S in
+
+    (* ... *)
+
+    result_success S res.
+\end{coqcode}
+\end{changemargin}
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{\R{} Core}
+
+\begin{ccode}
+FUNTAB R_FunTab[] = {
+  {"if",        do_if,        2},
+  {"while",     do_while,     2},
+  {"break",     do_break,     0},
+  {"return",    do_return,    1},
+  {"function",  do_function,  -1},
+  {"<-",        do_set,       2},
+  {"(",         do_paren,     1},
+  /* ... */
+  {"+",         do_arith1,    2},
+  {"-",         do_arith2,    2},
+  {"*",         do_arith3,    2},
+  {"/",         do_arith4,    2},
+  /* ... */
+  {"cos",       do_math20,    20},
+  {"sin",       do_math21,    21},
+  {"tan",       do_math22,    22},
+  /* ... */ }
+\end{ccode}
+
+    \begin{overlayarea}{\textwidth}{0cm}
+        \only<2>{
+            \vspace{-8cm}
+            \begin{block}{The core is what is needed to call these functions.}
+                \begin{itemize}
+                    \item The core is small;
+                    \item The formalisation is easily extendable.
+                \end{itemize}
+            \end{block}
+            \begin{block}{Content of the core}
+                \begin{itemize}
+                    \item Expression evaluation;
+                    \item Function calls;
+                    \item Environments, delayed evaluation (closures);
+                    \item TODO
+                \end{itemize}
+            \end{block}
+        }
+    \end{overlayarea}
 
 % C.
 % Separation between core and non-core.
@@ -193,21 +504,9 @@ x + y                               # Raises an error
 \end{frame}
 
 \begin{frame}
-    \frametitle{Formalising R Core}
-
-% Monad state + error.
-
-\end{frame}
-
-\begin{frame}
-    \frametitle{Snippets of GNU R}
-
-% SETJMP
-
-\end{frame}
-
-\begin{frame}
     \frametitle{Future}
+
+TODO
 
 % Testing.
 % Link using CompCert/Formalin.
@@ -228,6 +527,9 @@ x + y                               # Raises an error
         \item \hyperlink{frame:imperative:functional}{Representing imperativity in a functional setting};
         \item \hyperlink{frame:semantics:coq}{Semantics in \coqn{}};
         \item \hyperlink{frame:semantic:sizes}{Semantic sizes};
+        \item \hyperlink{frame:other:subtleties}{Other Subtleties of \R{}} ;
+        \item \hyperlink{frame:reading:pointers}{Reading pointers} ;
+        \item \hyperlink{frame:parser}{Parsing \R{}}.
     \end{enumerate}
     %\end{multicols}
 }
@@ -484,6 +786,144 @@ Inductive red_stat : state → scope → stat → out → Prop :=
 
 \end{frame}
 
+\frame{\questiontoc}
+
+\begin{frame}[fragile]
+    \label{frame:other:subtleties}
+    \frametitle{Other Subtleties}
+
+%\begin{onlyenv}<1>
+\begin{Rcode}
+f <- function (x, y, option, longArgumentName) ...
+
+# All the following calls are equivalent.
+f (1, 2, "something", 42)
+f (option = "something", 1, 2, 42)
+f (opt = "something", long = 42, 1, 2)
+\end{Rcode}
+%\end{onlyenv}
+
+\begin{overlayarea}{\textwidth}{5cm}
+\begin{onlyenv}<2>
+\begin{Rcode}
+f <- function (abc, ab, de) c (abc, ab, de)
+
+# All the following calls are equivalent.
+f (1, 2, 3)
+f (de = 3, 1, 2)
+f (d = 3, 1, 2)
+f (ab = 2, 1, 2)
+f (ab = 2, a = 1, 3)
+
+f (a = 3, 1, 2) # Returns an error.
+\end{Rcode}
+\end{onlyenv}
+\end{overlayarea}
+
+\end{frame}
+
+\frame{\questiontoc}
+
+\begin{frame}[fragile]
+    \label{frame:reading:pointers}
+    \frametitle{Eyeball Closeness: Reading Pointers}
+
+    \begin{changemargin}{-5mm}{-5mm}
+
+\begin{minipage}{.6\textwidth}
+    {\Cn{} code}
+\begin{ccode}
+symsxp_struct p_sym = p->symsxp;
+/* ... */
+\end{ccode}
+\end{minipage}
+    \begin{minipage}{.45\textwidth}
+    \begin{itemize}
+        \item May fail because the pointer \cinline|p| is unbound;
+        \item May fail because the union \cinline|*p| is not a \cinline|symsxp|.
+    \end{itemize}
+    \end{minipage}
+
+\vfill
+
+\parbox{\textwidth}{\onslide<2->{\Coq{} code, \only<2>{first}\only<3>{second}\only<4>{third}\only<5>{fourth} try}}
+\begin{minipage}{.5\textwidth}
+\begin{overlayarea}{\textwidth}{5cm}
+    \begin{onlyenv}<2>
+\begin{coqcode}
+match read p with
+  (* ... *)
+end
+\end{coqcode}
+    \end{onlyenv}
+    \begin{onlyenv}<3>
+\begin{coqcode}
+match read S p with
+| Some p_ =>
+  match p_ with
+  | symSxp p_sym =>
+    (* ... *)
+  | _ => (* ??? *)
+  end
+| None => (* ??? *)
+end
+\end{coqcode}
+    \end{onlyenv}
+    \begin{onlyenv}<4>
+\begin{coqcode}
+match read S p with
+| Some p_ =>
+  match p_ with
+  | symSxp p_sym =>
+    (* ... *)
+  | _ => error
+  end
+| None => error
+end
+\end{coqcode}
+    \end{onlyenv}
+    \begin{onlyenv}<5>
+\begin{coqcode}
+read%sym p_sym := p using S in
+(* ... *)
+\end{coqcode}
+    \end{onlyenv}
+\end{overlayarea}
+\end{minipage}\quad
+\begin{minipage}{.5\textwidth}
+\begin{minipage}{1.2\textwidth}
+\begin{overlayarea}{\textwidth}{5cm}
+    \begin{onlyenv}<4->
+\begin{coqcode}
+Inductive result (T : Type) :=
+  | success : state -> T -> result T
+  | error : result T
+  .
+\end{coqcode}
+    \end{onlyenv}
+    \begin{onlyenv}<5->
+\begin{coqcode}
+Notation "'read%sym' p_sym ':=' p
+    'using' S 'in' cont" :=
+  (* ... *).
+\end{coqcode}
+    \end{onlyenv}
+\end{overlayarea}
+\end{minipage}
+\end{minipage}
+
+\end{changemargin}
+
+\end{frame}
+
+\frame{\questiontoc}
+
+\begin{frame}
+    \label{frame:parser}
+
+    TODO
+
+\end{frame}
 
 \frame{\questiontoc}
 
