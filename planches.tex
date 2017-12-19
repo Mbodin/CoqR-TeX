@@ -26,6 +26,7 @@
     \begin{itemize}
         % http://blog.revolutionanalytics.com/2014/04/seven-quick-facts-about-r.html
         %\item Trending programming language;
+        \item More than 10,000 packages;
         \item More than 2~million users worldwide;
         \item Used by 70\% of data miners (24\% as primary language).
     \end{itemize}
@@ -122,13 +123,15 @@ x + y                               # Raises an error
     \begin{itemize}
         \item Specification \hfill \xmark
         \item Reference interpreter \hfill \cmark
-            \begin{itemize}
-                \item Related by code similarity.
-            \end{itemize}
+           \begin{itemize}
+               % \item Related by code similarity.
+               \item GNU R.
+           \end{itemize}
         \item Test suites \hfill \cmark
-            \begin{itemize}
-                \item Related by testing and comparing the results with the reference interpreter.
-            \end{itemize}
+           \begin{itemize}
+               %\item Related by testing and comparing the results with the reference interpreter.
+               \item TestR, Genthat, etc.
+           \end{itemize}
         % \item Books and tutoriels (= programmers’s intuition) \hfill \cmark
     \end{itemize}
 
@@ -199,25 +202,44 @@ x + y                               # Raises an error
 
 \end{frame}
 
+\begin{frame}
+    \frametitle{A Stratified Approach}
+
+    \begin{widemargin}
+    \begin{centertikz}
+        \node [locnode] (GNUR) {\R{} reference interpreter} ;
+        \node [right = 1cm of GNUR] {Lots of code for memory handling} ;
+
+        \node [above = 1cm of GNUR, xshift = -3cm] (linel) {} ;
+        \node [above = 1cm of GNUR, xshift = 8cm] (liner) {} ;
+        \draw [dashed] (linel) -- (liner) ;
+        \node [below = 0mm of liner, xshift = -1cm] {\Cn{}} ;
+        \node [above = 0mm of liner, xshift = -1cm] {\Coq{}} ;
+
+        \node [locnode, above = 2cm of GNUR] (proveR) {\Coq{} monadic interpreter} ;
+        \node [right = 1cm of proveR] {Close to the \Cn{}} ;
+
+        \node [locnode, dashed, above = 2cm of proveR] (semantics) {Rule-based semantics} ;
+        \node [right = 1cm of semantics] {As usable as possible} ;
+
+        \draw<2> [<->, dashed, DarkPlum, thick] (proveR) -- node [right] {\Coq{} proof} (semantics) ;
+        \draw<2> [<->, DarkPlum, thick] (GNUR) to [bend right] node [right, pos = .3] {Eyeball closeness} (proveR) ;
+        \draw<2> [<->, DarkPlum, thick] (GNUR) to [bend left] node [left, pos = .7] {Testing} (proveR) ;
+    \end{centertikz}
+    \end{widemargin}
+
+\end{frame}
+
+
 \section{Eyeball Closeness}
 
-\begin{frame}
-    \frametitle{Eyeball Closeness}
-\begin{center}
-    \begin{tikzpicture}
-    \node [box] (C) {\Cn{} code} ;
-    \node [box, right = 3cm of C] (low) {\parbox{23mm}{\centering{}\Coq{} formalisation}} ;
-
-    \draw [DarkPlum, <->, thick] (low) to node [above] {Eyeball} node [below] {correspondance} (C) ;
-\end{tikzpicture}
-\end{center}
+\sectionframe**{Eyeball Closeness}{
     \begin{itemize}
         \item \Cn{} is imperative, pointer-based;
         \item \Coq{} is purely functional, value-based;
         \item The translation is based on a monad \(\mathrm{state}+\mathrm{error}\).
     \end{itemize}
-\end{frame}
-
+}
 
 \begin{frame}[fragile]
     \frametitle{Eyeball Closeness: Enumeration}
@@ -365,6 +387,7 @@ Inductive SExpRec_union :=
 \begin{frame}[fragile]
     \frametitle{Eyeball Closeness: Reading Pointers}
 
+    \vspace{-1mm}
     \begin{changemargin}{-5mm}{-5mm}
 \begin{minipage}{.53\textwidth}
     {\Cn{} code}
@@ -380,6 +403,7 @@ read%sym p_sym := p using S in
 (* ... *)
 \end{coqcode}
 \end{minipage}
+    \vspace{-1mm}
 
 \begin{coqcode}
 Inductive result (T : Type) :=
