@@ -836,6 +836,16 @@
 % Definition of programming languages used in the document.
 \makeatletter
 \newcommand\makenewlistings@aux[2]{
+    \expandafter\newtcblisting{#2codenoescape}[1][]{
+        programbox,
+        listing only,
+        minted language = #1,
+        minted options= {
+            kwrename,
+            linenos = true,
+            fontsize = \small,
+            ##1}
+    }
     \expandafter\newtcblisting{#2code}[1][]{
         programbox,
         listing only,
