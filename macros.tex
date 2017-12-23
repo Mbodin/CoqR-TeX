@@ -888,6 +888,11 @@
 }
 \makeatother
 
+
+% There is a very frustrating bug in my LaTeX distribution.
+% Set this command to nothing if your LaTeX distribution hasn’t this bug.
+\newcommand\mintedinlinespacebug{\hspace{-4mm}}
+
 % Fixing bug between minted and polyglossia.
 \BeforeBeginEnvironment{minted}{\begin{english}}
 \AfterEndEnvironment{minted}{\end{english}}

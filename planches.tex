@@ -181,13 +181,15 @@ x + y                               # Raises an error
 
     % \draw<2-> [<->, thick] (ocaml) -- (jsref) ;
 
-    \draw<1> [<->, thick, Plum] (tests) --
+    \draw [<->, thick, Plum] (tests) --
         node [sloped, above, fill = white] {Running tests}
         (jsref) ;
 
-    \node [above of = semlim, locnode brown] (jscert) {\jscert} ;
+    \node<1> [above of = semlim, locnode brown] (jscert) {\jscert} ;
+    \node<2> [dashed, above of = semlim, locnode brown] (jscert) {\jscert} ;
 
-    \draw [->, thick, DarkPlum] (jsref) -- node [above] {Correctness} (jscert) ;
+    \draw<1> [->, thick, DarkPlum] (jsref) -- node [above] {Correctness} (jscert) ;
+    \draw<2> [->, dashed, thick, DarkPlum] (jsref) -- node [above] {Correctness} (jscert) ;
 
 %   \node [above of = jscert, node distance = 1cm] (next) {} ;
 %   \draw [dashed, ->] (jscert) -- (next) ;
@@ -198,10 +200,16 @@ x + y                               # Raises an error
 
     \node [locnode orange, below of = semlim, node distance = 32mm] (ecma) {\includegraphics[width = 15mm]{images/ecmastandard.png}} ;
 
-    \draw [<->, thick, Plum] (ecma) --
+    \draw<1> [<->, thick, Plum] (ecma) --
+        node [sloped, above, fill = white] {Step / rule}
+        node [sloped, below, fill = white] {correspondence} (jscert) ;
+    \draw<2> [<->, dashed, thick, Plum] (ecma) --
         node [sloped, above, fill = white] {Step / rule}
         node [sloped, below, fill = white] {correspondence} (jscert) ;
 
+    \draw<2> [<->, thick, Plum] (ecma) --
+        node [sloped, above, fill = white] {Step}
+        node [sloped, below, fill = white] {correspondence} (jsref) ;
 
 %    \node [right of = ecma, below, node distance = 3cm] {\texttt{jscert.org}} ;
 
@@ -505,9 +513,9 @@ FUNTAB R_FunTab[] = {
   {"*",         do_arith3,    2},
   {"/",         do_arith4,    2},
   /* ... */
-  {"cos",       do_math20,    20},
-  {"sin",       do_math21,    21},
-  {"tan",       do_math22,    22},
+  {"cos",       do_math20,    1},
+  {"sin",       do_math21,    1},
+  {"tan",       do_math22,    1},
   /* ... */ }
 \end{ccode}
 
@@ -541,7 +549,6 @@ FUNTAB R_FunTab[] = {
 
 \end{frame}
 
-\newcommand\conclusionframe[1]{
 \begin{frame}
     \frametitle{Future}
 
@@ -552,7 +559,7 @@ FUNTAB R_FunTab[] = {
         \end{itemize}
     \end{block}
 
-    #1{\pause}
+    \pause
 
     \begin{block}{Providing trust}
         \begin{itemize}
@@ -562,6 +569,7 @@ FUNTAB R_FunTab[] = {
     \end{block}
 
     \begin{block}{Building proofs}
+        \vspace{-4mm}
         \[
             \left.
                 \mbox{\begin{minipage}{5cm}
@@ -578,9 +586,6 @@ FUNTAB R_FunTab[] = {
     % To be useful for the R community (RExplain?).
 
 \end{frame}
-}
-
-\conclusionframe{}
 
 \begin{frame}[fragile]
     \frametitle{Proof that \(1 + 1\) reduces to \(2\) in JSCert}
@@ -621,31 +626,96 @@ Qed.
 
 \end{frame}
 
-\begin{frame}
+\begin{frame}[fragile]
     \frametitle{RExplain}
 
-    \begin{block}{In practise, JavaScript people read JSRef, not JSCert}
-        \begin{itemize}
-            \item An executable \R{} interpreter would be easier to read than a rule-based semantics;
-            \item Some want to specify \R{}, we may propose a solution.
-        \end{itemize}
-    \end{block}
+   %\begin{block}{In practise, JavaScript people read JSRef, not JSCert}
+   %    \begin{itemize}
+   %        \item An executable \R{} interpreter would be easier to read than a rule-based semantics;
+   %        \item Some want to specify \R{}, we may propose a solution.
+   %    \end{itemize}
+   %\end{block}
 
+    \begin{widemargin}
     \begin{centertikz}
-        \node [locnode] (func) {Functionnal interpreter} ;
-        \node [locnode, right = 1cm of func] (spec) {Ecma-style specification} ;
-        \node [locnode, above = 1cm of spec] (rbs) {Rule-based semantics} ;
-        \node [locnode, below = 1cm of spec] (other) {Other tools (debugger, etc.)} ;
-        \draw [->, thick] (func) to [bend left = 15] (rbs) ;
-        \draw [->, thick] (func) to (spec) ;
-        \draw [->, thick] (func) to [bend right = 15] (other) ;
+        \node [locnode] (imp) {\begin{minipage}{52mm}
+            Imperative interpreter
+\begin{camlcode}[linenos = false]
+let%success res = f args in
+read%clo res_clo = res in
+\end{camlcode}
+            \end{minipage}} ;
+        \node [locnode, right = 5mm of imp] (func) {\begin{minipage}{65mm}
+            Functionnal interpreter
+\begin{camlcode}[linenos = false]
+let%success res = f S args using S in
+read%clo res_clo = res using S in
+\end{camlcode}
+            \end{minipage}} ;
+        \node [locnode, below = 5mm of imp, xshift = 4cm] (spec) {\begin{minipage}{10cm}
+            Ecma-style specification
+            \begin{enumerate}
+                \item Let \mintedinlinespacebug\camlinline{res} be the result
+                    of calling \mintedinlinespacebug\camlinline{f} with argument
+                    \mintedinlinespacebug\camlinline{args};
+                \item At this stage, \mintedinlinespacebug\camlinline{res} should
+                    be a closure.
+            \end{enumerate}
+            \end{minipage}} ;
+        \node [locnode, below = 5mm of spec] (rbs) {\begin{minipage}{10cm}
+            Rule-based semantics
+\begin{coqcode}[linenos = false, fontsize = \tiny]
+| run_1 : forall S args o1 o2,
+  run S (f args) o1 -> run S (term_1 o1) o2 -> run S (term o1) o2
+| run_2 : forall S res_clo o,
+  is_closure S res res_clo -> run S (term_2 res_clo) o -> run S (term_1 (out S res)) o
+\end{coqcode}
+            \end{minipage}} ;
+        \draw [->, thick] (imp) to (func) ;
+        \draw [->, thick] (imp.-150) to [bend right = 25] (rbs) ;
+        \draw [->, thick] (imp) to (spec) ;
     \end{centertikz}
+    \end{widemargin}
 
     \url{https://github.com/jscert/jsexplain}
 
 \end{frame}
 
-\conclusionframe{\ignore}
+\begin{frame}
+    \frametitle{Thank you for listening!}
+
+    \vspace{-1mm}
+    \begin{block}{The current formalisation is modular}
+        \begin{itemize}
+            \item It is easy to add features.
+            \item We can implement specific features and certify their implementations.
+        \end{itemize}
+    \end{block}
+
+    \begin{block}{Providing trust}
+        \begin{itemize}
+            \item Test the formalisation…
+            \item …or certify it (CompCert’s semantics, Formalin, etc.).
+        \end{itemize}
+    \end{block}
+
+    \begin{block}{Building proofs}
+        \vspace{-4mm}
+        \[
+            \left.
+                \mbox{\begin{minipage}{5cm}
+                    \begin{itemize}
+                        \item Building a rule-based formalisation;
+                        \item A more functional interpreter.
+                    \end{itemize}
+                \end{minipage}}
+            \right\} \mbox{\parbox{5cm}{What is the best to build large proofs of programs?}}
+        \]
+    \end{block}
+
+    \url{https://github.com/Mbodin/proveR}
+
+\end{frame}
 
 \frame{\tableofcontents}
 
@@ -661,7 +731,7 @@ Qed.
         \item \hyperlink{frame:other:subtleties}{Other Subtleties of \R{}} ;
         \item \hyperlink{frame:reading:pointers}{Reading pointers} ;
         \item \hyperlink{frame:parser}{Parsing \R{}};
-        \item \hyperlink{frame:full:monad}{The full state+error monad};
+        \item \hyperlink{frame:full:monad}{The full state+error monad}.
     \end{enumerate}
     %\end{multicols}
 }
@@ -707,7 +777,7 @@ Qed.
 
     % \draw<2-> [<->, thick] (ocaml) -- (jsref) ;
 
-    \draw<1> [<->, thick, Plum] (tests) --
+    \draw [<->, thick, Plum] (tests) --
         node [sloped, above, fill = white] {Running tests}
         (jsref) ;
 
@@ -789,11 +859,11 @@ Inductive semantics : state -> prog -> state -> Prop ->
     \frametitle{Sequence in \jscert{} (Paper Version)}
 
     \begin{overlayarea}{\textwidth}{3cm}
-    \begin{block}{“\jsinline|s1 ; s2|” is evaluated as follows.}
+    \begin{block}{“\mintedinlinespacebug\jsinline|s1 ; s2|” is evaluated as follows.}
 \begin{enumerate}
-    \item Let~\(o_1\) be the result of evaluating~\jsinline|s1|.
+    \item Let~\(o_1\) be the result of evaluating~\mintedinlinespacebug\jsinline|s1|.
     \item If~\(o_1\) is an exception, return~\(o_1\).
-    \item Let~\(o_2\) be the result of evaluating~\jsinline|s2|.
+    \item Let~\(o_2\) be the result of evaluating~\mintedinlinespacebug\jsinline|s2|.
     \only<1>{
         \item If an exception~\(\mathit{V}\) was thrown, return \(\mpar{\jstthrow{}, \mathit{V}, \mathit{empty}}\). % where \(\mathit{V}\)~is the exception.
             % (Execution now proceeds as if no exception were thrown.)
@@ -971,8 +1041,8 @@ symsxp_struct p_sym = p->symsxp;
 \end{minipage}
     \begin{minipage}{.45\textwidth}
     \begin{itemize}
-        \item May fail because the pointer \cinline|p| is unbound;
-        \item May fail because the union \cinline|*p| is not a \cinline|symsxp|.
+        \item May fail because the pointer \mintedinlinespacebug\cinline|p| is unbound;
+        \item May fail because the union \mintedinlinespacebug\cinline|*p| is not a \mintedinlinespacebug\cinline|symsxp|.
     \end{itemize}
     \end{minipage}
 
