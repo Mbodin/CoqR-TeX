@@ -1518,29 +1518,31 @@ cr:           { EatLines = 1; }
 It is placed in the grammar when a new line might appear,
 but that the functions called to build the subterm of the current expression
 do not already set \mintinline{C}{EatLines} to \(1\).
-To translate this behaviour faithfully,
-we considered that \mintinline{C}{cr} is a sequence of newlines,
+This assignment has non-trivial implications.
+Our first try was to
+consider that \mintinline{C}{cr} is a sequence of newlines,
 as shown below.
 \begin{minted}{OCaml}
 cr:
   | NEW_LINE cr { }
   |             { }
 \end{minted}
-We then modified the grammar by adding \mintinline{C}{cr} whenever the corresponding \Cn{}
-function building \R{} expression sets \mintinline{C}{EatLines} to \(1\).
-For instance, the function \mintinline{C}{xxcond} sets \mintinline{C}{EatLines} to \(1\):
-\begin{minted}{C}
-cond: '(' expr ')'      { $$ = xxcond($2); }
-    ;
-\end{minted}
-%$$% Sorry: my syntax coloring doesn’t like the $$ in the code above…
-We thus translated it to the following reduction rule,
-adding a \mintinline{OCaml}{cr} expression afterwards.
-This means that we accept any sequence of new line to appear after the closing parenthesis.
-\begin{minted}{OCaml}
-cond:
-  | LPAR; e = expr; RPAR; cr    { lift1 xxcond e }
-\end{minted}
+This approach turned however to create incorrect parsing trees.
+It was also added a lot of ambiguity,
+the parser sometimes having to predict which token would appear
+after a sequence of new lines before this sequence.
+We thus backtracked into a less principled way but more similar than \R{}’s:
+the lexer and parser both shared a global variable \mintinline{OCaml}{eatlines : bool ref}.
+This introduces non-trivial interactions between the lexer and the parser.
+In particular, it becomes important to check when the parser calls the lexer.
+There is still currently a bug in some states of the \OCaml{} parser,
+as Bison and Menhir calls the lexer in a different way
+(Menhir is always one step ahead of the lexer,
+but Bison is not).
+For instance, the empty block \mintinline{R}|{}|
+is parsed differently by our Menhir parser:
+it expects and end-of-line afterwards whilst \R{} does not.
+We consider these different small enough for the middle term.
 
 Not everything was formalised in the parser.
 The function \mintinline{C}{R_atof} was for instance not translated:
