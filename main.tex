@@ -1,0 +1,130 @@
+
+\documentclass[10pt, acmart]{article}
+
+\settopmatter{printfolios=true}
+
+
+\begin{document}
+
+\section{Introduction}
+\label{sec:intro}
+
+R is used a lot.
+
+R is complex.
+
+We need to certify R softwares.
+
+We need a formalisation of the language.
+
+We aim to catch all the subtle cases of R.
+
+This formalisation is quite large, and we need to certify it.
+
+We use the same methodology than JSCert, with two ways to relate the formalisation to the R programming language:
+\begin{itemize}
+	\item Eyeball closeness;
+	\item Testing.
+\end{itemize}
+
+\section{Coq Interpreter}
+\abel{sec:coq:interp}
+
+\subsection{Eyeball Closeness}
+\label{sec:eyeball:closeness}
+
+We extensively used state + error monads as well as monadic notations
+to make every one or two lines of Coq corresponds to one or two lines of C.
+
+Example of C definition / Coq definition.
+
+Size of the project.
+
+\subsection{Difficulties}
+\label{sec:coq:difficulties}
+
+C and Coq are widely different programming languages.
+
+A simple model for C’s heap, with unions.
+Accesses are unguarded in C, but guarded in Coq.
+
+The [runs] trick to support looping in Coq in a structured way (similar to JSRef).
+
+\subsection{Shim}
+\label{sec:shim}
+
+Issues with parsing.
+How the parser itself is in a one-to-one correspondance with the original R parser.
+Why this still doesn’t prevent us from difference in behaviour.
+
+\section{Testing Architecture}
+\label{sec:testing:architecture}
+
+Two goals.
+First providing trust to the formalisation by certifying the absence of bugs.
+Second, help the development of the formalisation by catching bugs early.
+
+\subsection{Methodology}
+\label{sec:test:methodology}
+
+Various kinds of tests (multiline, line-by-line, tests that are expected to fail, etc.).
+
+What is considered to be a failure.
+
+Including the base library.
+
+\subsection{Results}
+\label{sec:test:results}
+
+How much tests are passed and failed.
+What does this mean (one line can trigger more than one pass).
+
+Other results (Potential fail, Not implemented) and how this helped the Coq development.
+
+Bugs found (and where).
+
+We extended the testing framework during development by adding new kinds of recognised
+data structure.
+We consider that the amount of work to extend the framework in another direction
+(thus reducing the number of Unknown) is sufficiently low.
+
+\section{Proofs}
+\label{sec:proofs}
+
+Tactic development.
+Given the size of the formalisation, some of these proofs would never have been possible
+without some proof automation.
+Automation metric: size of the .vo / size of the .v.
+
+Examples of properties that we have proven with our formalisation.
+
+Example of tactic in action:
+computeR after an allocation updating all the [safe_pointer], for instance.
+
+\section{Related Work}
+\label{sec:related:work}
+
+FastR
+genthat
+
+JSCert
+
+To a lesser extent, CompCert/Formaline.
+
+\section{Conclusion and Future Work}
+\label{sec:conclusion}
+
+We have a fully trustable formalisation of R.
+
+This formalisation can be used to prove program logic in R,
+the amount of work for a direct approach being quite large.
+
+We have a testing architecture that can be extended.
+
+We believe our testing framework to be adaptable to other situations,
+typically another programming language to be tested.
+
+\printbibliography{}
+
+\end{document}
+
