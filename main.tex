@@ -9,8 +9,8 @@
 
 \settopmatter{printfolios=true,printccs=false,printacmref=false}
 
-\acmConference[PL'17]{ACM SIGPLAN Conference on Programming Languages}{January 01--03, 2017}{New York, NY, USA}
-\acmYear{2019}
+\acmConference[DLS'18]{Dynamic Languages Symposium}{November~6, 2018}{Boston, MA, USA}
+\acmYear{2018}
 \acmISBN{} % \acmISBN{978-x-xxxx-xxxx-x/YY/MM}
 \acmDOI{} % \acmDOI{10.1145/nnnnnnn.nnnnnnn}
 \startPage{1}
@@ -54,53 +54,57 @@
 	}
 }
 
+\usepackage{todonotes}
+\newcommand{\mb}[1]{\todo[color=purple!20,size=\scriptsize]{#1}}
+\newcommand{\mbi}[1]{\todo[color=purple!20,inline]{#1}}
+
 \begin{document}
 
-\title{Formalising R}
+\title{Relating a Formalisation of R to R Itself} % I didn’t thought much about this. Any suggestion?
 
-\author{First1 Last1}
-\authornote{with author1 note}          %% \authornote is optional;
-                                        %% can be repeated if necessary
-\orcid{nnnn-nnnn-nnnn-nnnn}             %% \orcid is optional
+\author{Martin Bodin}
+\orcid{0000-0003-3588-3782}
 \affiliation{
-  \position{Position1}
-  \department{Department1}              %% \department is recommended
-  \institution{Institution1}            %% \institution is required
-  \streetaddress{Street1 Address1}
-  \city{City1}
-  \state{State1}
-  \postcode{Post-Code1}
-  \country{Country1}                    %% \country is recommended
+  %\position{}
+  %\department{Department1}
+  \institution{Center of Mathematical Modeling}
+  \streetaddress{Beauchef 851}
+  \city{Santiago}
+  % \state{State1}
+  % \postcode{Post-Code1}
+  \country{Chile}
 }
-\email{first1.last1@inst1.edu}          %% \email is recommended
+\email{mbodin@dim.uchile.cl}
 
-%% Author with two affiliations and emails.
-\author{First2 Last2}
-\authornote{with author2 note}          %% \authornote is optional;
-                                        %% can be repeated if necessary
-\orcid{nnnn-nnnn-nnnn-nnnn}             %% \orcid is optional
+\author{Tomás Diaz}
+% \authornote{with author2 note}
+% \orcid{nnnn-nnnn-nnnn-nnnn}
 \affiliation{
-  \position{Position2a}
-  \department{Department2a}             %% \department is recommended
-  \institution{Institution2a}           %% \institution is required
-  \streetaddress{Street2a Address2a}
-  \city{City2a}
-  \state{State2a}
-  \postcode{Post-Code2a}
-  \country{Country2a}                   %% \country is recommended
+  % \position{Position2a}
+  \department{DCC}
+  \institution{Universidad de Chile}
+  \streetaddress{Beauchef 851}
+  \city{Santiago}
+  % \state{State2a}
+  % \postcode{Post-Code2a}
+  \country{Chile}
 }
-\email{first2.last2@inst2a.com}         %% \email is recommended
+\email{toumasaldia@gmail.com} % Shouldn’t we put an address from uchile?
+
+\author{Éric Tanter}
+% \authornote{with author2 note}
+% \orcid{nnnn-nnnn-nnnn-nnnn}
 \affiliation{
-  \position{Position2b}
-  \department{Department2b}             %% \department is recommended
-  \institution{Institution2b}           %% \institution is required
-  \streetaddress{Street3b Address2b}
-  \city{City2b}
-  \state{State2b}
-  \postcode{Post-Code2b}
-  \country{Country2b}                   %% \country is recommended
+  % \position{Position2a}
+  \department{DCC}
+  \institution{Universidad de Chile}
+  \streetaddress{Beauchef 851}
+  \city{Santiago}
+  % \state{State2a}
+  % \postcode{Post-Code2a}
+  \country{Chile}
 }
-\email{first2.last2@inst2b.org}         %% \email is recommended
+\email{etanter@dcc.uchile.cl}
 
 \begin{abstract}
 Text of abstract \ldots.
@@ -108,23 +112,17 @@ Text of abstract \ldots.
 
 % %% 2012 ACM Computing Classification System (CSS) concepts
 % %% Generate at 'http://dl.acm.org/ccs/ccs.cfm'.
-% \begin{CCSXML}
-% <ccs2012>
-% <concept>
-% <concept_id>10011007.10011006.10011008</concept_id>
-% <concept_desc>Software and its engineering~General programming languages</concept_desc>
-% <concept_significance>500</concept_significance>
-% </concept>
-% <concept>
-% <concept_id>10003456.10003457.10003521.10003525</concept_id>
-% <concept_desc>Social and professional topics~History of programming languages</concept_desc>
-% <concept_significance>300</concept_significance>
-% </concept>
-% </ccs2012>
-% \end{CCSXML}
-%
-% \ccsdesc[500]{Software and its engineering~General programming languages}
-% \ccsdesc[300]{Social and professional topics~History of programming languages}
+\begin{CCSXML}
+    <ccs2012>
+    <concept>
+    <concept_id>10003752.10010124.10010131.10010133</concept_id>
+    <concept_desc>Theory of computation~Denotational semantics</concept_desc>
+    <concept_significance>500</concept_significance>
+    </concept>
+    </ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Theory of computation~Denotational semantics}
 % %% End of generated code
 
 \keywords{R, Coq, Formalisation, Testing}
@@ -134,23 +132,75 @@ Text of abstract \ldots.
 \section{Introduction}
 \label{sec:intro}
 
-R is used a lot.
+% R is used a lot.
+The R programming language~\parencite{R, ihaka1996r, Rwebsite}
+has gotten a lot of attention in the recent years.
+It is indeed used in a large range of fields (biology, finance, etc.),
+and its community ranges over millions of users.
+This diversity is reflected among R programmers,
+resulting in largely different programming styles.
+The language itself is community driven and reflects this diversity.
 
-R is complex.
+% R is complex and we need to certify R softwares.
+The R programming language is meant to be an expressive and powerful language,
+able to express complex notions in few keystrokes.
+This sometimes comes with the cost of readability.
+The semantics of R is subtle and contains numerous corner cases.
+\mb{An small example would be nice here.}
+%
+Debugging tools exist~\parencite{mcpherson2014},
+but such tool can’t always compensate R’s complex semantics.
+As a consequence, bugs occurs in R programs
+and fully trusting such programs can be difficult.
 
-We need to certify R softwares.
+% We need a formalisation of the language.
+Formal methods in general and the Coq proof assistant~\parencite{Coq}
+in particular offer an interesting answer to this trust issue.
+But to formally prove that an R program meets its specification,
+we need a formal semantics of R.
+In particular, we want to catch all the subtle cases of R semantics,
+such as implicit type conversions.
+Indeed, these corner cases are a typical place were bugs appears.
+Such a semantics for the full language will inevitably be complex
+because of the quantity of such cases.
 
-We need a formalisation of the language.
+% This formalisation is quite large, and we need to certify it.
+This opens a trust problem:
+how can such a large semantics (and hence the proofs made from it)
+can be trusted if it is that complex?
+To be able to trust such a formalisation,
+we need to relate to the R reference interpreters, GNU~R.
+This relation of the formalism to trust sources
+is not always considered to be an important part of the formalisation process,
+but it often needs a large amount of work~\parencite{leroy2014pip}.
+Given the size of our formalisation,
+we consider this part to be the most important of our contributions.
 
-We aim to catch all the subtle cases of R.
+% Contributions.
+We introduce CoqR\mb{Are we fixed on the name? ☺},
+a formalisation of the R programming language in the Coq proof assistant.
+We also provide two methods to relate this formalisation
+to the R reference interpreter.
+First, our semantics has been written in a way mimicking R source code.
+Second, our semantics is executable and we have extensively tested it
+against the reference interpreter.
+%
+This two-factors method is very close to the one of JSCert,
+which we discuss in Section~\ref{sec:related:work}.
 
-This formalisation is quite large, and we need to certify it.
-
-We use the same methodology than JSCert, with two ways to relate the formalisation to the R programming language:
-\begin{itemize}
-	\item Eyeball closeness;
-	\item Testing.
-\end{itemize}
+% Outlines.
+This paper is organised as follows.
+Section~\ref{sec:coq:interp} presents the Coq denotational semantics.
+In particular, Section~\ref{sec:eyeball:closeness} presents
+how this semantics is syntactically close to the C source code of R.
+Section~\ref{sec:testing:architecture} then presents our testing architecture.
+Not only this architecture is used as a way to relate our semantics
+with R reference interpreter,
+it also provided immediate benefits during the development of the semantics.
+Section~\ref{sec:driving:development} presents these benefits.
+The testing results are shown in Section~\ref{sec:test:results}.
+Finally, Section~\ref{sec:proofs} presents some proofs that have been done
+using our language formalisation.
 
 \section{Coq Interpreter}
 \label{sec:coq:interp}
@@ -198,13 +248,18 @@ What is considered to be a failure.
 
 Including the base library.
 
+\subsection{Driving the Development Process}
+\label{sec:driving:development}
+
+Identifying low-hanging fruits.
+
+How the other results (Potential fail, Not implemented) helped the Coq development.
+
 \subsection{Results}
 \label{sec:test:results}
 
 How much tests are passed and failed.
 What does this mean (one line can trigger more than one pass).
-
-Other results (Potential fail, Not implemented) and how this helped the Coq development.
 
 Bugs found (and where).
 
@@ -232,7 +287,7 @@ computeR after an allocation updating all the \verb|safe_pointer|, for instance.
 FastR
 genthat
 
-JSCert
+S5, KJS, JSCert
 
 To a lesser extent, CompCert/Formaline.
 
