@@ -60,7 +60,7 @@
 
 \begin{document}
 
-\title{Relating a Formalisation of R to R Itself} % I didn’t thought much about this. Any suggestion?
+\title{Relating an R Formalisation to R} % I didn’t thought much about this. Any suggestion?
 
 \author{Martin Bodin}
 \orcid{0000-0003-3588-3782}
@@ -89,7 +89,7 @@
   % \postcode{Post-Code2a}
   \country{Chile}
 }
-\email{toumasaldia@gmail.com} % Shouldn’t we put an address from uchile?
+\email{tdiaz@dcc.uchile.cl}
 
 \author{Éric Tanter}
 % \authornote{with author2 note}
@@ -113,16 +113,28 @@ Text of abstract \ldots.
 % %% 2012 ACM Computing Classification System (CSS) concepts
 % %% Generate at 'http://dl.acm.org/ccs/ccs.cfm'.
 \begin{CCSXML}
-    <ccs2012>
+  <ccs2012>
     <concept>
-    <concept_id>10003752.10010124.10010131.10010133</concept_id>
-    <concept_desc>Theory of computation~Denotational semantics</concept_desc>
-    <concept_significance>500</concept_significance>
+      <concept_id>10003752.10010124.10010131.10010133</concept_id>
+      <concept_desc>Theory of computation~Denotational semantics</concept_desc>
+      <concept_significance>500</concept_significance>
     </concept>
-    </ccs2012>
+    <concept>
+      <concept_id>10011007.10011006.10011066.10011070</concept_id>
+      <concept_desc>Software and its engineering~Application specific development environments</concept_desc>
+      <concept_significance>300</concept_significance>
+    </concept>
+    <concept>
+      <concept_id>10011007.10011074.10011099.10011692</concept_id>
+      <concept_desc>Software and its engineering~Formal software verification</concept_desc>
+      <concept_significance>100</concept_significance>
+    </concept>
+  </ccs2012>
 \end{CCSXML}
 
 \ccsdesc[500]{Theory of computation~Denotational semantics}
+\ccsdesc[300]{Software and its engineering~Application specific development environments}
+\ccsdesc[100]{Software and its engineering~Formal software verification}
 % %% End of generated code
 
 \keywords{R, Coq, Formalisation, Testing}
@@ -279,17 +291,75 @@ Automation metric: size of the .vo / size of the .v.
 Examples of properties that we have proven with our formalisation.
 
 Example of tactic in action:
-computeR after an allocation updating all the \verb|safe_pointer|, for instance.
+computeR after an allocation updating all the \mintinline{Coq}{safe_pointer}, for instance.
 
 \section{Related Work}
 \label{sec:related:work}
 
+\todo{
 FastR
 genthat
+}
 
-S5, KJS, JSCert
+The general goal of formalising a full real-world language,
+as opposed to a small subset, is not new.
+JavaScript is a particular relevant example.
+Indeed, empirical analyses~\parencite{RichardsHBV11}
+have confirmed that the language features
+that are usually ignored in subset-formalisations
+are actually important for actual web developers.
+%
+In the case of JavaScript, there are several trust sources.
+First, the language is precisely specified by the ECMAScript specification~\parencite{es2019}.
+Second, there exist various test suites~\parencite{test262, mozillatests}
+as well as several widely used interpreters.
+As a consequence, various formal specifications of JavaScript exist,
+each related with different of its trust sources.
 
-To a lesser extent, CompCert/Formaline.
+The first full formal semantics~\parencite{aplas08}
+is a semantics related to the third version of the ECMAScript specification.
+It had a major influence on the definitions of further JavaScript formal
+specification~\parencite{ses, jscert, popl12-Towards, usenix}.
+It served as the formal basis to prove the soundness of security-related
+JavaScript subsets~\parencite{MMT-CSF-TR09, mmt-esorics09, mmt-oakland10}.
+This work was however not mechanised, making it difficult to be used
+as a basis for other formal works.
+
+In parallel, several formal semantics~\parencite{js-ml, Guha2010, Politz:S5, kjs}
+for JavaScript were based on a JavaScript interpreter.
+These semantics are related to JavaScript test suites,
+either by comparing the results with the expected result,
+or by comparing results with widely used JavaScript interpreters.
+These formalisations tend to be easier to build
+as testing frameworks already exist.
+Furthermore, they are usually easier to understand by non-specialists.
+However, such formalisations suffer from all the issues of test suites:
+in JavaScript, the \mintinline{javascript}{for}-\mintinline{javascript}{in}
+feature was then loosely tested,
+and its behaviour varied from interpreters to interpreters.
+
+The JSCert formalisation~\parencite{jscert, popl14jscert}
+is an interesting step forward as it was designed
+to be related with both the ECMAScript specification and the JavaScript test suites.
+The formalisation is composed of two parts:
+a mechanised specification and an interpreter.
+The JSCert specification is syntactically related with the ECMAScript specification
+and the interpreter passes its test suites.
+The formalisation and the interpreter are related to each other by a Coq proof.
+This double-relation provides a large amount of trust to JSCert.
+In practise, both relations served to find issues in the JSCert specification,
+but also some implementation bugs in other interpreters,
+as well as mistakes in the ECMAScript specification.
+Furthermore JSCert is mechanised:
+this facilitates its reuse for other projects.
+However, this project involved a large number of persons:
+building both a specification and an interpreter,
+as well as a correctness proof between them, involves a lot of resources.
+We solved this issue in the CoqR specification
+by defining a denotational semantics:
+the same definition is both executable and syntactically close to its specification.
+
+CompCert/Formaline.
 
 \section{Conclusion and Future Work}
 \label{sec:conclusion}
