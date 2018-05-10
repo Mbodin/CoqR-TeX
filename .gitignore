@@ -222,6 +222,7 @@ TSWLatexianTemp*
 # Temporary files
 *~
 \#*\#
+*.swp
 
 # Miscellaneous
 main.pdf

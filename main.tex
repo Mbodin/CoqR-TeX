@@ -158,8 +158,14 @@ The R programming language is meant to be an expressive and powerful language,
 able to express complex notions in few keystrokes.
 This sometimes comes with the cost of readability.
 The semantics of R is subtle and contains numerous corner cases.
+The reasons for these corner cases are numerous,
+often due to backward compatibility.
+Another major reason is that R,
+in addition to be used as a programming language,
+is also used a lot interactively,
+where expectations are usually different than a principled programming language.
+
 \mb{An small example would be nice here.}
-%
 Debugging tools exist~\parencite{mcpherson2014},
 but such tool can’t always compensate R’s complex semantics.
 As a consequence, bugs occurs in R programs
@@ -227,8 +233,8 @@ Example of C definition / Coq definition.
 
 Size of the project.
 
-\subsection{Difficulties}
-\label{sec:coq:difficulties}
+\subsection{Structure of the Interpreter}
+\label{sec:coq:structure}
 
 C and Coq are widely different programming languages.
 
@@ -296,17 +302,60 @@ computeR after an allocation updating all the \mintinline{Coq}{safe_pointer}, fo
 \section{Related Work}
 \label{sec:related:work}
 
-\todo{
-FastR
-genthat
-}
+R is a notably difficult programming language~\parencite{RInferno},
+whose semantics is constantly moving—%
+see for instance the recent addition
+of R’s alternative representation~\parencite{altrepR}.
+In our formalisation, we chose to ignore these fast moving parts,
+but these parts are used by real-world R programs.
+Furthermore, the diversity of R users is such that different R programs
+will use very different libraries and features,
+as the generally accepted guideline~\parencite{RGuidelines}
+doesn’t restrain users about them.
+This makes tools difficult to build for R,
+and as a consequence, relatively few tools for R exist
+in comparison to the size of its community.
 
-The general goal of formalising a full real-world language,
-as opposed to a small subset, is not new.
+As a consequence,
+there exist few testing framework in R.
+The testR~\parencite{maj2013testr, 2014testr} project,
+which later evolved into Genthat~\parencite{genthat} library,
+is however based on an interesting way of generating unit tests for R functions.
+It start from a program using the functions to be tested.
+It then annotates and executes this program,
+storing the trace of the calls to the functions to be tested.
+Unit tests are then generated from this trace.
+The Genthat library is thus useful to generate tests for a library
+given some program using it,
+which can then be used to ensure that further versions of the library
+don’t break already existing code.
+
+GNU~R is not the only R interpreter that exist.
+Many different versions interpreters are based on the same C core code,
+but use different libraries for linear algebra,
+usually optimised for a given usage.
+%
+The FastR~\parencite{kalibera2014fast} project takes a different approach
+as it also reimplemented the core code.
+It is based on the Truffle~\parencite{wuerthingertruffle}
+self-optimising framework.
+Their tool is faster than the reference interpreter
+in the language interpretation, and not only the linear-algebraic part.
+%
+In both cases, a difference of behaviour between GNU~R
+and the specialised interpreter is considered as a bug.
+We believe that this support our choice of strongly basing
+our work on this interpreter.
+
+To the extent of our knowledge,
+we are the first to provide a mechanised specification of R.
+But the general goal of formalising full real-world languages—%
+as opposed to small subsets—is not new.
+%
 JavaScript is a particular relevant example.
 Indeed, empirical analyses~\parencite{RichardsHBV11}
 have confirmed that the language features
-that are usually ignored in subset-formalisations
+that are usually ignored in the formalised subsets of R
 are actually important for actual web developers.
 %
 In the case of JavaScript, there are several trust sources.
@@ -359,7 +408,22 @@ We solved this issue in the CoqR specification
 by defining a denotational semantics:
 the same definition is both executable and syntactically close to its specification.
 
-CompCert/Formaline.
+The Coq proof assistant has already been used
+in a variety of mechanised language formalisation projects.
+The most known is the CompCert project~\cite{Leroy-Compcert-CACM}:
+this project features an optimising compiler for C.
+This compiler is proven to be free of compilation bugs,
+leading to safer programs in critical software.
+This projects comes with a formalisation of the C programming language,
+as well as the formalisations of the intermediate compilation languages.
+%
+Due to the compiling nature of the CompCert project,
+it was acceptable to restrict the behaviours of the C programming language
+in their formalisation,
+restricting it to the behaviours that will actually be compiled by CompCert.
+The Formalin project~\parencite{formalin} is another formalisation
+of the C language:
+it aims at precisely listing all the possible behaviours of a C program.
 
 \section{Conclusion and Future Work}
 \label{sec:conclusion}
@@ -373,6 +437,8 @@ We have a testing architecture that can be extended.
 
 We believe our testing framework to be adaptable to other situations,
 typically another programming language to be tested.
+
+Link with Formalin
 
 \printbibliography{}
 
