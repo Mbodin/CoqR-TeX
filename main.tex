@@ -60,7 +60,7 @@
 
 \begin{document}
 
-\title{Relating an R Formalisation to R} % I didn’t thought much about this. Any suggestion?
+\title{Relating an R Formalization to R} % I didn’t thought much about this. Any suggestion?
 
 \author{Martin Bodin}
 \orcid{0000-0003-3588-3782}
@@ -137,7 +137,7 @@ Text of abstract \ldots.
 \ccsdesc[100]{Software and its engineering~Formal software verification}
 % %% End of generated code
 
-\keywords{R, Coq, Formalisation, Testing}
+\keywords{R, Coq, Formalization, Testing}
 
 \maketitle
 
@@ -163,7 +163,7 @@ often due to backward compatibility.
 Another major reason is that R,
 in addition to be used as a programming language,
 is also used a lot interactively,
-where expectations are usually different than a principled programming language.
+where expectations are usually different from a principled programming language.
 
 \mb{An small example would be nice here.}
 Debugging tools exist~\parencite{mcpherson2014},
@@ -171,7 +171,7 @@ but such tool can’t always compensate R’s complex semantics.
 As a consequence, bugs occurs in R programs
 and fully trusting such programs can be difficult.
 
-% We need a formalisation of the language.
+% We need a formalization of the language.
 Formal methods in general and the Coq proof assistant~\parencite{Coq}
 in particular offer an interesting answer to this trust issue.
 But to formally prove that an R program meets its specification,
@@ -182,22 +182,22 @@ Indeed, these corner cases are a typical place were bugs appears.
 Such a semantics for the full language will inevitably be complex
 because of the quantity of such cases.
 
-% This formalisation is quite large, and we need to certify it.
+% This formalization is quite large, and we need to certify it.
 This opens a trust problem:
 how can such a large semantics (and hence the proofs made from it)
 can be trusted if it is that complex?
-To be able to trust such a formalisation,
+To be able to trust such a formalization,
 we need to relate to the R reference interpreters, GNU~R.
 This relation of the formalism to trust sources
-is not always considered to be an important part of the formalisation process,
+is not always considered to be an important part of the formalization process,
 but it often needs a large amount of work~\parencite{leroy2014pip}.
-Given the size of our formalisation,
+Given the size of our formalization,
 we consider this part to be the most important of our contributions.
 
 % Contributions.
 We introduce CoqR\mb{Are we fixed on the name? ☺},
-a formalisation of the R programming language in the Coq proof assistant.
-We also provide two methods to relate this formalisation
+a formalization of the R programming language in the Coq proof assistant.
+We also provide two methods to relate this formalization
 to the R reference interpreter.
 First, our semantics has been written in a way mimicking R source code.
 Second, our semantics is executable and we have extensively tested it
@@ -207,7 +207,7 @@ This two-factors method is very close to the one of JSCert,
 which we discuss in Section~\ref{sec:related:work}.
 
 % Outlines.
-This paper is organised as follows.
+This paper is organized as follows.
 Section~\ref{sec:coq:interp} presents the Coq denotational semantics.
 In particular, Section~\ref{sec:eyeball:closeness} presents
 how this semantics is syntactically close to the C source code of R.
@@ -218,7 +218,7 @@ it also provided immediate benefits during the development of the semantics.
 Section~\ref{sec:driving:development} presents these benefits.
 The testing results are shown in Section~\ref{sec:test:results}.
 Finally, Section~\ref{sec:proofs} presents some proofs that have been done
-using our language formalisation.
+using our language formalization.
 
 \section{Coq Interpreter}
 \label{sec:coq:interp}
@@ -248,14 +248,14 @@ The [runs] trick to support looping in Coq in a structured way (similar to JSRef
 
 Issues with parsing.
 How the parser itself is in a one-to-one correspondance with the original R parser.
-Why this still doesn’t prevent us from difference in behaviour.
+Why this still doesn’t prevent us from difference in behavior.
 
 \section{Testing Architecture}
 \label{sec:testing:architecture}
 
 Two goals.
-First providing trust to the formalisation by certifying the absence of bugs.
-Second, help the development of the formalisation by catching bugs early.
+First providing trust to the formalization by certifying the absence of bugs.
+Second, help the development of the formalization by catching bugs early.
 
 \subsection{Methodology}
 \label{sec:test:methodology}
@@ -290,11 +290,11 @@ We consider that the amount of work to extend the framework in another direction
 \label{sec:proofs}
 
 Tactic development.
-Given the size of the formalisation, some of these proofs would never have been possible
+Given the size of the formalization, some of these proofs would never have been possible
 without some proof automation.
 Automation metric: size of the .vo / size of the .v.
 
-Examples of properties that we have proven with our formalisation.
+Examples of properties that we have proven with our formalization.
 
 Example of tactic in action:
 computeR after an allocation updating all the \mintinline{Coq}{safe_pointer}, for instance.
@@ -306,7 +306,7 @@ R is a notably difficult programming language~\parencite{RInferno},
 whose semantics is constantly moving—%
 see for instance the recent addition
 of R’s alternative representation~\parencite{altrepR}.
-In our formalisation, we chose to ignore these fast moving parts,
+In our formalization, we chose to ignore these fast moving parts,
 but these parts are used by real-world R programs.
 Furthermore, the diversity of R users is such that different R programs
 will use very different libraries and features,
@@ -331,25 +331,25 @@ which can then be used to ensure that further versions of the library
 don’t break already existing code.
 
 GNU~R is not the only R interpreter that exist.
-Many different versions interpreters are based on the same C core code,
+Many existing interpreters are based on the same C core code,
 but use different libraries for linear algebra,
 usually optimised for a given usage.
 %
 The FastR~\parencite{kalibera2014fast} project takes a different approach
 as it also reimplemented the core code.
 It is based on the Truffle~\parencite{wuerthingertruffle}
-self-optimising framework.
+self-optimizing framework.
 Their tool is faster than the reference interpreter
 in the language interpretation, and not only the linear-algebraic part.
 %
-In both cases, a difference of behaviour between GNU~R
-and the specialised interpreter is considered as a bug.
+In both cases, a difference of behavior between GNU~R
+and the specialized interpreter is considered as a bug.
 We believe that this support our choice of strongly basing
 our work on this interpreter.
 
 To the extent of our knowledge,
-we are the first to provide a mechanised specification of R.
-But the general goal of formalising full real-world languages—%
+we are the first to provide a mechanized specification of R.
+But the general goal of formalizing full real-world languages—%
 as opposed to small subsets—is not new.
 %
 JavaScript is a particular relevant example.
@@ -371,7 +371,7 @@ It had a major influence on the definitions of further JavaScript formal
 specification~\parencite{ses, jscert, popl12-Towards, usenix}.
 It served as the formal basis to prove the soundness of security-related
 JavaScript subsets~\parencite{MMT-CSF-TR09, mmt-esorics09, mmt-oakland10}.
-This work was however not mechanised, making it difficult to be used
+This work was however not mechanized, making it difficult to be used
 as a basis for other formal works.
 
 In parallel, several formal semantics~\parencite{js-ml, Guha2010, Politz:S5, kjs}
@@ -379,29 +379,29 @@ for JavaScript were based on a JavaScript interpreter.
 These semantics are related to JavaScript test suites,
 either by comparing the results with the expected result,
 or by comparing results with widely used JavaScript interpreters.
-These formalisations tend to be easier to build
+These formalizations tend to be easier to build
 as testing frameworks already exist.
 Furthermore, they are usually easier to understand by non-specialists.
-However, such formalisations suffer from all the issues of test suites:
+However, such formalizations suffer from all the issues of test suites:
 in JavaScript, the \mintinline{javascript}{for}-\mintinline{javascript}{in}
 feature was then loosely tested,
-and its behaviour varied from interpreters to interpreters.
+and its behavior varied from interpreters to interpreters.
 
-The JSCert formalisation~\parencite{jscert, popl14jscert}
+The JSCert formalization~\parencite{jscert, popl14jscert}
 is an interesting step forward as it was designed
 to be related with both the ECMAScript specification and the JavaScript test suites.
-The formalisation is composed of two parts:
-a mechanised specification and an interpreter.
+The formalization is composed of two parts:
+a mechanized specification and an interpreter.
 The JSCert specification is syntactically related with the ECMAScript specification
 and the interpreter passes its test suites.
-The formalisation and the interpreter are related to each other by a Coq proof.
+The specification and the interpreter are related to each other by a Coq proof.
 This double-relation provides a large amount of trust to JSCert.
-In practise, both relations served to find issues in the JSCert specification,
+In practice, both relations served to find issues in the JSCert specification,
 but also some implementation bugs in other interpreters,
 as well as mistakes in the ECMAScript specification.
-Furthermore JSCert is mechanised:
+Furthermore, JSCert is mechanized:
 this facilitates its reuse for other projects.
-However, this project involved a large number of persons:
+However, this project involved many persons:
 building both a specification and an interpreter,
 as well as a correctness proof between them, involves a lot of resources.
 We solved this issue in the CoqR specification
@@ -409,28 +409,28 @@ by defining a denotational semantics:
 the same definition is both executable and syntactically close to its specification.
 
 The Coq proof assistant has already been used
-in a variety of mechanised language formalisation projects.
+in a variety of mechanized language formalization projects.
 The most known is the CompCert project~\cite{Leroy-Compcert-CACM}:
-this project features an optimising compiler for C.
+this project features an optimizing compiler for C.
 This compiler is proven to be free of compilation bugs,
 leading to safer programs in critical software.
-This projects comes with a formalisation of the C programming language,
-as well as the formalisations of the intermediate compilation languages.
+This projects comes with a formalization of the C programming language,
+as well as the formalizations of the intermediate compilation languages.
 %
 Due to the compiling nature of the CompCert project,
-it was acceptable to restrict the behaviours of the C programming language
-in their formalisation,
-restricting it to the behaviours that will actually be compiled by CompCert.
-The Formalin project~\parencite{formalin} is another formalisation
+it was acceptable to restrict the behaviors of the C programming language
+in their formalization,
+restricting it to the behaviors that will actually be compiled by CompCert.
+The Formalin project~\parencite{formalin} is another formalization
 of the C language:
-it aims at precisely listing all the possible behaviours of a C program.
+it aims at precisely listing all the possible behaviors of a C program.
 
 \section{Conclusion and Future Work}
 \label{sec:conclusion}
 
-We have a fully trustable formalisation of R.
+We have a fully trustable formalization of R.
 
-This formalisation can be used to prove program logic in R,
+This formalization can be used to prove program logic in R,
 the amount of work for a direct approach being quite large.
 
 We have a testing architecture that can be extended.
