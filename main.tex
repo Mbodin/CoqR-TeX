@@ -60,7 +60,7 @@
 
 \begin{document}
 
-\title{Relating an R Formalization to R} % I didn’t thought much about this. Any suggestion?
+\title{Relating an R Formalization to R} % I didn't thought much about this. Any suggestion?
 
 \author{Martin Bodin}
 \orcid{0000-0003-3588-3782}
@@ -154,31 +154,70 @@ resulting in largely different programming styles.
 The language itself is community driven and reflects this diversity.
 
 % R is complex and we need to certify R softwares.
-The R programming language is meant to be an expressive and powerful language,
+The R programming language is meant to be both expressive and powerful,
 able to express complex notions in few keystrokes.
 This sometimes comes with the cost of readability.
-The semantics of R is subtle and contains numerous corner cases.
-The reasons for these corner cases are numerous,
-often due to backward compatibility.
-Another major reason is that R,
-in addition to be used as a programming language,
-is also used a lot interactively,
-where expectations are usually different from a principled programming language.
+The semantics of R is subtle and contains numerous corner cases
+which can be unexpected.
+The reasons for these corner cases are numerous
+and are often due to backward compatibility.
+Another common reason is that R
+is both used as a programming language and interactively:
+languages expectations are usually different in these two situations.
 
-\mb{An small example would be nice here.}
+An example of such unexpected behaviors can be found
+in R function calls.
+There are many ways to call a function,
+but to simplify\footnote{
+    We here ignore the \mintinline{R}{...} notation
+    as well as default arguments.
+    They have non-trivial interactions with the calling methods
+    described here.
+} there are two ways to provide an argument:
+either by position or by name.
+In the example below, the first call to \mintinline{R}{f}
+associates arguments by position, and the second by name.
+These two associating ways can be mixed together in the same call.
+%
+Association by name can be made by prefix:
+the third call associates \mintinline{R}{d} to \mintinline{R}{de}
+because it is the only matching argument by prefix.
+If more than one argument matches by prefix,
+R rejects the call and throws an error,
+as in the fifth call in the example below.
+However, exact matches are not counted in this process:
+in the fourth call below,
+the name \mintinline{R}{ab} is an exact match
+and thus only the argument \mintinline{R}{abc}
+is left to be associated to \mintinline{R}{a},
+leading to no error thrown.
+\begin{minted}{R}
+# The function f concatenates its 3 arguments.
+f <- function (abc, ab, de) { c (abc, ab, de) }
+# The next 4 calls below returns the same vector.
+f (1, 2, 3) # Association by position.
+f (de = 3, abc = 1, ab = 2) # By name.
+f (1, d = 3, 2) # Mixed ways.
+f (3, a = 1, ab = 2) # a is associated to abc.
+# The next call to f throws an error.
+f (a = 3, 1, 2) # Several prefixes.
+\end{minted}
+
+Such subtle behaviors are numerous in R~\parencite{RInferno}.
 Debugging tools exist~\parencite{mcpherson2014},
-but such tool can’t always compensate R’s complex semantics.
-As a consequence, bugs occurs in R programs
+but they can't always compensate R's complex semantics.
+Consequently, bugs occurs in R programs
 and fully trusting such programs can be difficult.
 
 % We need a formalization of the language.
-Formal methods in general and the Coq proof assistant~\parencite{Coq}
-in particular offer an interesting answer to this trust issue.
+Formal methods offer a solution to this trust issue:
+proof assistants such as Coq~\parencite{Coq} enable us
+to formally prove program properties with a high amount of trust.
 But to formally prove that an R program meets its specification,
 we need a formal semantics of R.
 In particular, we want to catch all the subtle cases of R semantics,
 such as implicit type conversions.
-Indeed, these corner cases are a typical place were bugs appears.
+These corner cases are indeed a typical place were bugs appears.
 Such a semantics for the full language will inevitably be complex
 because of the quantity of such cases.
 
@@ -188,14 +227,14 @@ how can such a large semantics (and hence the proofs made from it)
 can be trusted if it is that complex?
 To be able to trust such a formalization,
 we need to relate to the R reference interpreters, GNU~R.
-This relation of the formalism to trust sources
+This relation between the formalism and trust sources
 is not always considered to be an important part of the formalization process,
 but it often needs a large amount of work~\parencite{leroy2014pip}.
 Given the size of our formalization,
 we consider this part to be the most important of our contributions.
 
 % Contributions.
-We introduce CoqR\mb{Are we fixed on the name? ☺},
+We introduce CoqR\mb{Are we fixed on the name?},
 a formalization of the R programming language in the Coq proof assistant.
 We also provide two methods to relate this formalization
 to the R reference interpreter.
@@ -238,7 +277,7 @@ Size of the project.
 
 C and Coq are widely different programming languages.
 
-A simple model for C’s heap, with unions.
+A simple model for C's heap, with unions.
 Accesses are unguarded in C, but guarded in Coq.
 
 The [runs] trick to support looping in Coq in a structured way (similar to JSRef).
@@ -248,7 +287,7 @@ The [runs] trick to support looping in Coq in a structured way (similar to JSRef
 
 Issues with parsing.
 How the parser itself is in a one-to-one correspondance with the original R parser.
-Why this still doesn’t prevent us from difference in behavior.
+Why this still doesn't prevent us from difference in behavior.
 
 \section{Testing Architecture}
 \label{sec:testing:architecture}
@@ -305,13 +344,13 @@ computeR after an allocation updating all the \mintinline{Coq}{safe_pointer}, fo
 R is a notably difficult programming language~\parencite{RInferno},
 whose semantics is constantly moving—%
 see for instance the recent addition
-of R’s alternative representation~\parencite{altrepR}.
+of R's alternative representation~\parencite{altrepR}.
 In our formalization, we chose to ignore these fast moving parts,
 but these parts are used by real-world R programs.
 Furthermore, the diversity of R users is such that different R programs
 will use very different libraries and features,
 as the generally accepted guideline~\parencite{RGuidelines}
-doesn’t restrain users about them.
+doesn't restrain users about them.
 This makes tools difficult to build for R,
 and as a consequence, relatively few tools for R exist
 in comparison to the size of its community.
@@ -328,7 +367,7 @@ Unit tests are then generated from this trace.
 The Genthat library is thus useful to generate tests for a library
 given some program using it,
 which can then be used to ensure that further versions of the library
-don’t break already existing code.
+don't break already existing code.
 
 GNU~R is not the only R interpreter that exist.
 Many existing interpreters are based on the same C core code,
@@ -401,7 +440,7 @@ but also some implementation bugs in other interpreters,
 as well as mistakes in the ECMAScript specification.
 Furthermore, JSCert is mechanized:
 this facilitates its reuse for other projects.
-However, this project involved many persons:
+However, this project involved 8 people for a year:
 building both a specification and an interpreter,
 as well as a correctness proof between them, involves a lot of resources.
 We solved this issue in the CoqR specification
