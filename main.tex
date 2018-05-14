@@ -289,6 +289,58 @@ Issues with parsing.
 How the parser itself is in a one-to-one correspondance with the original R parser.
 Why this still doesn't prevent us from difference in behavior.
 
+\subsection{Base Library}
+\label{sec:library}
+
+Prior to execute any expression, GNU~R performs a lot of actions.
+First, the heap is initialised.
+This process involves initialising most global variables.
+Then, GNU~R executes the base library.
+It is a group of files written in R,
+totallising 19,000 lines of code.
+These files defines many functions that can be directly defined in R.
+%
+This means that we have to be able to run the base library
+to correctly test our interpreter\todo{For this, we need to have introduced testing before: this section needs to be moved}.
+
+Most of these functions are just links to internal functions
+with some argument checking or default argument.
+Below is an example:
+the defined function \mintinline{R}{which} behaves very similarly
+to the internal function \mintinline{R}{function (x) .Internal (which (x))}.
+The difference is that \mintinline{R}{which} takes two additional
+optionnal parameters.
+With their default values, the behaviour of this function
+is the same as the corresponding internal function:
+this definition extends the original simpler behaviour of the function.
+\begin{minted}{R}
+which <- function (x, arr = FALSE, names = TRUE) {
+    wh <- .Internal (which (x))
+    if (arr && !is.null (d <- dim (x)))
+        array (wh, d, dimnames (x), names = names)
+    else wh
+}
+\end{minted}
+
+These functions are easily run:
+only the \mintinline{R}{function} keyword is necessary
+to define the function \mintinline{R}{which}.
+Of course, once the base library run,
+if one actually calls the function \mintinline{R}{which},
+a not-implemented exception will be thrown:
+the internal function \mintinline{R}{function (x) .Internal (which (x))}
+has not been implemented.
+%
+We consider that this behavior is expected:
+the main reason to run the base library is to get
+
+The base library also prepares the base environment.
+For instance, the file \texttt{constants.R} of the base library
+contains the following line.
+\begin{minted}{R}
+pi <- 4 * atan (1)
+\end{minted}
+
 \section{Testing Architecture}
 \label{sec:testing:architecture}
 
