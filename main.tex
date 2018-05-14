@@ -55,8 +55,10 @@
 }
 
 \usepackage{todonotes}
-\newcommand{\mb}[1]{\todo[color=purple!20,size=\scriptsize]{#1}}
-\newcommand{\mbi}[1]{\todo[color=purple!20,inline]{#1}}
+\newcommand\mb[1]{\todo[color=purple!20,size=\scriptsize]{#1}}
+\newcommand\mbi[1]{\todo[color=purple!20,inline]{#1}}
+
+\newcommand\ignore[1]{}
 
 \begin{document}
 
@@ -262,18 +264,67 @@ using our language formalization.
 \section{Coq Interpreter}
 \label{sec:coq:interp}
 
+Our semantics of R is presented on the form of an interpreter.
+Denotational semantics are usually not the best fit for proofs—%
+for which inductive operational semantics are usually more adapted—%
+but it comes with a crucial advantage:
+it can be run, and thus tested.
+In this section, we show how we defined this interpreter.
+
 \subsection{Eyeball Closeness}
 \label{sec:eyeball:closeness}
+
+\mb{Raw figure from the CoqPL publication: do we want to change the example?}
+\begin{figure}
+\begin{minted}{C}
+EXP* applyClosure (EXP* op, EXP* arglist, EXP* rho){
+  EXP* formals, actuals, savedrho, newrho, res;
+  if (rho->type != ENVSXP)
+    error ("'rho' must be an environment.");
+  formals = op->clo.formals;
+  savedrho = op->clo.env;
+  PROTECT (actuals = matchArgs (formals, arglist));
+  /* ... */
+  return res
+}
+\end{minted}
+    % \vspace{-2mm} % There are too much blank in the last line of the code, leading
+    %               % to too much space.
+    \caption{The original C function}
+    \label{fig:c}
+\end{figure}
+
+\begin{figure}
+\begin{minted}{Coq}
+Definition applyClosure S (op arglist rho : EXP_pointer)
+    : result EXP_pointer :=
+  read%defined rho_ := rho using S in
+  ifb type rho_ <> EnvSxp then
+    result_error S "'rho' must be an environment."
+  else
+    read%clo op_clo := op using S in
+    let formals := clo_formals op_clo in
+    let savedrho := clo_env op_clo in
+    let%success actuals :=
+      matchArgs S formals arglist using S in
+    (* ... *)
+    result_success S res.
+\end{minted}
+    \caption{The Coq translation}
+    \label{fig:coq}
+\end{figure}
+
+One key specificity of this interpreter is that it has been written
+to be similar to the original C source code of GNU~R.
+More precisely, they are related by a line-to-line correspondence
+(also called eyeball closeness):
+every one or two lines of our interpreter
+correspond to one or two lines of the reference interpreter.
 
 We extensively used state + error monads as well as monadic notations
 to make every one or two lines of Coq corresponds to one or two lines of C.
 
-Example of C definition / Coq definition.
-
-Size of the project.
-
-\subsection{Structure of the Interpreter}
-\label{sec:coq:structure}
+Example of C definition / Coq definition. Figures~\ref{fig:c} and~\ref{fig:coq}.
 
 C and Coq are widely different programming languages.
 
@@ -282,12 +333,37 @@ Accesses are unguarded in C, but guarded in Coq.
 
 The [runs] trick to support looping in Coq in a structured way (similar to JSRef).
 
+\subsection{Structure of the Interpreter}
+\label{sec:coq:structure}
+
+Size of the project.
+How we cope to this size.
+
+Definition of the core and of the features.
+
+Initialisation of R, global variables.
+
 \subsection{Shim}
 \label{sec:shim}
 
 Issues with parsing.
 How the parser itself is in a one-to-one correspondance with the original R parser.
 Why this still doesn't prevent us from difference in behavior.
+
+
+\section{Testing Architecture}
+\label{sec:testing:architecture}
+
+Two goals.
+First providing trust to the formalization by certifying the absence of bugs.
+Second, help the development of the formalization by catching bugs early.
+
+\subsection{Methodology}
+\label{sec:test:methodology}
+
+Various kinds of tests (multiline, line-by-line, tests that are expected to fail, etc.).
+
+What is considered to be a failure.
 
 \subsection{Base Library}
 \label{sec:library}
@@ -297,19 +373,25 @@ First, the heap is initialised.
 This process involves initialising most global variables.
 Then, GNU~R executes the base library.
 It is a group of files written in R,
-totallising 19,000 lines of code.
-These files defines many functions that can be directly defined in R.
+totalizing 19,000 lines of code.
 %
 This means that we have to be able to run the base library
-to correctly test our interpreter\todo{For this, we need to have introduced testing before: this section needs to be moved}.
+to correctly test our interpreter.
+For instance, without the base library,
+no variable named \mintinline{R}{T} is defined:
+running the program \mintinline{R}{T} results in a lookup error
+in our interpreter whilst resulting in \mintinline{R}{TRUE} in R.
+After running the base library,
+which includes a line of the form \mintinline{R}{T <- TRUE},
+our interpreter behaves as R on this same program.
 
 Most of these functions are just links to internal functions
 with some argument checking or default argument.
 Below is an example:
 the defined function \mintinline{R}{which} behaves very similarly
-to the internal function \mintinline{R}{function (x) .Internal (which (x))}.
+to the internal \mintinline{R}{which} function.
 The difference is that \mintinline{R}{which} takes two additional
-optionnal parameters.
+optional parameters.
 With their default values, the behaviour of this function
 is the same as the corresponding internal function:
 this definition extends the original simpler behaviour of the function.
@@ -331,31 +413,38 @@ a not-implemented exception will be thrown:
 the internal function \mintinline{R}{function (x) .Internal (which (x))}
 has not been implemented.
 %
+\todo{What follows is to be entirely rewritten, I'm afraid.}
 We consider that this behavior is expected:
-the main reason to run the base library is to get
+the main reason to run the base library is to correctly
+classify the results of our interpreter.
+For instance, the difference of behavior of the program \mintinline{R}{T}
+before and after running the base library is problematical:
+the reason our interpreter would fail in this program without the base library
+is not due to our interpreter itself, but because the base library is missing.
+Classify the internal function \mintinline{R}{which} as being not implemented
+is a correct classification for our interpreter.
 
 The base library also prepares the base environment.
 For instance, the file \texttt{constants.R} of the base library
 contains the following line.
+Such lines are more complex as they involve computations:
+to be able to run the base library,
+we need to implement the \mintinline{R}{atan} function—%
+in this case, using an OCaml hook.
+Other examples of R functions that had to be implemented
+to run the base library include the definition of environments,
+the \mintinline{R}{substitute} function,
+the \mintinline{R}{$} operator \ignore$% Added to help my TeX syntax coloration…
+(which fetches an identifier in a named list or an environments),
+and \todo{Tomás: another one?}.
 \begin{minted}{R}
 pi <- 4 * atan (1)
 \end{minted}
 
-\section{Testing Architecture}
-\label{sec:testing:architecture}
+We have been able to run the entire base library.
+We believe that this is an evidence that we caught a sizeable
+part of the language features.
 
-Two goals.
-First providing trust to the formalization by certifying the absence of bugs.
-Second, help the development of the formalization by catching bugs early.
-
-\subsection{Methodology}
-\label{sec:test:methodology}
-
-Various kinds of tests (multiline, line-by-line, tests that are expected to fail, etc.).
-
-What is considered to be a failure.
-
-Including the base library.
 
 \subsection{Driving the Development Process}
 \label{sec:driving:development}
