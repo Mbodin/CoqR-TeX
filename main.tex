@@ -310,7 +310,7 @@ Definition do_attr S
   let%success nargs := R_length S args using S in
   let%success argList :=
     matchArgs S do_attr_formals args call using S in
-  ifb nargs < 2 \/ nargs > 3 then
+  if nargs <? 2 || nargs >? 3 then
     result_error S "Wrong argument count."
   else
     read%list car, _, _ := argList using S in
@@ -331,7 +331,7 @@ More precisely, they are related by a line-to-line correspondence
 every one or two lines of our interpreter
 correspond to one or two lines of the reference interpreter.
 %
-This correspondance helped us during the development process:
+This correspondence helped us during the development process:
 whenever a bug was encountered during testing,
 we would localize the line responsible for the difference in behavior
 between GNU~R and CoqR,
@@ -484,63 +484,92 @@ as we can't directly translate unguarded C accesses into Coq.
 We thus need a model of the heap in Coq.
 Figure~\ref{fig:EXP} shows how we defined \mintinline{Coq}{EXP}
 in Coq.
-Non-vector basic language elements are defined by a union.
+Basic language elements are records storing a header
+and data,
+which is defined as a sum-type of all its combinations.
+For instance, lists are defined by three pointers.
+Vectors are records storing their length and a list:
+in Coq, the data of vector is stored directly in the \mintinline{Coq}{EXP} structure
+and not following it in memory as in C.
 
-\begin{figure*}
-    \begin{subfigure}{.49\textwidth}
+\begin{figure}
 \begin{minted}{Coq}
-Record ListSxp_struct := make_ListSxp_struct {
-    list_carval : SEXP ;
-    list_cdrval : SEXP ;
-    list_tagval : SEXP
+Record ListStruct := make_ListStruct {
+    lSist_carval : EXP_pointer ;
+    lSist_cdrval : EXP_pointer ;
+    lSist_tagval : EXP_pointer
   }.
 
-Inductive EXP_union :=
-  | listSxp : ListSxp_struct -> EXP_union
-  | envSxp : EnvSxp_struct -> EXP_union
-  (* ... *).
-Coercion listSxp : ListSxp_struct >-> EXP_union.
-Coercion envSxp : EnvSxp_struct >-> EXP_union.
-(* ... *)
-\end{minted}
-    \caption{Definition of non-vector \mintinline{C}{EXP}}
-    \label{fig:EXP:non-vector}
-    \end{subfigure}
-    \begin{subfigure}{.49\textwidth}
-\begin{minted}{Coq}
 Record Vector_EXP (A : Type) := make_Vector_EXP {
-    Vector_header :> EXPHeader ;
     Vector_length : nat ;
     Vector_data :> list A
   }.
 
-Record NonVector_EXP := make_NonVector_EXP {
-    NonVector_EXP_header :> EXPHeader ;
-    NonVector_EXP_data :> EXP_union
+Inductive EXPData :=
+  | listExp : ListStruct -> EXPData
+  | envExp : EnvStruct -> EXPData
+  | EXP_VectorInteger : Vector_EXP int -> EXPData
+  | EXP_VectorComplex : Vector_EXP complex -> EXPData
+  (* ... *).
+Coercion listExp : ListStruct >-> EXPData.
+Coercion envExp : EnvStruct >-> EXPData.
+(* ... *)
+
+Record EXP := make_EXP {
+    EXP_header :> EXPHeader ;
+    EXP_data :> EXPdata
   }.
 \end{minted}
-    \caption{Definition of vector \mintinline{C}{EXP}}
-    \label{fig:EXP:vector}
-    \end{subfigure}
-    \begin{subfigure}{.49\textwidth}
-\begin{minted}{Coq}
-Inductive EXP :=
-  | EXP_NonVector : NonVector_EXP -> EXP
-  | EXP_VectorInteger : Vector_EXP int -> EXP
-  (* ... *).
-Coercion EXP_NonVector : NonVector_EXP >-> EXP.
-\end{minted}
-    \caption{Merging both kinds}
-    \label{fig:EXP:union}
-    \end{subfigure}
-    \caption{Definition of basic language elements (\mintinline{C}{EXP}) in Coq}
+    \caption{Basic language elements (\mintinline{C}{EXP}) in Coq}
     \label{fig:EXP}
-\end{figure*}
+\end{figure}
 
-A simple model for C's heap, with unions.
-Accesses are unguarded in C, but guarded in Coq.
+To ease readability, coercions have been used extensively.
+Coercions is a mechanism to mark some constructors as implicit.
+For instance, if Coq expects a \mintinline{Coq}{EXPData}
+and is given a \mintinline{Coq}{ListStruct},
+then the constructor \mintinline{Coq}{listExp} will be implicitly called.
+In the context of CoqR,
+this is more than a simple syntactic notation:
+it helps the line-to-line correspondence
+by erasing in the code things that are not present in C.
+Indeed, if one points to either a list or an environment in C,
+the notation to access its list or its environment is the same.
+%
+Of course, this implicit notation is only one-way:
+given a \mintinline{Coq}{ListStruct},
+we can convert it into an \mintinline{Coq}{EXPData},
+but to perform the converse, we have to pattern match
+on the shape of the \mintinline{Coq}{EXPData}.
+%
+This pattern matching is performed through specific monadic binders.
+For instance in Figure~\ref{fig:coq:do_attr}, \mintinline{Coq}{read%list}
+gets the \mintinline{Coq}{EXP} stored in the state \mintinline{Coq}{S}
+and pointed by \mintinline{Coq}{argList},
+then pattern-matches it as a list,
+extracting the \mintinline{Coq}{car}, \mintinline{Coq}{cdr},
+and \mintinline{Coq}{tag} fields.
+If the pointer is not in the domain of the state \mintinline{Coq}{S}
+or if the associated \mintinline{Coq}{EXP} object is not a list,
+then \mintinline{Coq}{result_impossible} is returned:
+this would correspond to an undefined behavior in C
+(dereferencing an invalid pointer or accessing the wrong projection of a \mintinline{C}{union}).
+The accesses in Coq are thus guarded by a monadic binder,
+whilst mimicking the unguarded accesses of C.
 
-PROTECT
+In Figure~\ref{fig:c:do_attr}, the \mintinline{C}{PROTECT} macro
+has been removed in the Coq translation of Figure~\ref{fig:coq:do_attr}.
+This macro is performing garbage collecting actions
+(in this case, it saves the object \mintinline{C}{argList} from garbage collection),
+and we chose not to model this part of GNU~R.
+Indeed, garbage collection is not supposed to change the result of any computation.
+Not modelling this part removed frequent lines in the translation process,
+enabling anyone wanting to reuse our formalization to focus on the computational part.
+%
+At this stage, the reader should be able
+to compare the C and Coq programs of Figure~\ref{fig:do_attr}
+line by line.
+The rest of CoqR was similarly defined.
 
 \begin{figure*}
     \centering{}
@@ -570,25 +599,27 @@ Definition do_attr_init globals runs S :=
     \label{fig:do_attr:formals}
 \end{figure*}
 
-The [runs] trick to support looping in Coq in a structured way (similar to JSRef).
-
 \subsection{Structure of the Interpreter}
 \label{sec:coq:structure}
 
 Size of the project.
 How we cope to this size.
 
+The [runs] trick to support looping in Coq in a structured way (similar to JSRef).
+
 Definition of the core and of the features.
 
 Initialization of R, global variables.
 
-Ignored aspects
+Ignored aspects.
+As stated in Section~\ref{sec:eyeball:closeness},
+we did not modelled the garbage collector.
 
 \subsection{Shim}
 \label{sec:shim}
 
 Issues with parsing.
-How the parser itself is in a one-to-one correspondance with the original R parser.
+How the parser itself is in a one-to-one correspondence with the original R parser.
 Why this still doesn't prevent us from difference in behavior.
 
 
