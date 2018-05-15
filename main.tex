@@ -149,10 +149,10 @@ Text of abstract \ldots.
 % R is used a lot.
 The R programming language~\parencite{R, ihaka1996r, Rwebsite}
 has gotten a lot of attention in the recent years.
-It is indeed used in a large range of fields (biology, finance, etc.),
+It is used in multiple fields (biology, finance, etc.),
 and its community ranges over millions of users.
-This diversity is reflected among R programmers,
-resulting in largely different programming styles.
+This diversity among R programmers
+results in largely different programming styles.
 The language itself is community driven and reflects this diversity.
 
 % R is complex and we need to certify R softwares.
@@ -164,8 +164,8 @@ which can be unexpected.
 The reasons for these corner cases are numerous
 and are often due to backward compatibility.
 Another common reason is that R
-is both used as a programming language and interactively:
-languages expectations are usually different in these two situations.
+is both used as a programming language and an interactive shell:
+languages expectations are different in these two situations.
 
 An example of such unexpected behaviors can be found
 in R function calls.
@@ -228,21 +228,29 @@ This opens a trust problem:
 how can such a large semantics (and hence the proofs made from it)
 can be trusted if it is that complex?
 To be able to trust such a formalization,
-we need to relate to the R reference interpreters, GNU~R.
+we need to relate to the R reference interpreters, GNU~R~\parencite{Rwebsite}.
 This relation between the formalism and trust sources
-is not always considered to be an important part of the formalization process,
-but it often needs a large amount of work~\parencite{leroy2014pip}.
+is not always considered to be an important part of the formalization process.
+In practise however, it often requires a large amount of work
+to be done properly~\parencite{leroy2014pip}.
 Given the size of our formalization,
 we consider this part to be the most important of our contributions.
 
 % Contributions.
 We introduce CoqR\mb{Are we fixed on the name?},
 a formalization of the R programming language in the Coq proof assistant.
-We also provide two methods to relate this formalization
-to the R reference interpreter.
-First, our semantics has been written in a way mimicking R source code.
+This is a continuation of a previous work~\parencite{CoqRCoqPL},
+\mb{Political choice here: is it a good idea to cite this previous work?}
+in which we formalised a small core of the R language.
+The additional contribution of this paper is the additional
+of a non-trivial quantity of R features,
+which enabled us to import R libraries.
+%
+Our main contribution is to provide two methods to relate this formalization
+to R reference interpreter, GNU~R.
+First, our semantics has been written in a way mimicking GNU~R's source code.
 Second, our semantics is executable and we have extensively tested it
-against the reference interpreter.
+against R reference interpreter.
 %
 This two-factors method is very close to the one of JSCert,
 which we discuss in Section~\ref{sec:related:work}.
@@ -290,8 +298,8 @@ EXP* applyClosure (EXP* op, EXP* arglist, EXP* rho){
 \end{minted}
     % \vspace{-2mm} % There are too much blank in the last line of the code, leading
     %               % to too much space.
-    \caption{The original C function}
-    \label{fig:c}
+    \caption{The original C function \mintinline{C}{applyClosure}}
+    \label{fig:c:applyClosure}
 \end{figure}
 
 \begin{figure}
@@ -310,8 +318,67 @@ Definition applyClosure S (op arglist rho : EXP_pointer)
     (* ... *)
     result_success S res.
 \end{minted}
-    \caption{The Coq translation}
-    \label{fig:coq}
+    \caption{The Coq translation of \mintinline{C}{applyClosure}}
+    \label{fig:coq:applyClosure}
+\end{figure}
+
+\mb{Another interesting example}
+\begin{figure}
+\begin{minted}{C}
+EXP* attribute_hidden do_attr (EXP* call, EXP* op, EXP* args, EXP* env){
+  EXP* argList, ans;
+  int nargs = R_length (args);
+  PROTECT (argList = matchArgs(do_attr_formals, args, call));
+  if (nargs < 2 || nargs > 3)
+    error ("Either 2 or 3 arguments are required.");
+  argList_car = CAR (argList);
+  /* ... */
+  return ans;
+}
+\end{minted}
+    % \vspace{-2mm} % There are too much blank in the last line of the code, leading
+    %               % to too much space.
+    \caption{The original C function \mintinline{C}{do_attr}}
+    \label{fig:c:do_attr}
+\end{figure}
+
+\begin{figure}
+\begin{minted}{Coq}
+Definition do_attr S (call op args env : EXP_pointer) : result SEXP_pointer :=
+  add%stack "do_attr" in
+  let%success nargs := R_length globals runs S args using S in
+  let%success argList := matchArgs globals runs S do_attr_do_attr_formals args call using S in
+  ifb nargs < 2 \/ nargs > 3 then
+    result_error S "Either 2 or 3 arguments are required."
+  else
+    read%list argList_car, argList_cdr, argList_tag := argList using S in
+    (* ... *)
+    result_success S ans.
+\end{minted}
+    \caption{The Coq translation of \mintinline{C}{do_attr}}
+    \label{fig:coq:do_attr}
+\end{figure}
+
+\begin{figure}
+\begin{minted}{C}
+  static EXP* formals = NULL;
+  if (formals == NULL)
+    formals = allocFormalsList2 (install ("x"), install ("which"));
+\end{minted}
+    \caption{Another snippet of \mintinline{C}{do_attr}}
+    \label{fig:c:do_attr:formals}
+\end{figure}
+
+\begin{figure}
+\begin{minted}{Coq}
+Definition do_attr_init S :=
+  add%stack "do_attr_init" in
+  let%success x := install globals runs S "x" using S in
+  let%success which := install globals runs S "which" using S in
+  allocFormalsList2 globals S x which.
+\end{minted}
+    \caption{The Coq translation of the code of Figure~\ref{fig:c:do_attr:formals}}
+    \label{fig:coq:do_attr:formals}
 \end{figure}
 
 One key specificity of this interpreter is that it has been written
@@ -324,7 +391,7 @@ correspond to one or two lines of the reference interpreter.
 We extensively used state + error monads as well as monadic notations
 to make every one or two lines of Coq corresponds to one or two lines of C.
 
-Example of C definition / Coq definition. Figures~\ref{fig:c} and~\ref{fig:coq}.
+Example of C definition / Coq definition. Figures~\ref{fig:c:do_attr} and~\ref{fig:coq:do_attr}.
 
 C and Coq are widely different programming languages.
 
@@ -341,7 +408,7 @@ How we cope to this size.
 
 Definition of the core and of the features.
 
-Initialisation of R, global variables.
+Initialization of R, global variables.
 
 \subsection{Shim}
 \label{sec:shim}
@@ -432,11 +499,12 @@ to be able to run the base library,
 we need to implement the \mintinline{R}{atan} function—%
 in this case, using an OCaml hook.
 Other examples of R functions that had to be implemented
-to run the base library include the definition of environments,
+to run the base library include functions to create new environments,
+logical operators,
 the \mintinline{R}{substitute} function,
 the \mintinline{R}{$} operator \ignore$% Added to help my TeX syntax coloration…
 (which fetches an identifier in a named list or an environments),
-and \todo{Tomás: another one?}.
+as well as various internal functions.
 \begin{minted}{R}
 pi <- 4 * atan (1)
 \end{minted}
