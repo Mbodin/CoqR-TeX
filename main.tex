@@ -439,12 +439,12 @@ For instance, lists contains three pointers:
 one to the first element (named \mintinline{Coq}{car}),
 to the following of the list (\mintinline{Coq}{cdr}),
 and to an optional name for the first element (\mintinline{Coq}{tag}).
-Vectors types store their size,
-followed in memory by an array of this size multiplied
-by the size of the stored data.
+Vectors types store their length,
+followed in memory by a C array.
+The size of this array depends both of its length
+and the size of the stored data.
 Figure~\ref{fig:basic:language:elements} illustrates this
-with integer and complex vectors (which are composed of two floats
-and are thus bigger than integers).
+with integer and complex vectors (which are composed of two floats).
 %
 Needless to say that the way memory is used in C
 makes it easy to unguardedly access a cell out of bounds,
@@ -482,13 +482,60 @@ which would lead to an undefined behavior.
 This is an issue,
 as we can't directly translate unguarded C accesses into Coq.
 We thus need a model of the heap in Coq.
+Figure~\ref{fig:EXP} shows how we defined \mintinline{Coq}{EXP}
+in Coq.
+Non-vector basic language elements are defined by a union.
 
+\begin{figure*}
+    \begin{subfigure}{.49\textwidth}
 \begin{minted}{Coq}
-Record Vector_SExpRec (A : Type) := make_Vector_SExpRec {
-  Vector_SExpRec_header :> SExpRecHeader ;
-  Vector_SExpRec_vecsxp :> VecSxp_struct A
-}.
+Record ListSxp_struct := make_ListSxp_struct {
+    list_carval : SEXP ;
+    list_cdrval : SEXP ;
+    list_tagval : SEXP
+  }.
+
+Inductive EXP_union :=
+  | listSxp : ListSxp_struct -> EXP_union
+  | envSxp : EnvSxp_struct -> EXP_union
+  (* ... *).
+Coercion listSxp : ListSxp_struct >-> EXP_union.
+Coercion envSxp : EnvSxp_struct >-> EXP_union.
+(* ... *)
 \end{minted}
+    \caption{Definition of non-vector \mintinline{C}{EXP}}
+    \label{fig:EXP:non-vector}
+    \end{subfigure}
+    \begin{subfigure}{.49\textwidth}
+\begin{minted}{Coq}
+Record Vector_EXP (A : Type) := make_Vector_EXP {
+    Vector_header :> EXPHeader ;
+    Vector_length : nat ;
+    Vector_data :> list A
+  }.
+
+Record NonVector_EXP := make_NonVector_EXP {
+    NonVector_EXP_header :> EXPHeader ;
+    NonVector_EXP_data :> EXP_union
+  }.
+\end{minted}
+    \caption{Definition of vector \mintinline{C}{EXP}}
+    \label{fig:EXP:vector}
+    \end{subfigure}
+    \begin{subfigure}{.49\textwidth}
+\begin{minted}{Coq}
+Inductive EXP :=
+  | EXP_NonVector : NonVector_EXP -> EXP
+  | EXP_VectorInteger : Vector_EXP int -> EXP
+  (* ... *).
+Coercion EXP_NonVector : NonVector_EXP >-> EXP.
+\end{minted}
+    \caption{Merging both kinds}
+    \label{fig:EXP:union}
+    \end{subfigure}
+    \caption{Definition of basic language elements (\mintinline{C}{EXP}) in Coq}
+    \label{fig:EXP}
+\end{figure*}
 
 A simple model for C's heap, with unions.
 Accesses are unguarded in C, but guarded in Coq.
