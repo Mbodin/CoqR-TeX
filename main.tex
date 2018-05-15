@@ -235,6 +235,8 @@ In practise however, it often requires a large amount of work
 to be done properly~\parencite{leroy2014pip}.
 Given the size of our formalization,
 we consider this part to be the most important of our contributions.
+Our code is available online at
+\url{https://github.com/Mbodin/proveR/releases/tag/DLS2018}\todo{make this tag appear}.
 
 % Contributions.
 We introduce CoqR\mb{Are we fixed on the name?},
@@ -273,8 +275,8 @@ using our language formalization.
 \label{sec:coq:interp}
 
 Our semantics of R is presented on the form of an interpreter.
-Denotational semantics are usually not the best fit for proofs—%
-for which inductive operational semantics are usually more adapted—%
+Denotational semantics are usually not the best fit for Coq proofs---%
+inductive operational semantics are usually more adapted---%
 but it comes with a crucial advantage:
 it can be run, and thus tested.
 In this section, we show how we defined this interpreter.
@@ -282,121 +284,170 @@ In this section, we show how we defined this interpreter.
 \subsection{Eyeball Closeness}
 \label{sec:eyeball:closeness}
 
-\mb{Raw figure from the CoqPL publication: do we want to change the example?}
-\begin{figure}
+\begin{figure*}
+    \centering{}
+\begin{subfigure}{.55\textwidth}
 \begin{minted}{C}
-EXP* applyClosure (EXP* op, EXP* arglist, EXP* rho){
-  EXP* formals, actuals, savedrho, newrho, res;
-  if (rho->type != ENVSXP)
-    error ("'rho' must be an environment.");
-  formals = op->clo.formals;
-  savedrho = op->clo.env;
-  PROTECT (actuals = matchArgs (formals, arglist));
-  /* ... */
-  return res
-}
-\end{minted}
-    % \vspace{-2mm} % There are too much blank in the last line of the code, leading
-    %               % to too much space.
-    \caption{The original C function \mintinline{C}{applyClosure}}
-    \label{fig:c:applyClosure}
-\end{figure}
-
-\begin{figure}
-\begin{minted}{Coq}
-Definition applyClosure S (op arglist rho : EXP_pointer)
-    : result EXP_pointer :=
-  read%defined rho_ := rho using S in
-  ifb type rho_ <> EnvSxp then
-    result_error S "'rho' must be an environment."
-  else
-    read%clo op_clo := op using S in
-    let formals := clo_formals op_clo in
-    let savedrho := clo_env op_clo in
-    let%success actuals :=
-      matchArgs S formals arglist using S in
-    (* ... *)
-    result_success S res.
-\end{minted}
-    \caption{The Coq translation of \mintinline{C}{applyClosure}}
-    \label{fig:coq:applyClosure}
-\end{figure}
-
-\mb{Another interesting example}
-\begin{figure}
-\begin{minted}{C}
-EXP* attribute_hidden do_attr (EXP* call, EXP* op, EXP* args, EXP* env){
-  EXP* argList, ans;
+EXP* do_attr (EXP* call, EXP* op, EXP* args, EXP* env){
+  EXP* argList, ans, car;
   int nargs = R_length (args);
-  PROTECT (argList = matchArgs(do_attr_formals, args, call));
+  argList = matchArgs (do_attr_formals, args, call);
+  PROTECT (argList);
   if (nargs < 2 || nargs > 3)
-    error ("Either 2 or 3 arguments are required.");
-  argList_car = CAR (argList);
+    error ("Wrong argument count.");
+  car = CAR (argList);
   /* ... */
   return ans;
 }
 \end{minted}
-    % \vspace{-2mm} % There are too much blank in the last line of the code, leading
-    %               % to too much space.
-    \caption{The original C function \mintinline{C}{do_attr}}
+    \vspace{-2mm} % There are too much blank in the last line of the code, leading
+                  % to too much space, making the whole thing ugly.
+    \caption{original C function}
     \label{fig:c:do_attr}
-\end{figure}
-
-\begin{figure}
+\end{subfigure}
+\begin{subfigure}{.44\textwidth}
 \begin{minted}{Coq}
-Definition do_attr S (call op args env : EXP_pointer) : result SEXP_pointer :=
+Definition do_attr globals runs S
+    (call op args env : EXP_pointer) :=
   add%stack "do_attr" in
-  let%success nargs := R_length globals runs S args using S in
-  let%success argList := matchArgs globals runs S do_attr_do_attr_formals args call using S in
+  let%success nargs :=
+    R_length globals runs S args using S in
+  let%success argList :=
+    matchArgs globals runs S
+      do_attr_formals args call using S in
   ifb nargs < 2 \/ nargs > 3 then
-    result_error S "Either 2 or 3 arguments are required."
+    result_error S "Wrong argument count."
   else
-    read%list argList_car, argList_cdr, argList_tag := argList using S in
+    read%list car, cdr, tag := argList using S in
     (* ... *)
     result_success S ans.
 \end{minted}
-    \caption{The Coq translation of \mintinline{C}{do_attr}}
+    \caption{Coq translation}
     \label{fig:coq:do_attr}
-\end{figure}
+\end{subfigure}
+    \caption{Original C function and Coq translation of \mintinline{C}{do_attr}}
+    \label{fig:do_attr}
+\end{figure*}
 
-\begin{figure}
-\begin{minted}{C}
-  static EXP* formals = NULL;
-  if (formals == NULL)
-    formals = allocFormalsList2 (install ("x"), install ("which"));
-\end{minted}
-    \caption{Another snippet of \mintinline{C}{do_attr}}
-    \label{fig:c:do_attr:formals}
-\end{figure}
-
-\begin{figure}
-\begin{minted}{Coq}
-Definition do_attr_init S :=
-  add%stack "do_attr_init" in
-  let%success x := install globals runs S "x" using S in
-  let%success which := install globals runs S "which" using S in
-  allocFormalsList2 globals S x which.
-\end{minted}
-    \caption{The Coq translation of the code of Figure~\ref{fig:c:do_attr:formals}}
-    \label{fig:coq:do_attr:formals}
-\end{figure}
-
-One key specificity of this interpreter is that it has been written
+One key specificity of this interpreter is that it has been designed
 to be similar to the original C source code of GNU~R.
 More precisely, they are related by a line-to-line correspondence
 (also called eyeball closeness):
 every one or two lines of our interpreter
 correspond to one or two lines of the reference interpreter.
+%
+This correspondance helped us during the development process:
+whenever a bug was encountered during testing,
+we would localize the line responsible for the difference in behavior
+between GNU~R and CoqR,
+then check the line-to-line correspondence.
+Such checks were quick and easy to do,
+and often lead to a quick fix of CoqR.
+
+Coq and C are widely different programming languages:
+Coq is purely functional
+whilst global side-effects appear frequently in C code.
+Furthermore, Coq is designed to reject any function
+whose behavior is not entirely defined
+(it is for instance impossible to miss a case in a pattern matching),
+whilst undefined behaviors are accepted by C compilers.
+Finally, Coq functions are guaranteed not to loop,
+whilst non-termination is not an issue in C.
+%
+To make Coq functions follow C paradigms,
+we thus introduced a state, error, and fuel monad, shown below.
+\begin{minted}{Coq}
+Inductive result (A : Type) :=
+  | result_success : state -> A -> result A
+  | result_error : state -> string -> result A
+  | result_longjump : state -> context -> result A
+  | result_impossible : state -> string -> result A
+  | result_not_implemented : string -> result A
+  | result_bottom : state -> result A.
+\end{minted}
+The main constructor is \mintinline{Coq}{result_success}:
+it is returned when a computation was successful.
+In addition to the result (of type \mintinline{Coq}{A} in the definition),
+it carries the global state.
+%
+The constructor \mintinline{Coq}{result_error} is meant to catch
+errors thrown by GNU~R,
+for instance a type-error when calling a non-function:
+these errors are not catchable and immediately ends the execution.
+A \mintinline{Coq}{string} is provided to help our debugging process.
+%
+Some specific calls in GNU~R source code require
+the \mintinline{Coq}{result_longjump} constructor:
+it typically appears in constructs like \mintinline{R}{break}
+or \mintinline{R}{return} and involves a non-local jump in C.
+We won't give much details about this constructor in this paper.
+%
+Unspecified C behaviors are translated into \mintinline{Coq}{result_impossible}.
+This typically includes dereferencing an invalid pointer.
+Getting this result immediately ends the Coq interpreter:
+it is meant to be unreachable.
+%
+Given the size of the interpreter,
+it was important to be able to execute it without it being complete.
+The \mintinline{Coq}{result_not_implemented} is thus important
+for the development, and is treated specifically in our testing framework.
+%
+Finally, \mintinline{Coq}{result_bottom} is returned
+to end the execution when reaching the maximum number of executed instructions
+(also called fuel).
+This is meant to artificially make our interpreter terminate,
+despite the fact that the executed R program may not.
+
+This monad is associated with a monadic binder,
+written \mintinline{Coq}{let%success}.
+It expects its argument to be of the form
+\mintinline{Coq}{result_success}
+to name the carried result in the following code,
+the state being propagated.
+Any other kind of results are propagated.
+%
+For instance,
+Figure~\ref{fig:c:do_attr} shows a C function,
+and Figure~\ref{fig:coq:do_attr} its Coq translation.
 
 We extensively used state + error monads as well as monadic notations
 to make every one or two lines of Coq corresponds to one or two lines of C.
 
-Example of C definition / Coq definition. Figures~\ref{fig:c:do_attr} and~\ref{fig:coq:do_attr}.
+Example of C definition / Coq definition. 
 
 C and Coq are widely different programming languages.
 
 A simple model for C's heap, with unions.
 Accesses are unguarded in C, but guarded in Coq.
+
+\begin{figure*}
+    \centering{}
+\begin{subfigure}{.5\textwidth}
+\begin{minted}{C}
+  static EXP* formals = NULL;
+  if (formals == NULL)
+    formals = allocFormalsList2 (install ("x"),
+                install ("which"));
+\end{minted}
+    \caption{C snippet}
+    \label{fig:c:do_attr:formals}
+\end{subfigure}
+\begin{subfigure}{.49\textwidth}
+\begin{minted}{Coq}
+Definition do_attr_init globals runs S :=
+  add%stack "do_attr_init" in
+  let%success x :=
+    install globals runs S "x" using S in
+  let%success which :=
+    install globals runs S "which" using S in
+  allocFormalsList2 globals S x which.
+\end{minted}
+    \caption{Coq translation}
+    \label{fig:coq:do_attr:formals}
+\end{subfigure}
+    \caption{Another snippet of \mintinline{C}{do_attr} and its Coq translation}
+    \label{fig:do_attr:formals}
+\end{figure*}
 
 The [runs] trick to support looping in Coq in a structured way (similar to JSRef).
 
@@ -496,7 +547,7 @@ For instance, the file \texttt{constants.R} of the base library
 contains the following line.
 Such lines are more complex as they involve computations:
 to be able to run the base library,
-we need to implement the \mintinline{R}{atan} function—%
+we need to implement the \mintinline{R}{atan} function---%
 in this case, using an OCaml hook.
 Other examples of R functions that had to be implemented
 to run the base library include functions to create new environments,
@@ -551,7 +602,7 @@ computeR after an allocation updating all the \mintinline{Coq}{safe_pointer}, fo
 \label{sec:related:work}
 
 R is a notably difficult programming language~\parencite{RInferno},
-whose semantics is constantly moving—%
+whose semantics is constantly moving---%
 see for instance the recent addition
 of R's alternative representation~\parencite{altrepR}.
 In our formalization, we chose to ignore these fast moving parts,
@@ -597,8 +648,8 @@ our work on this interpreter.
 
 To the extent of our knowledge,
 we are the first to provide a mechanized specification of R.
-But the general goal of formalizing full real-world languages—%
-as opposed to small subsets—is not new.
+But the general goal of formalizing full real-world languages---%
+as opposed to small subsets---is not new.
 %
 JavaScript is a particular relevant example.
 Indeed, empirical analyses~\parencite{RichardsHBV11}
