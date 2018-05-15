@@ -300,25 +300,20 @@ EXP* do_attr (EXP* call, EXP* op, EXP* args, EXP* env){
   return ans;
 }
 \end{minted}
-    \vspace{-2mm} % There are too much blank in the last line of the code, leading
-                  % to too much space, making the whole thing ugly.
     \caption{original C function}
     \label{fig:c:do_attr}
 \end{subfigure}
 \begin{subfigure}{.44\textwidth}
 \begin{minted}{Coq}
-Definition do_attr globals runs S
+Definition do_attr S
     (call op args env : EXP_pointer) :=
-  add%stack "do_attr" in
-  let%success nargs :=
-    R_length globals runs S args using S in
+  let%success nargs := R_length S args using S in
   let%success argList :=
-    matchArgs globals runs S
-      do_attr_formals args call using S in
+    matchArgs S do_attr_formals args call using S in
   ifb nargs < 2 \/ nargs > 3 then
     result_error S "Wrong argument count."
   else
-    read%list car, cdr, tag := argList using S in
+    read%list car, _, _ := argList using S in
     (* ... *)
     result_success S ans.
 \end{minted}
@@ -332,7 +327,7 @@ Definition do_attr globals runs S
 One key specificity of this interpreter is that it has been designed
 to be similar to the original C source code of GNU~R.
 More precisely, they are related by a line-to-line correspondence
-(also called eyeball closeness):
+(also called \emph{eyeball closeness}):
 every one or two lines of our interpreter
 correspond to one or two lines of the reference interpreter.
 %
@@ -343,6 +338,10 @@ between GNU~R and CoqR,
 then check the line-to-line correspondence.
 Such checks were quick and easy to do,
 and often lead to a quick fix of CoqR.
+%
+Figure~\ref{fig:do_attr} shows an example of such correspondence:
+Figure~\ref{fig:c:do_attr} shows a C function,
+and Figure~\ref{fig:coq:do_attr} its Coq translation.
 
 Coq and C are widely different programming languages:
 Coq is purely functional
@@ -394,7 +393,7 @@ for the development, and is treated specifically in our testing framework.
 %
 Finally, \mintinline{Coq}{result_bottom} is returned
 to end the execution when reaching the maximum number of executed instructions
-(also called fuel).
+(also called \emph{fuel}).
 This is meant to artificially make our interpreter terminate,
 despite the fact that the executed R program may not.
 
@@ -404,21 +403,97 @@ It expects its argument to be of the form
 \mintinline{Coq}{result_success}
 to name the carried result in the following code,
 the state being propagated.
-Any other kind of results are propagated.
+All other kinds of results are propagated.
+It is typically used when calling a function:
+in Figure~\ref{fig:coq:do_attr},
+the calls to \mintinline{Coq}{R_length}
+and \mintinline{Coq}{matchArgs}
+may return an unsuccessful result,
+but the code that follows will only be executed if the result is successful.
 %
-For instance,
-Figure~\ref{fig:c:do_attr} shows a C function,
-and Figure~\ref{fig:coq:do_attr} its Coq translation.
+This monadic interpreter is similar the one of the JSExplain project~\parencite{JSExplain},
+which aims at defining a JavaScript interpreter readable by non-specialists.
+We believe this helps finding bugs in CoqR.
 
-We extensively used state + error monads as well as monadic notations
-to make every one or two lines of Coq corresponds to one or two lines of C.
+We now describe how we modelled GNU~R's heap.
+Although the underlying language is C,
+GNU~R has been designed with a specific structure in mind~\parencite{R}.
+Almost all objects manipulated by the GNU~R interpreter
+are called \emph{basic language elements}---or \mintinline{C}{EXP} in C.
+Each of them are composed of a header and some information depending
+of the basic language elements.
+%
+The header stores the type of the basic language element,
+a list of attributes,
+as well as several mostly-boolean informations
+(for instance whether it can be updated in place
+without breaking other places of the heap).
+% For instance, the header of an environment stores whether
+% the environment is locked,
+% which prevents the addition or removal of its bindings.
+There are 24 different types of basic language elements in R,
+9 of which being different kinds of vectors.
+%
+What comes afterwards depends on the type.
+For instance, lists contains three pointers:
+one to the first element (named \mintinline{Coq}{car}),
+to the following of the list (\mintinline{Coq}{cdr}),
+and to an optional name for the first element (\mintinline{Coq}{tag}).
+Vectors types store their size,
+followed in memory by an array of this size multiplied
+by the size of the stored data.
+Figure~\ref{fig:basic:language:elements} illustrates this
+with integer and complex vectors (which are composed of two floats
+and are thus bigger than integers).
+%
+Needless to say that the way memory is used in C
+makes it easy to unguardedly access a cell out of bounds,
+which would lead to an undefined behavior.
 
-Example of C definition / Coq definition. 
+\begin{figure}
+    \centering{}
+    \begin{tikzpicture}
+        \node [draw = black, rectangle, minimum height = 6mm, anchor = base] (hlist) {header} ;
+        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of hlist] (car) {car} ;
+        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of car] (cdr) {cdr} ;
+        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of cdr] (tag) {tag} ;
+        \node [left = 2mm of hlist] (nlist) {List:} ;
 
-C and Coq are widely different programming languages.
+        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, below = 2mm of hlist] (hvector1) {header} ;
+        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of hvector1] (size1) {size} ;
+        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of size1] (i1) {\(i_1\)} ;
+        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of i1] (i2) {\(i_2\)} ;
+        \node [anchor = base, right = 0pt of i2] (i3) {\(\ldots\)} ;
+        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of i3] (in) {\(i_n\)} ;
+        \node [left = 2mm of hvector1] (nvector1) {Integer vector:} ;
+
+        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, below = 2mm of hvector1] (hvector2) {header} ;
+        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of hvector2] (size2) {size} ;
+        \node [draw = black, rectangle, minimum height = 6mm, minimum width = 1cm, anchor = base, right = 0pt of size2] (c1) {\(c_1\)} ;
+        \node [draw = black, rectangle, minimum height = 6mm, minimum width = 1cm, anchor = base, right = 0pt of c1] (c2) {\(c_2\)} ;
+        \node [anchor = base, right = 0pt of c2] (c3) {\(\ldots\)} ;
+        \node [draw = black, rectangle, minimum height = 6mm, minimum width = 1cm, anchor = base, right = 0pt of c3] (cn) {\(c_n\)} ;
+        \node [left = 2mm of hvector2] (nvector2) {Complex vector:} ;
+    \end{tikzpicture}
+    \caption{Basic language elements in memory}
+    \label{fig:basic:language:elements}
+\end{figure}
+
+This is an issue,
+as we can't directly translate unguarded C accesses into Coq.
+We thus need a model of the heap in Coq.
+
+\begin{minted}{Coq}
+Record Vector_SExpRec (A : Type) := make_Vector_SExpRec {
+  Vector_SExpRec_header :> SExpRecHeader ;
+  Vector_SExpRec_vecsxp :> VecSxp_struct A
+}.
+\end{minted}
 
 A simple model for C's heap, with unions.
 Accesses are unguarded in C, but guarded in Coq.
+
+PROTECT
 
 \begin{figure*}
     \centering{}
@@ -435,7 +510,6 @@ Accesses are unguarded in C, but guarded in Coq.
 \begin{subfigure}{.49\textwidth}
 \begin{minted}{Coq}
 Definition do_attr_init globals runs S :=
-  add%stack "do_attr_init" in
   let%success x :=
     install globals runs S "x" using S in
   let%success which :=
@@ -460,6 +534,8 @@ How we cope to this size.
 Definition of the core and of the features.
 
 Initialization of R, global variables.
+
+Ignored aspects
 
 \subsection{Shim}
 \label{sec:shim}
@@ -667,7 +743,7 @@ each related with different of its trust sources.
 The first full formal semantics~\parencite{aplas08}
 is a semantics related to the third version of the ECMAScript specification.
 It had a major influence on the definitions of further JavaScript formal
-specification~\parencite{ses, jscert, popl12-Towards, usenix}.
+specification~\parencite{ses, popl14jscert, popl12-Towards, usenix}.
 It served as the formal basis to prove the soundness of security-related
 JavaScript subsets~\parencite{MMT-CSF-TR09, mmt-esorics09, mmt-oakland10}.
 This work was however not mechanized, making it difficult to be used
@@ -686,7 +762,7 @@ in JavaScript, the \mintinline{javascript}{for}-\mintinline{javascript}{in}
 feature was then loosely tested,
 and its behavior varied from interpreters to interpreters.
 
-The JSCert formalization~\parencite{jscert, popl14jscert}
+The JSCert formalization~\parencite{popl14jscert}
 is an interesting step forward as it was designed
 to be related with both the ECMAScript specification and the JavaScript test suites.
 The formalization is composed of two parts:
@@ -737,6 +813,7 @@ We have a testing architecture that can be extended.
 We believe our testing framework to be adaptable to other situations,
 typically another programming language to be tested.
 
+Our R specification is a shallow embedding of the reference interpreter of R.
 Link with Formalin
 
 \printbibliography{}
