@@ -287,10 +287,12 @@ In this section, we show how we defined this interpreter.
 
 \begin{figure*}
     \centering{}
-\begin{subfigure}{.55\textwidth}
+\begin{subfigure}{.54\textwidth}
 \begin{minted}{C}
-EXP* do_attr (EXP* call, EXP* op, EXP* args, EXP* env){
-  EXP* argList, ans, car;
+EXP* do_attr (EXP* call, EXP* op,
+              EXP* args, EXP* env){
+  EXP* argList, car, ans;
+  /* ... */
   int nargs = R_length (args);
   argList = matchArgs (do_attr_formals, args, call);
   PROTECT (argList);
@@ -304,13 +306,15 @@ EXP* do_attr (EXP* call, EXP* op, EXP* args, EXP* env){
     \caption{original C function}
     \label{fig:c:do_attr}
 \end{subfigure}
-\begin{subfigure}{.44\textwidth}
+\begin{subfigure}{.45\textwidth}
 \begin{minted}{Coq}
-Definition do_attr S
+Definition do_attr globals runs S
     (call op args env : EXP_pointer) :=
-  let%success nargs := R_length S args using S in
+  let%success nargs :=
+    R_length globals runs S args using S in
   let%success argList :=
-    matchArgs S do_attr_formals args call using S in
+    matchArgs globals runs S
+      do_attr_formals args call using S in
   if nargs <? 2 || nargs >? 3 then
     result_error S "Wrong argument count."
   else
@@ -571,12 +575,15 @@ Indeed, garbage collection is not supposed to change the result of any computati
 Not modelling this part removed frequent lines in the translation process,
 enabling us to focus on the computational part.
 %
+The \mintinline{Coq}{globals} and \mintinline{Coq}{runs} arguments
+are discussed in Section~\ref{sec:coq:structure}.
+%
 At this stage, the reader should be able
 to compare the C and Coq programs of Figure~\ref{fig:do_attr}
 line by line.
 The rest of CoqR was similarly defined.
 
-\subsection{Structure of the Interpreter}
+\subsection{A Scalable Structure}
 \label{sec:coq:structure}
 
 % The project is quite large.
@@ -647,39 +654,61 @@ run R's base library (see Section~\ref{sec:library}).
 \begin{figure}
 \begin{minted}{C}
 FUNTAB R_FunTab[] = {
-  {"if",       do_if,       2,  true,  false},
-  {"while",    do_while,    2,  true,  false},
-  {"break",    do_break,    0,  true,  false},
-  {"return",   do_return,   1,  true,  false},
-  {"function", do_function, -1, true,  false},
-  {"<-",       do_set,      2,  true,  false},
-  {"(",        do_paren,    1,  true,  true},
-  {"which",    do_which,    1,  false, true},
-  {"+",        do_arith1,   2,  true,  true},
-  {"-",        do_arith2,   2,  true,  true},
-  {"cos",      do_math20,   1,  true,  true},
-  {"sin",      do_math21,   1,  true,  true},
+  {"if",        do_if,       2,  true,  false},
+  {"while",     do_while,    2,  true,  false},
+  {"break",     do_break,    0,  true,  false},
+  {"return",    do_return,   1,  true,  false},
+  {"function",  do_function, -1, true,  false},
+  {"<-",        do_set,      2,  true,  false},
+  {"(",         do_paren,    1,  true,  true},
+  {".Internal", do_internal, 1,  true,  false},
+  {"which",     do_which,    1,  false, true},
+  {"+",         do_arith1,   2,  true,  true},
+  {"-",         do_arith2,   2,  true,  true},
+  {"cos",       do_math20,   1,  true,  true},
+  {"sin",       do_math21,   1,  true,  true},
   /* ... */ }
 \end{minted}
     \caption{All features of R listed in GNU~R source code}
     \label{fig:names}
 \end{figure}
 
-\todo{Initialization of R, global variables.}
-
-At a closer look, we tried to structure the project
-to make it as maintainable as possible.
+% Initialization of R and global variables.
+The initialization of GNU~R's internal variables
+takes a large place in its source code.
+Even before importing any libraries, a lot of basic language elements
+are created and stored in global variables.
+For instance, the often-used variable \mintinline{C}{R_NilValue}
+is set to be a list whose \mintinline{C}{car}, \mintinline{C}{cdr},
+and \mintinline{C}{tag} fields point to \mintinline{C}{R_NilValue} itself.
+This element is used instead of the \mintinline{C}{NULL} pointer
+to mark any non-present element.
+There are over \(80\) such global variables to be initialized.
+These global variables are always initialized once,
+then never changes.
 %
-\todo{The [runs] trick to support looping in Coq in a structured way (similar to JSRef).}
+Their initialization is subtle, however:
+most of them perform local computations, calling core functions.
+To avoid this circular dependency (that Coq wouldn't accept),
+one could parametrize each core functions by the value of the global variables it uses.
+This would however not scale to the size of the project.
+%
+Instead, we parameterized each function by a unique \mintinline{Coq}{globals}
+environment, which is a mapping from a definite set of global variables
+to \mintinline{Coq}{EXP_pointer}.
+This additional argument can be seen in Figure~\ref{fig:coq:do_attr}.
+Coercions have been used to make Coq implicitly perform a look-up
+in the \mintinline{Coq}{globals} environment whenever a global variable is read.
 
 \begin{figure*}
     \centering{}
 \begin{subfigure}{.5\textwidth}
 \begin{minted}{C}
-  static EXP* formals = NULL;
-  if (formals == NULL)
-    formals = allocFormalsList2 (install ("x"),
-                install ("which"));
+  static EXP* do_attr_formals = NULL;
+  if (do_attr_formals == NULL)
+    do_attr_formals =
+      allocFormalsList2 (install ("x"),
+                         install ("which"));
 \end{minted}
     \caption{C snippet}
     \label{fig:c:do_attr:formals}
@@ -700,9 +729,96 @@ Definition do_attr_init globals runs S :=
     \label{fig:do_attr:formals}
 \end{figure*}
 
-\todo{Ignored aspects.}
+% Static global variables.
+There are ways to hide global variables in C.
+This is the case of the \mintinline{C}{static} keyword
+when used inside a function:
+the variable value is persistent across calls,
+as if it were a global variable.
+Let us for instance consider another snippet of the function
+\mintinline{C}{do_attr} in Figure~\ref{fig:c:do_attr:formals},
+defining the \mintinline{C}{static} variable \mintinline{C}{do_attr_formals}.
+It stands in place of the first part commented out in Figure~\ref{fig:c:do_attr}.
+At its first call, the variable is initialized by a basic language element.
+It can be costly to reallocate it at each call,
+and it is kept \mintinline{C}{static} for this reason.
+%
+This exactly follows the scheme of the other global variables:
+it is initialized once, then never changes.
+We treat it as such.
+We extracted out the part of \mintinline{C}{do_attr}
+initializing it, as shown in Figure~\ref{fig:coq:do_attr:formals}.
+This code is executed after the normal global variables are initialized.
+Thanks to coercions,
+this variable is then used transparently in Figure~\ref{fig:coq:do_attr}.
+
+% Structuring the fuel.
+Another additional argument present in Figure~\ref{fig:coq:do_attr}
+is the \mintinline{Coq}{runs} argument.
+This argument aims at factorizing the fuel given to Coq function
+to make them artificially terminate.
+The usual way to do this is to make each function check whether its fuel
+reached \(0\), and if so return \mintinline{Coq}{result_bottom}.
+This is not practical as it repeats the same code
+and breaks with the line-to-line correspondence
+(this operation not being done in C).
+%
+We solved this issue by adopting the same method than in JSCert:
+instead of a fuel argument, each function takes a record \mintinline{Coq}{runs}.
+This record stores all recursive functions as its projections.
+Each recursive call in C are then translated by calling
+the corresponding projection of the record,
+as in a regular fixed-point combinator.
+\mb{I guess that this could be improved a lot…}
+Once all functions have been defined,
+one can then define a function \mintinline{Coq}{runs} taking some fuel:
+at each step, its projections are functions taking a \mintinline{Coq}{runs}
+with less fuel as argument;
+when reaching \(0\), all its projections systematically return \mintinline{Coq}{result_bottom}.
+Figure~\ref{fig:runs} shows its Coq definition.
+%
+\mb{Maybe we just don't want to speak about this ☺}
+\mbi{
+Note that the symbol table has to be one of the projections of \mintinline{Coq}{runs},
+otherwise a user could make the Coq interpreter loop by giving as argument… not clear,actually.
+}
+%
+This structure only needs one pattern-matching on fuel
+in the whole CoqR interpreter.
+It is thus a scalable way to organize our Coq project.
+
+\begin{figure}
+\begin{minted}{Coq}
+Fixpoint runs max_step globals :=
+  match max_step with
+  | O => {|
+      runs_while_loop := fun _ S _ _ _ =>
+        result_bottom S ;
+      runs_eval := fun S _ _ =>
+        result_bottom S ;
+      (* ... *) |}
+  | S n => {|
+      runs_while_loop := fun A S (a : A) expr stat =>
+        while_loop globals (runs n) A S a expr stat ;
+      runs_eval := fun S e rho =>
+        eval globals (runs n) S e rho ;
+      (* ... *) |}
+  end.
+\end{minted}
+    \caption{Definition of \mintinline{Coq}{runs} in Coq}
+    \label{fig:runs}
+\end{figure}
+
+% Ignored aspects.
 As stated in Section~\ref{sec:eyeball:closeness},
-we did not modelled the garbage collector.
+we chose to ignore some aspects of the source code of GNU~R.
+All garbage collection commands have been formalized out.
+Furthermore, we removed all support for various locales and character encodings:
+our interpreter only considers ASCII strings.
+More generally, we removed all possibility to dynamically
+parametrize the behavior of the interpreter using options
+stored the shell environment.
+\mb{Are there other things we should mentionned?}
 
 \subsection{Shim}
 \label{sec:shim}
@@ -761,9 +877,9 @@ the defined function \mintinline{R}{which} behaves very similarly
 to the internal \mintinline{R}{which} function.
 The difference is that \mintinline{R}{which} takes two additional
 optional parameters.
-With their default values, the behaviour of this function
+With their default values, the behavior of this function
 is the same as the corresponding internal function:
-this definition extends the original simpler behaviour of the function.
+this definition extends the original simpler behavior of the function.
 \begin{minted}{R}
 which <- function (x, arr = FALSE, names = TRUE) {
     wh <- .Internal (which (x))
