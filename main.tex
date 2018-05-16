@@ -325,6 +325,7 @@ Definition do_attr S
     \label{fig:do_attr}
 \end{figure*}
 
+% Definition of the line-to-line correspondence.
 One key specificity of this interpreter is that it has been designed
 to be similar to the original C source code of GNU~R.
 More precisely, they are related by a line-to-line correspondence
@@ -343,6 +344,7 @@ Figure~\ref{fig:do_attr} shows an example of such correspondence:
 Figure~\ref{fig:c:do_attr} shows a C function,
 and Figure~\ref{fig:coq:do_attr} its Coq translation.
 
+% Differences between C and Coq.
 Coq and C are widely different programming languages:
 Coq is purely functional
 whilst global side-effects are frequent in C.
@@ -397,6 +399,7 @@ to end the execution when reaching the maximum number of executed instructions
 This is meant to artificially make our interpreter terminate,
 despite the fact that the interpreted R program may not.
 
+% Monadic binders.
 This monad is associated with a monadic binder,
 written \mintinline{Coq}{let%success}.
 It expects its argument to be of the form
@@ -416,6 +419,7 @@ which aims at defining a JavaScript interpreter readable by non-specialists.
 We believe that this helps to find bugs in CoqR
 and to convey trust to the overall R semantics.
 
+% Basic language elements.
 We now describe how we modelled GNU~R's heap.
 Although the underlying language is C,
 GNU~R has been designed with a specific structure in mind~\parencite{R}.
@@ -477,6 +481,7 @@ which would lead to an undefined behavior.
     \label{fig:basic:language:elements}
 \end{figure}
 
+% Guarded accesses in Coq to represent unguarded accesses in C.
 This is an issue,
 as we can't directly translate unguarded C accesses into Coq:
 we need a model of the heap.
@@ -521,6 +526,7 @@ Record EXP := make_EXP {
     \label{fig:EXP}
 \end{figure}
 
+% About the use of coercions.
 To ease readability, coercions have been used extensively.
 Coercion is a mechanism to mark some constructors as implicit.
 For instance, if Coq expects a \mintinline{Coq}{EXPData}
@@ -555,6 +561,7 @@ this corresponds to an undefined behavior in C
 The accesses in Coq are thus guarded by monadic binders,
 whilst closely mimicking the unguarded accesses of C.
 
+% About garbage collection.
 The \mintinline{C}{PROTECT} macro of Figure~\ref{fig:c:do_attr}
 has been removed in the Coq translation.
 This macro is performing a garbage collecting action
@@ -568,6 +575,102 @@ At this stage, the reader should be able
 to compare the C and Coq programs of Figure~\ref{fig:do_attr}
 line by line.
 The rest of CoqR was similarly defined.
+
+\subsection{Structure of the Interpreter}
+\label{sec:coq:structure}
+
+% The project is quite large.
+The CoqR project spans over 18,000 lines of Coq definitions,
+including around 5,000 lines for the core functions
+and 4,000 lines for additional features of R.
+This is larger than in the JSCert project.
+We had to cope with this size to make the whole project scalable.
+This section can be seen as a case-study for a large Coq development.
+
+% We need to identify a core language.
+A first important step was to identify a core for R.
+%
+In GNU~R source code, all syntactic constructs corresponds to a C function.
+This includes constructs like \mintinline{R}{if}, % \mintinline{R}{while},
+\mintinline{R}{return}, or even assignments:
+although the parser accepts a seemingly imperative syntax,
+it is internally replaced by Lisp-style function calls.
+In particular, the two abstract syntax trees generated
+by GNU~R parser for the two lines below are identical\footnote{
+    R uses a lazy evaluation strategy:
+    the expression \mintinline{R}{x <- 1} is only evaluated
+    when actually used.
+    As it performs side effects, results can be unexpected.
+}.
+\begin{minted}{R}
+if (TRUE) x <- 1 else return ()
+"if" (TRUE, "<-" (x, 1), "return" ())
+\end{minted}
+Figure~\ref{fig:names} shows a snippet of GNU~R's source code,
+in its file \texttt{names.c}.
+This C array lists all functions present in the initial environment
+of R whose code is written in C.
+It associates the name of the function with the corresponding C function,
+along with its arity and some additional information
+(whether the function is to be directly defined in the initial environment
+or available in the \mintinline{R}{.Internal} construct,
+and whether it evaluates lazily or eagerly).
+The original array spans over 800 lines of code.
+This array is called the \emph{symbol table}.
+%
+This is an opportunity as this array clearly defines a set of functions
+that can be individually removed from GNU~R without breaking the overall
+interpreter, only breaking the parts using it.
+We thus consider these functions to be additional features:
+the core of the R language consists of the functions used to evaluate R expressions
+that are \emph{not} present in the symbol table.
+
+% We can easily extend the core feature by feature.
+This definition of the core of R enables us to focus
+our formalisation effort on a very restricted part of the language
+in a first stage,
+then extend it feature by feature once the project gets mature.
+Core functions include the execution process for function calls,
+environments, closures, promises (delayed evaluation),
+as well as the parts initializing the symbol table.
+Constructs like \mintinline{R}{if} and \mintinline{R}{while}
+are not part of the core,
+but some assignment functions are
+as they are used when calling functions.
+%
+This core is easily extendable:
+we can add any other feature by implementing
+its associated function and adding it to the symbol table.
+We focussed on the addition of the functions necessary to
+run R's base library (see Section~\ref{sec:library}).
+
+\begin{figure}
+\begin{minted}{C}
+FUNTAB R_FunTab[] = {
+  {"if",       do_if,       2,  true,  false},
+  {"while",    do_while,    2,  true,  false},
+  {"break",    do_break,    0,  true,  false},
+  {"return",   do_return,   1,  true,  false},
+  {"function", do_function, -1, true,  false},
+  {"<-",       do_set,      2,  true,  false},
+  {"(",        do_paren,    1,  true,  true},
+  {"which",    do_which,    1,  false, true},
+  {"+",        do_arith1,   2,  true,  true},
+  {"-",        do_arith2,   2,  true,  true},
+  {"cos",      do_math20,   1,  true,  true},
+  {"sin",      do_math21,   1,  true,  true},
+  /* ... */ }
+\end{minted}
+    \caption{All features of R listed in GNU~R source code}
+    \label{fig:names}
+\end{figure}
+
+\todo{Initialization of R, global variables.}
+
+At a closer look, we tried to structure the project
+to make it as maintainable as possible.
+%
+\todo{The [runs] trick to support looping in Coq in a structured way (similar to JSRef).}
 
 \begin{figure*}
     \centering{}
@@ -597,32 +700,24 @@ Definition do_attr_init globals runs S :=
     \label{fig:do_attr:formals}
 \end{figure*}
 
-\subsection{Structure of the Interpreter}
-\label{sec:coq:structure}
-
-Size of the project.
-How we cope to this size.
-
-The [runs] trick to support looping in Coq in a structured way (similar to JSRef).
-
-Definition of the core and of the features.
-
-Initialization of R, global variables.
-
-Ignored aspects.
+\todo{Ignored aspects.}
 As stated in Section~\ref{sec:eyeball:closeness},
 we did not modelled the garbage collector.
 
 \subsection{Shim}
 \label{sec:shim}
 
+\todo{}
+
 Issues with parsing.
-How the parser itself is in a one-to-one correspondence with the original R parser.
+How the parser itself is in a line-to-line correspondence with the original R parser.
 Why this still doesn't prevent us from difference in behavior.
 
 
 \section{Testing Architecture}
 \label{sec:testing:architecture}
+
+\todo{}
 
 Two goals.
 First providing trust to the formalization by certifying the absence of bugs.
@@ -631,6 +726,8 @@ Second, help the development of the formalization by catching bugs early.
 \subsection{Methodology}
 \label{sec:test:methodology}
 
+\todo{}
+
 Various kinds of tests (multiline, line-by-line, tests that are expected to fail, etc.).
 
 What is considered to be a failure.
@@ -638,6 +735,7 @@ What is considered to be a failure.
 \subsection{Base Library}
 \label{sec:library}
 
+% The need to execute the base library.
 Prior to execute any expression, GNU~R performs a lot of actions.
 First, the heap is initialised.
 This process involves initialising most global variables.
@@ -655,6 +753,7 @@ After running the base library,
 which includes a line of the form \mintinline{R}{T <- TRUE},
 our interpreter behaves as R on this same program.
 
+% Example of typical function definition in the base library.
 Most of these functions are just links to internal functions
 with some argument checking or default argument.
 Below is an example:
@@ -674,6 +773,7 @@ which <- function (x, arr = FALSE, names = TRUE) {
 }
 \end{minted}
 
+% About the not-implemented results.
 These functions are easily run:
 only the \mintinline{R}{function} keyword is necessary
 to define the function \mintinline{R}{which}.
@@ -694,6 +794,7 @@ is not due to our interpreter itself, but because the base library is missing.
 Classify the internal function \mintinline{R}{which} as being not implemented
 is a correct classification for our interpreter.
 
+% Computational content in the base library.
 The base library also prepares the base environment.
 For instance, the file \texttt{constants.R} of the base library
 contains the following line.
@@ -712,6 +813,7 @@ as well as various internal functions.
 pi <- 4 * atan (1)
 \end{minted}
 
+% Result.
 We have been able to run the entire base library.
 We believe that this is an evidence that we caught a sizeable
 part of the language features.
@@ -720,12 +822,16 @@ part of the language features.
 \subsection{Driving the Development Process}
 \label{sec:driving:development}
 
+\todo{}
+
 Identifying low-hanging fruits.
 
 How the other results (Potential fail, Not implemented) helped the Coq development.
 
 \subsection{Results}
 \label{sec:test:results}
+
+\todo{}
 
 How much tests are passed and failed.
 What does this mean (one line can trigger more than one pass).
@@ -740,6 +846,8 @@ We consider that the amount of work to extend the framework in another direction
 \section{Proofs}
 \label{sec:proofs}
 
+\todo{}
+
 Tactic development.
 Given the size of the formalization, some of these proofs would never have been possible
 without some proof automation.
@@ -753,6 +861,7 @@ computeR after an allocation updating all the \mintinline{Coq}{safe_pointer}, fo
 \section{Related Work}
 \label{sec:related:work}
 
+% Few tools about R.
 R is a notably difficult programming language~\parencite{RInferno},
 whose semantics is constantly moving---%
 see for instance the recent addition
@@ -767,6 +876,7 @@ This makes tools difficult to build for R,
 and as a consequence, relatively few tools for R exist
 in comparison to the size of its community.
 
+% Genthat.
 As a consequence,
 there exist few testing framework in R.
 The testR~\parencite{maj2013testr, 2014testr} project,
@@ -781,6 +891,7 @@ given some program using it,
 which can then be used to ensure that further versions of the library
 don't break already existing code.
 
+% FastR
 GNU~R is not the only R interpreter that exist.
 Many existing interpreters are based on the same C core code,
 but use different libraries for linear algebra,
@@ -798,6 +909,7 @@ and the specialized interpreter is considered as a bug.
 We believe that this support our choice of strongly basing
 our work on this interpreter.
 
+% JavaScript semantics and their trust sources.
 To the extent of our knowledge,
 we are the first to provide a mechanized specification of R.
 But the general goal of formalizing full real-world languages---%
@@ -816,6 +928,7 @@ as well as several widely used interpreters.
 As a consequence, various formal specifications of JavaScript exist,
 each related with different of its trust sources.
 
+% Maffeis et al.
 The first full formal semantics~\parencite{aplas08}
 is a semantics related to the third version of the ECMAScript specification.
 It had a major influence on the definitions of further JavaScript formal
@@ -825,6 +938,7 @@ JavaScript subsets~\parencite{MMT-CSF-TR09, mmt-esorics09, mmt-oakland10}.
 This work was however not mechanized, making it difficult to be used
 as a basis for other formal works.
 
+% The Essence of JavaScript.
 In parallel, several formal semantics~\parencite{js-ml, Guha2010, Politz:S5, kjs}
 for JavaScript were based on a JavaScript interpreter.
 These semantics are related to JavaScript test suites,
@@ -838,6 +952,7 @@ in JavaScript, the \mintinline{javascript}{for}-\mintinline{javascript}{in}
 feature was then loosely tested,
 and its behavior varied from interpreters to interpreters.
 
+% JSCert.
 The JSCert formalization~\parencite{popl14jscert}
 is an interesting step forward as it was designed
 to be related with both the ECMAScript specification and the JavaScript test suites.
@@ -859,6 +974,7 @@ We solved this issue in the CoqR specification
 by defining a denotational semantics:
 the same definition is both executable and syntactically close to its specification.
 
+% CompCert.
 The Coq proof assistant has already been used
 in a variety of mechanized language formalization projects.
 The most known is the CompCert project~\cite{Leroy-Compcert-CACM}:
@@ -878,6 +994,8 @@ it aims at precisely listing all the possible behaviors of a C program.
 
 \section{Conclusion and Future Work}
 \label{sec:conclusion}
+
+\todo{}
 
 We have a fully trustable formalization of R.
 
