@@ -274,14 +274,15 @@ using our language formalization.
 \section{Coq Interpreter}
 \label{sec:coq:interp}
 
-Our semantics of R is presented on the form of an interpreter.
+Our semantics of R is presented on the form of an interpreter
+and is thus denotational.
 Denotational semantics are usually not the best fit for Coq proofs---%
 inductive operational semantics are usually more adapted---%
 but it comes with a crucial advantage:
 it can be run, and thus tested.
 In this section, we show how we defined this interpreter.
 
-\subsection{Eyeball Closeness}
+\subsection{Line-by-line Correspondence}
 \label{sec:eyeball:closeness}
 
 \begin{figure*}
@@ -332,11 +333,10 @@ every one or two lines of our interpreter
 correspond to one or two lines of the reference interpreter.
 %
 This correspondence helped us during the development process:
-whenever a bug was encountered during testing,
-we would localize the line responsible for the difference in behavior
-between GNU~R and CoqR,
+whenever a bug was encountered during the testing process,
+we would localize the function responsible for the bug,
 then check the line-to-line correspondence.
-Such checks were quick and easy to do,
+Such checks were quick and easy to perform,
 and often lead to a quick fix of CoqR.
 %
 Figure~\ref{fig:do_attr} shows an example of such correspondence:
@@ -345,13 +345,13 @@ and Figure~\ref{fig:coq:do_attr} its Coq translation.
 
 Coq and C are widely different programming languages:
 Coq is purely functional
-whilst global side-effects appear frequently in C code.
+whilst global side-effects are frequent in C.
 Furthermore, Coq is designed to reject any function
 whose behavior is not entirely defined
-(it is for instance impossible to miss a case in a pattern matching),
-whilst undefined behaviors are accepted by C compilers.
-Finally, Coq functions are guaranteed not to loop,
-whilst non-termination is not an issue in C.
+(it is for instance impossible to miss a case in a pattern-matching),
+whilst C is known for its undefined behaviors.
+Finally, in contrary to C functions,
+Coq functions are guaranteed not to loop.
 %
 To make Coq functions follow C paradigms,
 we thus introduced a state, error, and fuel monad, shown below.
@@ -371,20 +371,20 @@ it carries the global state.
 %
 The constructor \mintinline{Coq}{result_error} is meant to catch
 errors thrown by GNU~R,
-for instance a type-error when calling a non-function:
+for instance an R typing error:
 these errors are not catchable and immediately ends the execution.
-A \mintinline{Coq}{string} is provided to help our debugging process.
+A \mintinline{Coq}{string} is provided to help the debugging process.
 %
-Some specific calls in GNU~R source code require
-the \mintinline{Coq}{result_longjump} constructor:
-it typically appears in constructs like \mintinline{R}{break}
-or \mintinline{R}{return} and involves a non-local jump in C.
+The constructor \mintinline{Coq}{result_longjump}
+typically appears in constructs like \mintinline{R}{break}
+or \mintinline{R}{return} involving non-local jumps.
 We won't give much details about this constructor in this paper.
 %
 Unspecified C behaviors are translated into \mintinline{Coq}{result_impossible}.
 This typically includes dereferencing an invalid pointer.
 Getting this result immediately ends the Coq interpreter:
 it is meant to be unreachable.
+Such a result would mean that a bug in GNU~R has been found.
 %
 Given the size of the interpreter,
 it was important to be able to execute it without it being complete.
@@ -395,13 +395,13 @@ Finally, \mintinline{Coq}{result_bottom} is returned
 to end the execution when reaching the maximum number of executed instructions
 (also called \emph{fuel}).
 This is meant to artificially make our interpreter terminate,
-despite the fact that the executed R program may not.
+despite the fact that the interpreted R program may not.
 
 This monad is associated with a monadic binder,
 written \mintinline{Coq}{let%success}.
 It expects its argument to be of the form
 \mintinline{Coq}{result_success}
-to name the carried result in the following code,
+and binds the carried result to a name,
 the state being propagated.
 All other kinds of results are propagated.
 It is typically used when calling a function:
@@ -409,44 +409,42 @@ in Figure~\ref{fig:coq:do_attr},
 the calls to \mintinline{Coq}{R_length}
 and \mintinline{Coq}{matchArgs}
 may return an unsuccessful result,
-but the code that follows will only be executed if the result is successful.
+and the code afterwards will only be executed if the result has been successful.
 %
-This monadic interpreter is similar the one of the JSExplain project~\parencite{JSExplain},
+Such monads are similar to the ones used in the JSExplain project~\parencite{JSExplain},
 which aims at defining a JavaScript interpreter readable by non-specialists.
-We believe this helps finding bugs in CoqR.
+We believe that this helps to find bugs in CoqR
+and to convey trust to the overall R semantics.
 
 We now describe how we modelled GNU~R's heap.
 Although the underlying language is C,
 GNU~R has been designed with a specific structure in mind~\parencite{R}.
-Almost all objects manipulated by the GNU~R interpreter
-are called \emph{basic language elements}---or \mintinline{C}{EXP} in C.
-Each of them are composed of a header and some information depending
-of the basic language elements.
+Almost all objects manipulated by the interpreter
+are called \emph{basic language elements},
+or \mintinline{C}{EXP} in C.
+Each of them are composed of a header and some data.
 %
 The header stores the type of the basic language element,
 a list of attributes,
 as well as several mostly-boolean informations
-(for instance whether it can be updated in place
-without breaking other places of the heap).
-% For instance, the header of an environment stores whether
-% the environment is locked,
-% which prevents the addition or removal of its bindings.
-There are 24 different types of basic language elements in R,
-9 of which being different kinds of vectors.
+(for instance whether it can be safely updated in place).
+There are \(24\) different types of basic language elements in R,
+\(9\) of which being different kinds of vectors.
 %
-What comes afterwards depends on the type.
-For instance, lists contains three pointers:
+The stored data depends on the type of the element.
+For instance, lists contain three pointers:
 one to the first element (named \mintinline{Coq}{car}),
-to the following of the list (\mintinline{Coq}{cdr}),
+to the queue of the list (\mintinline{Coq}{cdr}),
 and to an optional name for the first element (\mintinline{Coq}{tag}).
-Vectors types store their length,
-followed in memory by a C array.
+Vectors store their length,
+followed by a C array in memory.
 The size of this array depends both of its length
-and the size of the stored data.
+and the type of vector.
 Figure~\ref{fig:basic:language:elements} illustrates this
-with integer and complex vectors (which are composed of two floats).
+with integer and complex vectors
+(complexes are composed of two floats).
 %
-Needless to say that the way memory is used in C
+The way memory is used in C
 makes it easy to unguardedly access a cell out of bounds,
 which would lead to an undefined behavior.
 
@@ -480,13 +478,12 @@ which would lead to an undefined behavior.
 \end{figure}
 
 This is an issue,
-as we can't directly translate unguarded C accesses into Coq.
-We thus need a model of the heap in Coq.
-Figure~\ref{fig:EXP} shows how we defined \mintinline{Coq}{EXP}
-in Coq.
+as we can't directly translate unguarded C accesses into Coq:
+we need a model of the heap.
+Figure~\ref{fig:EXP} shows how we defined \mintinline{Coq}{EXP} in Coq.
 Basic language elements are records storing a header
 and data,
-which is defined as a sum-type of all its combinations.
+which in turn is defined as a sum type.
 For instance, lists are defined by three pointers.
 Vectors are records storing their length and a list:
 in Coq, the data of vector is stored directly in the \mintinline{Coq}{EXP} structure
@@ -525,24 +522,25 @@ Record EXP := make_EXP {
 \end{figure}
 
 To ease readability, coercions have been used extensively.
-Coercions is a mechanism to mark some constructors as implicit.
+Coercion is a mechanism to mark some constructors as implicit.
 For instance, if Coq expects a \mintinline{Coq}{EXPData}
 and is given a \mintinline{Coq}{ListStruct},
-then the constructor \mintinline{Coq}{listExp} will be implicitly called.
+then the constructor \mintinline{Coq}{listExp} will be implicitly called
+thanks to the corresponding line in Figure~\ref{fig:EXP}.
 In the context of CoqR,
-this is more than a simple syntactic notation:
-it helps the line-to-line correspondence
-by erasing in the code things that are not present in C.
-Indeed, if one points to either a list or an environment in C,
-the notation to access its list or its environment is the same.
+this is more than a simple syntactic notation
+as it helps the line-to-line correspondence
+by hiding what is not present in C:
+if one points to either a list or an environment,
+the C notation to access its list or its environment is the same.
 %
 Of course, this implicit notation is only one-way:
 given a \mintinline{Coq}{ListStruct},
 we can convert it into an \mintinline{Coq}{EXPData},
-but to perform the converse, we have to pattern match
+but to perform the converse, we have to pattern-match
 on the shape of the \mintinline{Coq}{EXPData}.
 %
-This pattern matching is performed through specific monadic binders.
+This pattern-matching is performed by specific monadic binders.
 For instance in Figure~\ref{fig:coq:do_attr}, \mintinline{Coq}{read%list}
 gets the \mintinline{Coq}{EXP} stored in the state \mintinline{Coq}{S}
 and pointed by \mintinline{Coq}{argList},
@@ -552,19 +550,19 @@ and \mintinline{Coq}{tag} fields.
 If the pointer is not in the domain of the state \mintinline{Coq}{S}
 or if the associated \mintinline{Coq}{EXP} object is not a list,
 then \mintinline{Coq}{result_impossible} is returned:
-this would correspond to an undefined behavior in C
+this corresponds to an undefined behavior in C
 (dereferencing an invalid pointer or accessing the wrong projection of a \mintinline{C}{union}).
-The accesses in Coq are thus guarded by a monadic binder,
-whilst mimicking the unguarded accesses of C.
+The accesses in Coq are thus guarded by monadic binders,
+whilst closely mimicking the unguarded accesses of C.
 
-In Figure~\ref{fig:c:do_attr}, the \mintinline{C}{PROTECT} macro
-has been removed in the Coq translation of Figure~\ref{fig:coq:do_attr}.
-This macro is performing garbage collecting actions
-(in this case, it saves the object \mintinline{C}{argList} from garbage collection),
-and we chose not to model this part of GNU~R.
+The \mintinline{C}{PROTECT} macro of Figure~\ref{fig:c:do_attr}
+has been removed in the Coq translation.
+This macro is performing a garbage collecting action
+(it saves the object \mintinline{C}{argList} from garbage collection),
+and we chose not to model this aspect of GNU~R.
 Indeed, garbage collection is not supposed to change the result of any computation.
 Not modelling this part removed frequent lines in the translation process,
-enabling anyone wanting to reuse our formalization to focus on the computational part.
+enabling us to focus on the computational part.
 %
 At this stage, the reader should be able
 to compare the C and Coq programs of Figure~\ref{fig:do_attr}
