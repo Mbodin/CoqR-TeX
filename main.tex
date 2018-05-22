@@ -109,7 +109,23 @@
 \email{etanter@dcc.uchile.cl}
 
 \begin{abstract}
-Text of abstract \ldots.
+    The R programming language is used by a large community.
+    Yet, its semantics contains subtle but various corner-cases.
+    This makes it difficult to fully trust an R program,
+    as these corner-cases can lead to unexpected behavior.
+    We believe that a Coq formalisation of the language would help.
+
+    We introduce CoqR, an R interpreter (or denotational semantics) written in Coq.
+    This interpreter has been related to the reference R interpreter
+    GNU~R by two ways.
+    First, the Coq code has been written to mimic the source code of GNU~R.
+    Second, the interpreter has been extensively tested against GNU~R.
+    Both these methods helped finding bugs.
+
+    We have furthermore developed a general testing architecture
+    for R interpreters.
+    It guided our Coq development
+    and we believe that it can be reused by other interpreters.
 \end{abstract}
 
 % %% 2012 ACM Computing Classification System (CSS) concepts
@@ -236,7 +252,7 @@ to be done properly~\parencite{leroy2014pip}.
 Given the size of our formalization,
 we consider this part to be the most important of our contributions.
 Our code is available online at
-\url{https://github.com/Mbodin/proveR/releases/tag/DLS2018}\todo{make this tag appear}.
+\url{https://github.com/Mbodin/proveR/releases/tag/DLS2018}\todo{make this tag exist on Github}.
 
 % Contributions.
 We introduce CoqR\mb{Are we fixed on the name?},
@@ -823,12 +839,45 @@ stored the shell environment.
 \subsection{Shim}
 \label{sec:shim}
 
+% Why the shim is important.
+Bugs in certified softwares can still appear.
+The reason is that most of the time,
+the software is not entirely formalized in Coq.
+Some additional code is added,
+usually to perform basic inputs and outputs.
+This additional code is called the \emph{shim},
+and usually concentrate most of a certified software
+bugs~\parencite{Yang:2011:FUB:1993498.1993532}.
+
 \todo{}
 
 Issues with parsing.
 How the parser itself is in a line-to-line correspondence with the original R parser.
 Why this still doesn't prevent us from difference in behavior.
 
+% Parsing in the shim.
+Parsing real-world programming languages is known not to be straightforwards.
+We wanted our parser to be as close as possible to GNU~R's parser.
+Unfortunately, the Bison grammar of GNU~R does not respect
+the grammar constraints to be implemented in Menhir directly in Coq~\parencite{jourdan2012validating}.
+We instead produced an OCaml parser using Menhir,
+which is thus part of the shim.
+
+% Ambiguities in the grammar.
+To provide more trust to our parser, we decided to reuse the exact same grammar
+than GNU~R, without optimizing it in any way.
+This is a first issue with our parser:
+the Bison grammar on which GNU~R is based is ambiguous.
+As a consequence, Bison makes some arbitrary choices,
+and Menhir may take some other.
+%
+Another source of difference in behavior between the two parser
+(GNU~R's and CoqR's) is due to side effects between the lexer and the parser.
+Indeed, there are some places in which new lines are significant
+and other where they are not\todo{An example}.
+In GNU~R source code, the lexer reads a global boolean variable
+each time it reads a new line,
+to know whether it should ignore it.
 
 \section{Testing Architecture}
 \label{sec:testing:architecture}
@@ -961,6 +1010,10 @@ We consider that the amount of work to extend the framework in another direction
 
 \section{Proofs}
 \label{sec:proofs}
+
+In this section,
+we answer the objectives stated in the introduction:
+our denotational semantics should be usable to build proofs about the R language.
 
 \todo{}
 
