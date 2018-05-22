@@ -876,38 +876,54 @@ and they could be different.
 We checked during testing that they do not,
 both choosing the second option above in practice.
 
-% New lines in R
+% Side effects in the grammar
 Another source of difference in behavior
 between GNU~R's and CoqR's parser
-is caused by the communication between lexer and parser.
-There are some places in R where new lines are significant
+involves new lines.
+There are contexts in R where new lines are significant
 and others where they are not.
-For instance, once \mintinline{R}{function ()} is being read,
-any new line is ignored:
-an expression is expected.
-However, after \mintinline{R}{break} is being read,
-new lines are considered to separate instructions
-(if the context enables it).
-This can be counterintuitive
-as \mintinline{R}{{ function () break + 1 }}
-is accepted by R and returns a function
-whose body contains the \mintinline{R}{+ 1} part.
-However, in the code below,
-the block is considered to have two instructions
-(a function and a number) and returns the second one:
-the final result is \mintinline{R}{1}.
+For instance, in \mintinline{R}{{ function () break + 1 }},
+adding a new line after the \mintinline{R}{function} or \mintinline{R}{+} keywords
+does not change the final result,
+but adding a new line after the \mintinline{R}{break} keyword does.
+%
+In such situations, lexers usually produce the new line token
+nevertheless, leaving to the parser the choice to ignore it or not.
+However, in GNU~R, the lexer reads a global boolean variable %\mintinline{C}{eatLines}
+whenever it encounters a new line.
+This global variable indicates whether the lexer should ignore the new line.
+This variable is controlled by the parser:
+the lexer and the parser thus communicate through side-effects.
+%
+Such effects are usually considered to be bad practice
+as they heavily depend on when the parser calls the lexer
+(or they might get synchronised out).
+%
+To keep the line-to-line correspondence,
+we nevertheless built the same communication channel
+between the lexer and the parser in OCaml.
+Unfortunately, Bison and Menhir do not always call the lexer
+the same way.
+%
+For instance, empty blocks \mintinline{R}{{}} wrongly
+lead new lines to be eaten in our parser.
+This is easily fixable by replacing them
+by the equivalent R constant \mintinline{R}{NULL}.
 
-\begin{minted}{R}
-{ function () break
-  + 1 }
-\end{minted}
-
-% Side effects in the grammar
-In GNU~R source code, the lexer reads a global boolean variable
-each time it reads a new line,
-to know whether it should ignore it.
-
-\todo{}
+Despite the few differences of behavior,
+we believe that our methodology helped us
+reducing the amount of bugs in our parser.
+The differences of behavior are precisely known
+and easily fixable in the executed R code.
+%
+The alternative would have been
+to heavily rewrite the grammar,
+resulting in a very different grammar than GNU~R's.
+Bugs in such a grammar would certainly exist
+and would be difficult to spot.
+%
+We thus believe that our methodology also applies to the parser,
+and more generally to the whole shim.
 
 
 \section{Testing Architecture}
@@ -1031,6 +1047,8 @@ How the other results (Potential fail, Not implemented) helped the Coq developme
 
 How much tests are passed and failed.
 What does this mean (one line can trigger more than one pass).
+
+Bisect results.
 
 Bugs found (and where).
 
