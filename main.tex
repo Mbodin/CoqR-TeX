@@ -836,48 +836,79 @@ parametrize the behavior of the interpreter using options
 stored the shell environment.
 \mb{Are there other things we should mentionned?}
 
-\subsection{Shim}
+\subsection{Parsing R}
 \label{sec:shim}
 
 % Why the shim is important.
-Bugs in certified softwares can still appear.
-The reason is that most of the time,
-the software is not entirely formalized in Coq.
-Some additional code is added,
-usually to perform basic inputs and outputs.
+Bugs can still appear in verified softwares.
+Indeed, such softwares are not entirely formalized in Coq:
+some additional code is added to perform the program's inputs and outputs.
 This additional code is called the \emph{shim},
-and usually concentrate most of a certified software
-bugs~\parencite{Yang:2011:FUB:1993498.1993532}.
-
-\todo{}
-
-Issues with parsing.
-How the parser itself is in a line-to-line correspondence with the original R parser.
-Why this still doesn't prevent us from difference in behavior.
+and it usually concentrates bugs in certified softwares~\parencite{Yang:2011:FUB:1993498.1993532}.
 
 % Parsing in the shim.
-Parsing real-world programming languages is known not to be straightforwards.
-We wanted our parser to be as close as possible to GNU~R's parser.
-Unfortunately, the Bison grammar of GNU~R does not respect
-the grammar constraints to be implemented in Menhir directly in Coq~\parencite{jourdan2012validating}.
-We instead produced an OCaml parser using Menhir,
-which is thus part of the shim.
+A particularly important part of our shim consists of our parser.
+Parsing real-world programming languages is known to be challenging.
+As a consequence, we wanted our parser to be as close as possible to GNU~R's parser,
+instantiating again our methodology.
+Unfortunately, our parser could not be implemented in Coq
+through the Menhir tool~\parencite{jourdan2012validating}
+as the Bison grammar of GNU~R does not respect the grammar constraints
+of Menhir's Coq front-end.
+We thus fell back to its OCaml front-end,
+making our parser part of the shim.
 
 % Ambiguities in the grammar.
-To provide more trust to our parser, we decided to reuse the exact same grammar
-than GNU~R, without optimizing it in any way.
-This is a first issue with our parser:
-the Bison grammar on which GNU~R is based is ambiguous.
-As a consequence, Bison makes some arbitrary choices,
-and Menhir may take some other.
-%
-Another source of difference in behavior between the two parser
-(GNU~R's and CoqR's) is due to side effects between the lexer and the parser.
-Indeed, there are some places in which new lines are significant
-and other where they are not\todo{An example}.
+Following our line-to-line methodology,
+we did not optimize GNU~R's grammar in any way.
+This is a first issue with our parser
+as the Bison grammar of GNU~R is ambiguous,
+with 27 shift/reduce conflicts.
+These conflicts typically appear in expressions such as
+\mintinline{R}{repeat 4 * break},
+which could be read as \mintinline{R}{(repeat 4) * break}
+(which would loop)
+or \mintinline{R}{repeat (4 * break)}
+(which would terminate immediately),
+depending on your interpretation.
+As a consequence, both Bison and Menhir make some arbitrary choices,
+and they could be different.
+We checked during testing that they do not,
+both choosing the second option above in practice.
+
+% New lines in R
+Another source of difference in behavior
+between GNU~R's and CoqR's parser
+is caused by the communication between lexer and parser.
+There are some places in R where new lines are significant
+and others where they are not.
+For instance, once \mintinline{R}{function ()} is being read,
+any new line is ignored:
+an expression is expected.
+However, after \mintinline{R}{break} is being read,
+new lines are considered to separate instructions
+(if the context enables it).
+This can be counterintuitive
+as \mintinline{R}{{ function () break + 1 }}
+is accepted by R and returns a function
+whose body contains the \mintinline{R}{+ 1} part.
+However, in the code below,
+the block is considered to have two instructions
+(a function and a number) and returns the second one:
+the final result is \mintinline{R}{1}.
+
+\begin{minted}{R}
+{ function () break
+  + 1 }
+\end{minted}
+
+% Side effects in the grammar
 In GNU~R source code, the lexer reads a global boolean variable
 each time it reads a new line,
 to know whether it should ignore it.
+
+\todo{}
+
 
 \section{Testing Architecture}
 \label{sec:testing:architecture}
@@ -1064,7 +1095,7 @@ don't break already existing code.
 GNU~R is not the only R interpreter that exist.
 Many existing interpreters are based on the same C core code,
 but use different libraries for linear algebra,
-usually optimised for a given usage.
+usually optimized for a given usage.
 %
 The FastR~\parencite{kalibera2014fast} project takes a different approach
 as it also reimplemented the core code.
