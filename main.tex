@@ -28,7 +28,7 @@
 \usepackage[
    backend=biber,
    bibencoding=utf8,
-   style=alphabetic,
+   style=numeric,
    hyperref=true,
    % citestyle=authoryear-comp,
    backref=false,
@@ -60,20 +60,23 @@
 \usepackage{todonotes}
 \newcommand\mb[1]{\todo[color=purple!20,size=\scriptsize]{#1}}
 \newcommand\mbi[1]{\todo[color=purple!20,inline]{#1}}
+\newcommand\et[1]{\todo[color=blue!20,size=\scriptsize]{#1}}
+\newcommand\eti[1]{\todo[color=blue!20,inline]{#1}}
+
 \setlength{\marginparwidth}{15mm} % Note: This is only temporary, to have notes more readable. It should be removed before submitting.
 
 \newcommand\ignore[1]{}
 
 \begin{document}
 
-\title{Relating an R Formalization to R} % I didn't thought much about this. Any suggestion?
+\title{A Trustworthy Formalization of R} % I didn't thought much about this. Any suggestion?
 
 \author{Martin Bodin}
 \orcid{0000-0003-3588-3782}
 \affiliation{
   %\position{}
-  %\department{Department1}
-  \institution{Center of Mathematical Modeling}
+  \department{Center for Mathematical Modeling}
+  \institution{University of Chile}
   \streetaddress{Beauchef 851}
   \city{Santiago}
   % \state{State1}
@@ -82,13 +85,13 @@
 }
 \email{mbodin@dim.uchile.cl}
 
-\author{Tomás Diaz}
+\author{Tom{\'a}s Diaz}
 % \authornote{with author2 note}
 % \orcid{nnnn-nnnn-nnnn-nnnn}
 \affiliation{
   % \position{Position2a}
-  \department{DCC}
-  \institution{Universidad de Chile}
+  \department{Computer Science Department}
+  \institution{University of Chile}
   \streetaddress{Beauchef 851}
   \city{Santiago}
   % \state{State2a}
@@ -97,13 +100,13 @@
 }
 \email{tdiaz@dcc.uchile.cl}
 
-\author{Éric Tanter}
+\author{{\'E}ric Tanter}
 % \authornote{with author2 note}
 % \orcid{nnnn-nnnn-nnnn-nnnn}
 \affiliation{
   % \position{Position2a}
-  \department{DCC}
-  \institution{Universidad de Chile}
+  \department{Computer Science Department}
+  \institution{University of Chile}
   \streetaddress{Beauchef 851}
   \city{Santiago}
   % \state{State2a}
@@ -113,11 +116,13 @@
 \email{etanter@dcc.uchile.cl}
 
 \begin{abstract}
+\eti{update when paper is stable:}
+
     The R programming language is used by a large community.
     Yet, its semantics contains subtle but various corner-cases.
     This makes it difficult to fully trust an R program,
     as these corner-cases can lead to unexpected behavior.
-    We believe that a Coq formalisation of the language would help.
+    We believe that a Coq formalization of the language would help.
 
     We introduce CoqR, an R interpreter (or denotational semantics) written in Coq.
     This interpreter has been related to the reference R interpreter
@@ -168,116 +173,100 @@
 
 % R is used a lot.
 The R programming language~\parencite{R, ihaka1996r, Rwebsite}
-has gotten a lot of attention in the recent years.
-It is used in multiple fields (biology, finance, etc.),
-and its community ranges over millions of users.
-This diversity among R programmers
-results in largely different programming styles.
-The language itself is community driven and reflects this diversity.
+has gotten a lot of traction in recent years, being used by millions of users in areas as varied as biology and finance. This diversity among R programmers results in largely different programming styles. In fact, the language itself is community driven and reflects this diversity.
 
 % R is complex and we need to certify R softwares.
 The R programming language is meant to be both expressive and powerful,
 able to express complex notions in few keystrokes.
-This sometimes comes with the cost of readability.
-The semantics of R is subtle and contains numerous corner cases
-which can be unexpected.
-The reasons for these corner cases are numerous
-and are often due to backward compatibility.
-Another common reason is that R
-is both used as a programming language and an interactive shell:
-languages expectations are different in these two situations.
+This sometimes comes at the cost of readability. Indeed, 
+the semantics of R is subtle and contains numerous corner cases that can result in unexpected behavior. 
 
-An example of such unexpected behaviors can be found
-in R function calls.
-There are many ways to call a function,
-but to simplify\footnote{
-    We here ignore the \mintinline{R}{...} notation
-    as well as default arguments.
-    They have non-trivial interactions with the calling methods
-    described here.
-} there are two ways to provide an argument:
-either by position or by name.
-In the example below, the first call to \mintinline{R}{f}
-associates arguments by position, and the second by name.
-These two associating ways can be mixed together in the same call.
-%
-Association by name can be made by prefix:
-the third call associates \mintinline{R}{d} to \mintinline{R}{de}
-because it is the only matching argument by prefix.
+The reasons for these corner cases are numerous, ranging from backward compatibility to the desire to accommodate the use of R as both a traditional programming language and an interactive shell.
+Even a feature as basic as function calls can be the source of surprises in R. 
+Indeed, there are many ways to call a function, and in particular there are two ways to provide an argument: either by position or by name.\footnote{
+    To simplify, here we ignore the \mintinline{R}{...} notation
+    as well as default arguments, which both have non-trivial interactions with the function call mechanisms.}
+
+Figure~\ref{fig:calls} defines a function \mintinline{R}{f} that concatenates its three arguments. The first call associates arguments by position, and the second by name. The third call mixes both mechanisms. But in R, 
+association by name can be made {\em by prefix}:
+observe that the third call associates \mintinline{R}{d} to \mintinline{R}{de}
+because it is the only argument whose name starts with \mintinline{R}{d}.
 If more than one argument matches by prefix,
-R rejects the call and throws an error,
-as in the fifth call in the example below.
+then R rejects the call and throws an error,
+as in the fifth call in Figure~\ref{fig:calls}.
 However, exact matches are not counted in this process:
-in the fourth call below,
+in the fourth call,
 the name \mintinline{R}{ab} is an exact match
 and thus only the argument \mintinline{R}{abc}
 is left to be associated to \mintinline{R}{a},
 leading to no error thrown.
+
+\begin{figure}[t]
 \begin{minted}{R}
-# The function f concatenates its 3 arguments.
 f <- function (abc, ab, de) { c (abc, ab, de) }
-# The next 4 calls below returns the same vector.
-f (1, 2, 3) # Association by position.
-f (de = 3, abc = 1, ab = 2) # By name.
-f (1, d = 3, 2) # Mixed ways.
-f (3, a = 1, ab = 2) # a is associated to abc.
-# The next call to f throws an error.
-f (a = 3, 1, 2) # Several prefixes.
+f(1, 2, 3)                 # By position
+f(de = 3, abc = 1, ab = 2) # By name
+f(1, d = 3, 2)             # Mixed
+f(3, a = 1, ab = 2)        # a is associated to abc
+f(a = 3, 1, 2)             # error: several prefixes
 \end{minted}
+\caption{Exploring function calls in R.}
+\label{fig:calls}
+\end{figure}
 
 Such subtle behaviors are numerous in R~\parencite{RInferno}.
 Debugging tools exist~\parencite{mcpherson2014},
-but they can't always compensate R's complex semantics.
-Consequently, bugs occurs in R programs
+but they cannot always compensate for the complex semantics of R.
+Consequently, surprising bugs occur in R programs
 and fully trusting such programs can be difficult.
 
 % We need a formalization of the language.
-Formal methods offer a solution to this trust issue:
+Formal methods offer a solution to the trust issue:
 proof assistants such as Coq~\parencite{Coq} enable us
 to formally prove program properties with a high amount of trust.
 But to formally prove that an R program meets its specification,
-we need a formal semantics of R.
-In particular, we want to catch all the subtle cases of R semantics,
-such as implicit type conversions.
-These corner cases are indeed a typical place were bugs appears.
-Such a semantics for the full language will inevitably be complex
-because of the quantity of such cases.
+we first need a formal semantics of R. \et{mention the on-going spec effort and its limits} 
+In particular, the formal semantics should account for all the subtle cases of the R semantics, such as function call conventions described above, implicit type conversions, and so on.
+This is necessary because these corner cases are indeed a typical place were bugs appear and are hard to track. 
+A complete semantics for the full R language will inevitably be complex,
+because of the large amount of such corner cases.
 
 % This formalization is quite large, and we need to certify it.
-This opens a trust problem:
-how can such a large semantics (and hence the proofs made from it)
-can be trusted if it is that complex?
-To be able to trust such a formalization,
-we need to relate to the R reference interpreters, GNU~R~\parencite{Rwebsite}.
-This relation between the formalism and trust sources
-is not always considered to be an important part of the formalization process.
-In practise however, it often requires a large amount of work
+This complexity in turn raises a meta-trust issue: 
+how can a large semantics (and consequently the proofs made from it)
+be trusted?
+The approach we take in this work \et{in line with prior work on JavaScript (lambdaJS in particular, can we say the same of JSCert?), also C? what else?} is to relate the formal semantics to the reference interpreter of R, GNU~R~\parencite{Rwebsite}. In the absence of a standardized formal semantics, GNU~R is the reference point that defines what the R language really is.
+Being able to relate the formalism to trust sources is a crucial aspect of the formalization process, and often requires a large amount of work
 to be done properly~\parencite{leroy2014pip}.
-Given the size of our formalization,
-we consider this part to be the most important of our contributions.
-Our code is available online at
-\url{https://github.com/Mbodin/proveR/releases/tag/DLS2018}\todo{make this tag exist on Github}.
 
-% Contributions.
-We introduce CoqR\mb{Are we fixed on the name?},
-a formalization of the R programming language in the Coq proof assistant.
-This is a continuation of a previous work~\parencite{CoqRCoqPL},
-\mb{Political choice here: is it a good idea to cite this previous work?}
-in which we formalised a small core of the R language.
-The additional contribution of this paper is the additional
-of a non-trivial quantity of R features,
-which enabled us to import R libraries.
+\paragraph{Contributions.} 
+We present CoqR\mb{Are we fixed on the name?}\et{no, put it as a macro ;-)}, a trustworthy formalization of the R programming language in the Coq proof assistant. The formalization is a denotational semantics, in the form of an interpreter. This interpreter is trustworthy because we have followed two complementary techniques to maximize trust, inspired by the JSCert project\et{cite}. First, the Coq interpreter has been written using a monadic encoding that allows for a direct eyeball correspondence with the C++ source code of GNU~R. Second, we have extensively tested the interpreter against the R reference interpreter.\et{using the standard test suites? and additional ones?} To this end, we have developed a testing framework that streamlines the process of running both the Coq interpreter and GNU~R on a set of test cases and report on mismatches and errors. We report on the process of scaling up our interpreter in order to be able to import existing R libraries.
+
+% Given the size of our formalization,
+% we consider this part to be the most important of our contributions.
+
+% The development presented here, including the Coq interpreter, the testing framework, and the tests, is available online at:\\
+% \url{https://github.com/Mbodin/proveR/releases/tag/DLS2018}\todo{make this tag exist on Github}.
+
+% % Contributions.
+% We introduce CoqR
+
+% a formalization of the R programming language in the Coq proof assistant.
+% This is a continuation of a previous work~\parencite{CoqRCoqPL},
+% \mb{Political choice here: is it a good idea to cite this previous work?}\et{no, skip - this wasn't a technical result, just a progress report/position paper}
+% in which we formalised a small core of the R language.
+% The additional contribution of this paper is the additional
+% of a non-trivial quantity of R features,
+% which enabled us to import R libraries.
 %
-Our main contribution is to provide two methods to relate this formalization
-to R reference interpreter, GNU~R.
-First, our semantics has been written in a way mimicking GNU~R's source code.
-Second, our semantics is executable and we have extensively tested it
-against R reference interpreter.
 %
-This two-factors method is very close to the one of JSCert,
-which we discuss in Section~\ref{sec:related:work}.
+% This two-factors method is very close to the one of JSCert,
+% which we discuss in Section~\ref{sec:related:work}.
+
+
 
 % Outlines.
+\eti{update when paper is stable:}
 This paper is organized as follows.
 Section~\ref{sec:coq:interp} presents the Coq denotational semantics.
 In particular, Section~\ref{sec:eyeball:closeness} presents
