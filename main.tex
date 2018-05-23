@@ -57,6 +57,7 @@
 \usepackage{todonotes}
 \newcommand\mb[1]{\todo[color=purple!20,size=\scriptsize]{#1}}
 \newcommand\mbi[1]{\todo[color=purple!20,inline]{#1}}
+\setlength{\marginparwidth}{15mm} % Note: This is only temporary, to have notes more readable. It should be removed before submitting.
 
 \newcommand\ignore[1]{}
 
@@ -871,6 +872,10 @@ which could be read as \mintinline{R}{(repeat 4) * break}
 or \mintinline{R}{repeat (4 * break)}
 (which would terminate immediately),
 depending on your interpretation.
+\mbi{I'm not confident about this example.
+    This is the example given by Menhir using the \texttt{explain} option,
+    but I believe that the real issue is somewhere else.
+    Is it an issue if we don't provide an example for this paragraph?}
 As a consequence, both Bison and Menhir make some arbitrary choices,
 and they could be different.
 We checked during testing that they do not,
@@ -944,8 +949,38 @@ Various kinds of tests (multiline, line-by-line, tests that are expected to fail
 
 What is considered to be a failure.
 
-\subsection{Base Library}
+\subsection{Driving the Development Process}
+\label{sec:driving:development}
+
+\todo{}
+
+Identifying low-hanging fruits.
+
+How the other results (Potential fail, Not implemented) helped the Coq development.
+
+\subsection{Results}
+\label{sec:test:results}
+
+\todo{}
+
+Bisect results.
+
+Bugs found (and where).
+
+How much tests are passed and failed.
+What does this mean (one line can trigger more than one pass).
+
+We extended the testing framework during development by adding new kinds of recognised
+data structure.
+We consider that the amount of work to extend the framework in another direction
+(thus reducing the number of Unknown) is sufficiently low.
+
+
+\section{Base Library}
 \label{sec:library}
+
+\subsection{Description}
+\label{sec:library:description}
 
 % The need to execute the base library.
 Prior to execute any expression, GNU~R performs a lot of actions.
@@ -1030,35 +1065,22 @@ We have been able to run the entire base library.
 We believe that this is an evidence that we caught a sizeable
 part of the language features.
 
-
-\subsection{Driving the Development Process}
-\label{sec:driving:development}
-
-\todo{}
-
-Identifying low-hanging fruits.
-
-How the other results (Potential fail, Not implemented) helped the Coq development.
-
-\subsection{Results}
-\label{sec:test:results}
+\subsection{Development Process}
+\label{sec:library:development}
 
 \todo{}
 
-How much tests are passed and failed.
-What does this mean (one line can trigger more than one pass).
+The base library was not added in one block.
+Instead, we added which function were necessary
+(the computational content of above).
+The testing framework lead us to know which functions were to be implemented,
+and as such served as a real-world case study for the framework.
 
-Bisect results.
-
-Bugs found (and where).
-
-We extended the testing framework during development by adding new kinds of recognised
-data structure.
-We consider that the amount of work to extend the framework in another direction
-(thus reducing the number of Unknown) is sufficiently low.
 
 \section{Proofs}
 \label{sec:proofs}
+\todo{This section might be moved before,
+    as the base library results are much better and should be kept for the end.}
 
 In this section,
 we answer the objectives stated in the introduction:
