@@ -240,7 +240,7 @@ Being able to relate the formalism to trust sources is a crucial aspect of the f
 to be done properly~\parencite{leroy2014pip}.
 
 \paragraph{Contributions.} 
-We present CoqR\mb{Are we fixed on the name?}\et{no, put it as a macro ;-)}, a trustworthy formalization of the R programming language in the Coq proof assistant. The formalization is a denotational semantics, in the form of an interpreter. This interpreter is trustworthy because we have followed two complementary techniques to maximize trust, inspired by the JSCert project\et{cite}. First, the Coq interpreter has been written using a monadic encoding that allows for a direct eyeball correspondence with the C++ source code of GNU~R. Second, we have extensively tested the interpreter against the R reference interpreter.\et{using the standard test suites? and additional ones?} To this end, we have developed a testing framework that streamlines the process of running both the Coq interpreter and GNU~R on a set of test cases and report on mismatches and errors. We report on the process of scaling up our interpreter in order to be able to import existing R libraries.
+We present CoqR\mb{Are we fixed on the name?}\et{no, put it as a macro ;-)}, a trustworthy formalization of the R programming language in the Coq proof assistant. The formalization is a denotational semantics, in the form of an interpreter. This interpreter is trustworthy because we have followed two complementary techniques to maximize trust, inspired by the JSCert project\et{cite}. First, the Coq interpreter has been written using a monadic encoding that allows for a direct eyeball correspondence with the C source code of GNU~R. Second, we have extensively tested the interpreter against the R reference interpreter.\et{using the standard test suites? and additional ones?} To this end, we have developed a testing framework that streamlines the process of running both the Coq interpreter and GNU~R on a set of test cases and report on mismatches and errors. We report on the process of scaling up our interpreter in order to be able to import existing R libraries.
 
 % Given the size of our formalization,
 % we consider this part to be the most important of our contributions.
@@ -289,12 +289,84 @@ Denotational semantics are usually not the best fit for Coq proofs---%
 inductive operational semantics are usually more adapted---%
 but it comes with a crucial advantage:
 it can be run, and thus tested.
-In this section, we show how we defined this interpreter.
 
-\subsection{Line-by-line Correspondence}
+In this section, we show how we define the Coq interpreter in order to achieve the first of the two mechanisms in place for trust, namely the eyeball correspondence with the GNU~R interpreter.
+
+\subsection{Bridging the Gap between C and Coq}
+\label{sec:monad}
+
+The basic principle of eyeball correspondence is that every one or two lines of the Coq interpreter should correspond to one or two lines of the C reference interpreter.
+
+Of course, achieving a close correspondence between C and Coq versions of the same program is challenging, because C and Coq are widely different programming languages:
+Coq is purely functional
+whilst global side-effects are frequent in C.
+Furthermore, Coq is designed to reject any function
+whose behavior is not entirely defined
+(it is for instance impossible to miss a case in a pattern-matching),
+whilst C is known for its undefined behaviors.
+Finally, contrary to C,
+Coq programs are required to terminate.
+
+
+\begin{figure}[t]
+\begin{minted}{Coq}
+Inductive result (A : Type) :=
+  | result_success : state -> A -> result A
+  | result_error : state -> string -> result A
+  | result_longjump : state -> context -> result A
+  | result_impossible : state -> string -> result A
+  | result_not_implemented : string -> result A
+  | result_bottom : state -> result A.
+\end{minted}
+\caption{The result monad.}
+\label{fig:result}
+\end{figure}
+
+In order to limit the impact that these differences can have on the eyeball correspondence, we introduce a {\em result monad}, which combines both the state, error, and fuel monads (Figure~\ref{fig:result}), and allows us to program in Coq ``as if it were C''. 
+\et{add some basic introductory level stuff on monads, and each of these...}
+More precisely, the result monad features the following constructors:\footnote{The result monad is similar to the one used in the JSExplain project~\parencite{JSExplain}, which aims at defining a JavaScript interpreter in Coq, readable by non-specialists. 
+}
+\begin{itemize}
+\item The main constructor is \mintinline{Coq}{result_success}, used when a computation is successful.
+In addition to the result (of type \mintinline{Coq}{A} in the definition),
+it carries the global state (of type \mintinline{Coq}{state}). (We describe the representation of state later on in this section.)
+%
+\item The constructor \mintinline{Coq}{result_error} is meant to catch
+errors thrown by GNU~R, for instance an R runtime typing error:
+these errors are not catchable and immediately end the execution.
+A \mintinline{Coq}{string} is provided to help the debugging process.
+%
+\item The constructor \mintinline{Coq}{result_longjump}
+appears in constructs involving non-local jumps like \mintinline{R}{break}
+or \mintinline{R}{return}.
+We do not give much details about this constructor in this paper.\et{why not?}
+%
+\item Unspecified C behaviors are translated into \mintinline{Coq}{result_impossible}. This typically includes dereferencing an invalid pointer.
+Getting this result immediately ends the Coq interpreter: it is meant to be unreachable. Observing such a result means that a bug in GNU~R has been found.\et{has this happened? I guess not}
+%
+\item Given the size of the interpreter\et{not mentioned before},
+it is important to be able to execute it without it being complete.
+The \mintinline{Coq}{result_not_implemented} is thus important
+for the development, and is treated specifically in our testing framework.
+%
+\item Finally, \mintinline{Coq}{result_bottom} is returned
+to end the execution when reaching the maximum number of executed instructions
+(also called \emph{fuel}). This is meant to artificially make our interpreter terminate, despite the fact that the interpreted R program may not.
+\end{itemize}
+
+The result monad is associated with a monadic binder,
+written \mintinline{Coq}{let%success}.
+This binder expects its argument to evaluate to a result of the form
+\mintinline{Coq}{result_success}. If so, it binds the carried result to a name, and transparently propagates the possibly-updated state.
+All other kinds of results are transparently propagated to the top-level. This obliviousness to global state, errors and non-termination is what enables a close correspondence between a program written in both languages.
+
+% We believe that this helps to find bugs in CoqR
+% and to convey trust to the overall R semantics.
+
+\subsection{Eyeball Correspondence}
 \label{sec:eyeball:closeness}
 
-\begin{figure*}
+\begin{figure*}[t]
     \centering{}
 \begin{subfigure}{.54\textwidth}
 \begin{minted}{C}
@@ -338,102 +410,78 @@ Definition do_attr globals runs S
     \label{fig:do_attr}
 \end{figure*}
 
-% Definition of the line-to-line correspondence.
-One key specificity of this interpreter is that it has been designed
-to be similar to the original C source code of GNU~R.
-More precisely, they are related by a line-to-line correspondence
-(also called \emph{eyeball closeness}):
-every one or two lines of our interpreter
-correspond to one or two lines of the reference interpreter.
-%
-This correspondence helped us during the development process:
-whenever a bug was encountered during the testing process,
-we would localize the function responsible for the bug,
-then check the line-to-line correspondence.
-Such checks were quick and easy to perform,
-and often lead to a quick fix of CoqR.
-%
-Figure~\ref{fig:do_attr} shows an example of such correspondence:
-Figure~\ref{fig:c:do_attr} shows a C function,
-and Figure~\ref{fig:coq:do_attr} its Coq translation.
 
-% Differences between C and Coq.
-Coq and C are widely different programming languages:
-Coq is purely functional
-whilst global side-effects are frequent in C.
-Furthermore, Coq is designed to reject any function
-whose behavior is not entirely defined
-(it is for instance impossible to miss a case in a pattern-matching),
-whilst C is known for its undefined behaviors.
-Finally, in contrary to C functions,
-Coq functions are guaranteed not to loop.
-%
-To make Coq functions follow C paradigms,
-we thus introduced a state, error, and fuel monad, shown below.
-\begin{minted}{Coq}
-Inductive result (A : Type) :=
-  | result_success : state -> A -> result A
-  | result_error : state -> string -> result A
-  | result_longjump : state -> context -> result A
-  | result_impossible : state -> string -> result A
-  | result_not_implemented : string -> result A
-  | result_bottom : state -> result A.
-\end{minted}
-The main constructor is \mintinline{Coq}{result_success}:
-it is returned when a computation was successful.
-In addition to the result (of type \mintinline{Coq}{A} in the definition),
-it carries the global state.
-%
-The constructor \mintinline{Coq}{result_error} is meant to catch
-errors thrown by GNU~R,
-for instance an R typing error:
-these errors are not catchable and immediately ends the execution.
-A \mintinline{Coq}{string} is provided to help the debugging process.
-%
-The constructor \mintinline{Coq}{result_longjump}
-typically appears in constructs like \mintinline{R}{break}
-or \mintinline{R}{return} involving non-local jumps.
-We won't give much details about this constructor in this paper.
-%
-Unspecified C behaviors are translated into \mintinline{Coq}{result_impossible}.
-This typically includes dereferencing an invalid pointer.
-Getting this result immediately ends the Coq interpreter:
-it is meant to be unreachable.
-Such a result would mean that a bug in GNU~R has been found.
-%
-Given the size of the interpreter,
-it was important to be able to execute it without it being complete.
-The \mintinline{Coq}{result_not_implemented} is thus important
-for the development, and is treated specifically in our testing framework.
-%
-Finally, \mintinline{Coq}{result_bottom} is returned
-to end the execution when reaching the maximum number of executed instructions
-(also called \emph{fuel}).
-This is meant to artificially make our interpreter terminate,
-despite the fact that the interpreted R program may not.
+% % Definition of the line-to-line correspondence.
+% One key specificity of this interpreter is that it has been designed
+% to be similar to the original C source code of GNU~R.
+% More precisely, they are related by a line-to-line correspondence
+% (also called \emph{eyeball closeness})\et{is closeness a standard term here? (eyeball correspondence sounds better to me)}:
+% every one or two lines of our interpreter
+% correspond to one or two lines of the reference interpreter.
+% %
 
-% Monadic binders.
-This monad is associated with a monadic binder,
-written \mintinline{Coq}{let%success}.
-It expects its argument to be of the form
-\mintinline{Coq}{result_success}
-and binds the carried result to a name,
-the state being propagated.
-All other kinds of results are propagated.
-It is typically used when calling a function:
-in Figure~\ref{fig:coq:do_attr},
-the calls to \mintinline{Coq}{R_length}
+By developing CoqR as a monadic interpreter using the result monad introduced above, we are able to achieve an eyeball correspondence between the C and Coq interpreters. This correspondence is extremely helpful during development:
+whenever a bug is encountered while testing, we localize the function responsible for the bug and then check the line-to-line correspondence.
+Such checks are quick and easy to perform, often leading to a quick fix of CoqR.
+%
+
+Figure~\ref{fig:do_attr} shows an example of the eyeball correspondence that can be achieved using the result monad. Figure~\ref{fig:c:do_attr} shows a C function, and Figure~\ref{fig:coq:do_attr} its Coq translation.
+The binder \mintinline{Coq}{let%success} is used when calling a function. 
+For instance, the calls to \mintinline{Coq}{R_length}
 and \mintinline{Coq}{matchArgs}
 may return an unsuccessful result,
 and the code afterwards will only be executed if the result has been successful.
-%
-Such monads are similar to the ones used in the JSExplain project~\parencite{JSExplain},
-which aims at defining a JavaScript interpreter readable by non-specialists.
-We believe that this helps to find bugs in CoqR
-and to convey trust to the overall R semantics.
+
+\et{walk the reader through the correspondence: comparison operators, raising an error, returning the final result. } 
+
+The other differences that one can observe are several arguments that are systematically passed to each function (\mintinline{Coq}{globals}, \mintinline{Coq}{runs}, and \mintinline{Coq}{S}), as well as the use of 
+\mintinline{Coq}{read%list} 
+instead of \mintinline{C}{CAR} in the C version, and the fact that the use of the \mintinline{C}{PROTECT} macro is missing from the Coq version. We clarify each of these points in the following subsections.
+
+% The \mintinline{Coq}{S} argument and the use 
+% are related to the modeling of the heap, discussed in Section~\ref{sec:coq:structure}.
+
+% The \mintinline{Coq}{globals} argument is discussed in Section~\ref{sec:coq:structure}.
+
+% The \mintinline{Coq}{runs} argument is related to dealing with non-termination, and is discussed in Section~\ref{sec:fuel}.
+
+
+
+\subsection{Modeling the Heap}
+\label{sec:heap}
+
+
+\begin{figure}
+    \centering{}
+    \begin{tikzpicture}
+        \node [draw = black, rectangle, minimum height = 6mm, anchor = base] (hlist) {header} ;
+        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of hlist] (car) {car} ;
+        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of car] (cdr) {cdr} ;
+        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of cdr] (tag) {tag} ;
+        \node [left = 2mm of hlist] (nlist) {List:} ;
+
+        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, below = 2mm of hlist] (hvector1) {header} ;
+        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of hvector1] (size1) {size} ;
+        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of size1] (i1) {\(i_1\)} ;
+        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of i1] (i2) {\(i_2\)} ;
+        \node [anchor = base, right = 0pt of i2] (i3) {\(\ldots\)} ;
+        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of i3] (in) {\(i_n\)} ;
+        \node [left = 2mm of hvector1] (nvector1) {Integer vector:} ;
+
+        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, below = 2mm of hvector1] (hvector2) {header} ;
+        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of hvector2] (size2) {size} ;
+        \node [draw = black, rectangle, minimum height = 6mm, minimum width = 1cm, anchor = base, right = 0pt of size2] (c1) {\(c_1\)} ;
+        \node [draw = black, rectangle, minimum height = 6mm, minimum width = 1cm, anchor = base, right = 0pt of c1] (c2) {\(c_2\)} ;
+        \node [anchor = base, right = 0pt of c2] (c3) {\(\ldots\)} ;
+        \node [draw = black, rectangle, minimum height = 6mm, minimum width = 1cm, anchor = base, right = 0pt of c3] (cn) {\(c_n\)} ;
+        \node [left = 2mm of hvector2] (nvector2) {Complex vector:} ;
+    \end{tikzpicture}
+    \caption{Basic language elements in memory}
+    \label{fig:basic:language:elements}
+\end{figure}
 
 % Basic language elements.
-We now describe how we modelled GNU~R's heap.
+We now describe how we modeled GNU~R's heap.
 Although the underlying language is C,
 GNU~R has been designed with a specific structure in mind~\parencite{R}.
 Almost all objects manipulated by the interpreter
@@ -465,38 +513,11 @@ The way memory is used in C
 makes it easy to unguardedly access a cell out of bounds,
 which would lead to an undefined behavior.
 
-\begin{figure}
-    \centering{}
-    \begin{tikzpicture}
-        \node [draw = black, rectangle, minimum height = 6mm, anchor = base] (hlist) {header} ;
-        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of hlist] (car) {car} ;
-        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of car] (cdr) {cdr} ;
-        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of cdr] (tag) {tag} ;
-        \node [left = 2mm of hlist] (nlist) {List:} ;
 
-        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, below = 2mm of hlist] (hvector1) {header} ;
-        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of hvector1] (size1) {size} ;
-        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of size1] (i1) {\(i_1\)} ;
-        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of i1] (i2) {\(i_2\)} ;
-        \node [anchor = base, right = 0pt of i2] (i3) {\(\ldots\)} ;
-        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of i3] (in) {\(i_n\)} ;
-        \node [left = 2mm of hvector1] (nvector1) {Integer vector:} ;
-
-        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, below = 2mm of hvector1] (hvector2) {header} ;
-        \node [draw = black, rectangle, minimum height = 6mm, anchor = base, right = 0pt of hvector2] (size2) {size} ;
-        \node [draw = black, rectangle, minimum height = 6mm, minimum width = 1cm, anchor = base, right = 0pt of size2] (c1) {\(c_1\)} ;
-        \node [draw = black, rectangle, minimum height = 6mm, minimum width = 1cm, anchor = base, right = 0pt of c1] (c2) {\(c_2\)} ;
-        \node [anchor = base, right = 0pt of c2] (c3) {\(\ldots\)} ;
-        \node [draw = black, rectangle, minimum height = 6mm, minimum width = 1cm, anchor = base, right = 0pt of c3] (cn) {\(c_n\)} ;
-        \node [left = 2mm of hvector2] (nvector2) {Complex vector:} ;
-    \end{tikzpicture}
-    \caption{Basic language elements in memory}
-    \label{fig:basic:language:elements}
-\end{figure}
 
 % Guarded accesses in Coq to represent unguarded accesses in C.
 This is an issue,
-as we can't directly translate unguarded C accesses into Coq:
+as we cannot directly translate unguarded C accesses into Coq:
 we need a model of the heap.
 Figure~\ref{fig:EXP} shows how we defined \mintinline{Coq}{EXP} in Coq.
 Basic language elements are records storing a header
@@ -574,32 +595,24 @@ this corresponds to an undefined behavior in C
 The accesses in Coq are thus guarded by monadic binders,
 whilst closely mimicking the unguarded accesses of C.
 
-% About garbage collection.
-The \mintinline{C}{PROTECT} macro of Figure~\ref{fig:c:do_attr}
-has been removed in the Coq translation.
-This macro is performing a garbage collecting action
-(it saves the object \mintinline{C}{argList} from garbage collection),
-and we chose not to model this aspect of GNU~R.
-Indeed, garbage collection is not supposed to change the result of any computation.
-Not modelling this part removed frequent lines in the translation process,
-enabling us to focus on the computational part.
+
+% Not modeling this part enabled us to focus on the computational part.
 %
-The \mintinline{Coq}{globals} and \mintinline{Coq}{runs} arguments
-are discussed in Section~\ref{sec:coq:structure}.
 %
-At this stage, the reader should be able
-to compare the C and Coq programs of Figure~\ref{fig:do_attr}
-line by line.
-The rest of CoqR was similarly defined.
+% At this stage, the reader should be able
+% to compare the C and Coq programs of Figure~\ref{fig:do_attr}
+% line by line.
+% The rest of CoqR was similarly defined.
 
 \subsection{A Scalable Structure}
 \label{sec:coq:structure}
+\eti{need to restructure this section, separate the part on "dealing with globals" from the "core/extension" aspect}
 
 % The project is quite large.
 The CoqR project spans over 18,000 lines of Coq definitions,
 including around 5,000 lines for the core functions
 and 4,000 lines for additional features of R.
-This is larger than in the JSCert project.
+This is larger than in the JSCert project.\et{ref + how large is JSCert?}
 We had to cope with this size to make the whole project scalable.
 This section can be seen as a case-study for a large Coq development.
 
@@ -643,7 +656,7 @@ that are \emph{not} present in the symbol table.
 
 % We can easily extend the core feature by feature.
 This definition of the core of R enables us to focus
-our formalisation effort on a very restricted part of the language
+our formalization effort on a very restricted part of the language
 in a first stage,
 then extend it feature by feature once the project gets mature.
 Core functions include the execution process for function calls,
@@ -654,10 +667,10 @@ are not part of the core,
 but some assignment functions are
 as they are used when calling functions.
 %
-This core is easily extendable:
+This core is easily extensible:
 we can add any other feature by implementing
 its associated function and adding it to the symbol table.
-We focussed on the addition of the functions necessary to
+We focused on the addition of the functions necessary to
 run R's base library (see Section~\ref{sec:library}).
 
 \begin{figure}
@@ -739,6 +752,7 @@ Definition do_attr_init globals runs S :=
 \end{figure*}
 
 % Static global variables.
+\paragraph{Hidden global variables.}
 There are ways to hide global variables in C.
 This is the case of the \mintinline{C}{static} keyword
 when used inside a function:
@@ -761,6 +775,8 @@ This code is executed after the normal global variables are initialized.
 Thanks to coercions,
 this variable is then used transparently in Figure~\ref{fig:coq:do_attr}.
 
+\subsection{Dealing with Non-Termination}
+\label{sec:fuel}
 % Structuring the fuel.
 Another additional argument present in Figure~\ref{fig:coq:do_attr}
 is the \mintinline{Coq}{runs} argument.
@@ -818,16 +834,26 @@ Fixpoint runs max_step globals :=
     \label{fig:runs}
 \end{figure}
 
+
+\subsection{Limitations}
+% About garbage collection.
+The use of the \mintinline{C}{PROTECT} macro in Figure~\ref{fig:c:do_attr} is missing in the Coq translation. This macro use performs a garbage collecting action, namely it saves the object \mintinline{C}{argList} from garbage collection.
+At this stage, we chose not to model the garbage collection aspect of GNU~R in CoqR. Indeed, garbage collection adds complexity to the interpreter, but is not supposed to affect the result of any computation. For now, we focus on the computational part of GNU~R.
+
 % Ignored aspects.
-As stated in Section~\ref{sec:eyeball:closeness},
-we chose to ignore some aspects of the source code of GNU~R.
-All garbage collection commands have been formalized out.
-Furthermore, we removed all support for various locales and character encodings:
-our interpreter only considers ASCII strings.
-More generally, we removed all possibility to dynamically
+% As stated in Section~\ref{sec:eyeball:closeness},
+% we chose to ignore some aspects of the source code of GNU~R.
+% All garbage collection commands have been formalized out.
+Additionally, CoqR only considers ASCII strings, and hence does not support various locales and character encodings supported by R. 
+More generally, CoqR ignores any possibility to dynamically
 parametrize the behavior of the interpreter using options
 stored the shell environment.
-\mb{Are there other things we should mentionned?}
+
+\mb{Are there other things we should mention?}
+
+Note that the eyeball correspondence between GNU~R and CoqR would pay off in the future if one wants to extend CoqR to account some of these features, such as garbage collection.
+
+\eti{I'm here (haven't gone through all text of section 2 above yet, but haven't looked at parsing at all)}
 
 \subsection{Parsing R}
 \label{sec:shim}
