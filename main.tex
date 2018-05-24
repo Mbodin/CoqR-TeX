@@ -67,6 +67,8 @@
 
 \newcommand\ignore[1]{}
 
+\newcommand\CoqR{CoqR}
+
 \begin{document}
 
 \title{A Trustworthy Formalization of R} % I didn't thought much about this. Any suggestion?
@@ -124,7 +126,7 @@
     as these corner-cases can lead to unexpected behavior.
     We believe that a Coq formalization of the language would help.
 
-    We introduce CoqR, an R interpreter (or denotational semantics) written in Coq.
+    We introduce \CoqR{}, an R interpreter (or denotational semantics) written in Coq.
     This interpreter has been related to the reference R interpreter
     GNU~R by two ways.
     First, the Coq code has been written to mimic the source code of GNU~R.
@@ -235,12 +237,25 @@ because of the large amount of such corner cases.
 This complexity in turn raises a meta-trust issue: 
 how can a large semantics (and consequently the proofs made from it)
 be trusted?
-The approach we take in this work \et{in line with prior work on JavaScript (lambdaJS in particular, can we say the same of JSCert?), also C? what else?} is to relate the formal semantics to the reference interpreter of R, GNU~R~\parencite{Rwebsite}. In the absence of a standardized formal semantics, GNU~R is the reference point that defines what the R language really is.
+The approach we take in this work
+\eti{in line with prior work on JavaScript (lambdaJS in particular, can we say the same of JSCert?), also C? what else?}
+\mbi{
+    We can say the same for lambdaJS/ES5 and KJS, although we are then only talking about testing and not line-to-line correspondence.
+    We also can for JSCert, although it was tested against test suites and not a reference interpreter.
+    I don't think that we can say the same for CompCert or Formalin, as they only considered the C specification.
+    Maybe CompCertS falls into this category as it tried to mimic the behavior of real-world compilers, but I don't remember that it was actually tested.}
+is to relate the formal semantics to the reference interpreter of R, GNU~R~\parencite{Rwebsite}. In the absence of a standardized formal semantics, GNU~R is the reference point that defines what the R language really is.
 Being able to relate the formalism to trust sources is a crucial aspect of the formalization process, and often requires a large amount of work
 to be done properly~\parencite{leroy2014pip}.
 
 \paragraph{Contributions.} 
-We present CoqR\mb{Are we fixed on the name?}\et{no, put it as a macro ;-)}, a trustworthy formalization of the R programming language in the Coq proof assistant. The formalization is a denotational semantics, in the form of an interpreter. This interpreter is trustworthy because we have followed two complementary techniques to maximize trust, inspired by the JSCert project\et{cite}. First, the Coq interpreter has been written using a monadic encoding that allows for a direct eyeball correspondence with the C source code of GNU~R. Second, we have extensively tested the interpreter against the R reference interpreter.\et{using the standard test suites? and additional ones?} To this end, we have developed a testing framework that streamlines the process of running both the Coq interpreter and GNU~R on a set of test cases and report on mismatches and errors. We report on the process of scaling up our interpreter in order to be able to import existing R libraries.
+We present \CoqR{}, a trustworthy formalization of the R programming language in the Coq proof assistant.
+The formalization is a denotational semantics, in the form of an interpreter.
+This interpreter is trustworthy because we have followed two complementary techniques to maximize trust, inspired by the JSCert project~\parencite{popl14jscert}.
+First, the Coq interpreter has been written using a monadic encoding that allows for a direct eyeball correspondence with the C source code of GNU~R.
+Second, we have extensively tested the interpreter against the R reference interpreter.\et{using the standard test suites? and additional ones?}\mb{I think that we can cite the FastR paper at this stage~\parencite{kalibera2014fast}: they talk about their test suite.}
+To this end, we have developed a testing framework that streamlines the process of running both the Coq interpreter and GNU~R on a set of test cases and report on mismatches and errors.
+We report on the process of scaling up our interpreter in order to be able to import existing R libraries.
 
 % Given the size of our formalization,
 % we consider this part to be the most important of our contributions.
@@ -249,7 +264,7 @@ We present CoqR\mb{Are we fixed on the name?}\et{no, put it as a macro ;-)}, a t
 % \url{https://github.com/Mbodin/proveR/releases/tag/DLS2018}\todo{make this tag exist on Github}.
 
 % % Contributions.
-% We introduce CoqR
+% We introduce \CoqR{}
 
 % a formalization of the R programming language in the Coq proof assistant.
 % This is a continuation of a previous work~\parencite{CoqRCoqPL},
@@ -339,10 +354,10 @@ A \mintinline{Coq}{string} is provided to help the debugging process.
 \item The constructor \mintinline{Coq}{result_longjump}
 appears in constructs involving non-local jumps like \mintinline{R}{break}
 or \mintinline{R}{return}.
-We do not give much details about this constructor in this paper.\et{why not?}
+We do not give much details about this constructor in this paper.\et{why not?}\mb{If we have space, I can add some details. But it really boils down to a specific C behavior that is not that much used in the interpreter (mainly in one place in function calls).}
 %
 \item Unspecified C behaviors are translated into \mintinline{Coq}{result_impossible}. This typically includes dereferencing an invalid pointer.
-Getting this result immediately ends the Coq interpreter: it is meant to be unreachable. Observing such a result means that a bug in GNU~R has been found.\et{has this happened? I guess not}
+Getting this result immediately ends the Coq interpreter: it is meant to be unreachable. Observing such a result means that a bug in GNU~R has been found.\et{has this happened? I guess not}\mb{No it hasn't. What I meant but that is that in \CoqR{}, such a mistake always result in an error, whilst in GNU~R, this could result in a silent error due to compiler optimizations: we are in theory able to catch bugs that direct testing on GNU~R wouldn't be able to catch.}
 %
 \item Given the size of the interpreter\et{not mentioned before},
 it is important to be able to execute it without it being complete.
@@ -360,7 +375,7 @@ This binder expects its argument to evaluate to a result of the form
 \mintinline{Coq}{result_success}. If so, it binds the carried result to a name, and transparently propagates the possibly-updated state.
 All other kinds of results are transparently propagated to the top-level. This obliviousness to global state, errors and non-termination is what enables a close correspondence between a program written in both languages.
 
-% We believe that this helps to find bugs in CoqR
+% We believe that this helps to find bugs in \CoqR{}
 % and to convey trust to the overall R semantics.
 
 \subsection{Eyeball Correspondence}
@@ -420,9 +435,9 @@ Definition do_attr globals runs S
 % correspond to one or two lines of the reference interpreter.
 % %
 
-By developing CoqR as a monadic interpreter using the result monad introduced above, we are able to achieve an eyeball correspondence between the C and Coq interpreters. This correspondence is extremely helpful during development:
+By developing \CoqR{} as a monadic interpreter using the result monad introduced above, we are able to achieve an eyeball correspondence between the C and Coq interpreters. This correspondence is extremely helpful during development:
 whenever a bug is encountered while testing, we localize the function responsible for the bug and then check the line-to-line correspondence.
-Such checks are quick and easy to perform, often leading to a quick fix of CoqR.
+Such checks are quick and easy to perform, often leading to a quick fix of \CoqR{}.
 %
 
 Figure~\ref{fig:do_attr} shows an example of the eyeball correspondence that can be achieved using the result monad. Figure~\ref{fig:c:do_attr} shows a C function, and Figure~\ref{fig:coq:do_attr} its Coq translation.
@@ -567,7 +582,7 @@ For instance, if Coq expects a \mintinline{Coq}{EXPData}
 and is given a \mintinline{Coq}{ListStruct},
 then the constructor \mintinline{Coq}{listExp} will be implicitly called
 thanks to the corresponding line in Figure~\ref{fig:EXP}.
-In the context of CoqR,
+In the context of \CoqR{},
 this is more than a simple syntactic notation
 as it helps the line-to-line correspondence
 by hiding what is not present in C:
@@ -602,7 +617,7 @@ whilst closely mimicking the unguarded accesses of C.
 % At this stage, the reader should be able
 % to compare the C and Coq programs of Figure~\ref{fig:do_attr}
 % line by line.
-% The rest of CoqR was similarly defined.
+% The rest of \CoqR{} was similarly defined.
 
 \subsection{Dealing with Global Variables}
 \label{sec:globals}
@@ -619,14 +634,14 @@ is set to be a list whose \mintinline{C}{car}, \mintinline{C}{cdr},
 and \mintinline{C}{tag} fields point to \mintinline{C}{R_NilValue} itself.
 This element is used instead of the \mintinline{C}{NULL} pointer
 to mark any non-present element. Another important global variable is 
-\mintinline{C}{R_FunTab}, which is the {\em symbol table} that maps operation and function names to C functions implementing them. (We exploit this structuring of the interpreter for building CoqR in an incremental manner---see Section~\ref{sec:coq:structure}.)
+\mintinline{C}{R_FunTab}, which is the {\em symbol table} that maps operation and function names to C functions implementing them. (We exploit this structuring of the interpreter for building \CoqR{} in an incremental manner---see Section~\ref{sec:coq:structure}.)
 
 %
 The initialization of global variable is fairly subtle. Most initializations perform local computations, calling core functions.
 To avoid this circular dependency---which Coq would not accept---one could parametrize each core function by the value of the global variables it uses.
 This would however not scale, considering the size of the project and the number of global variables involved.
 %
-Instead, we parameterize each function of CoqR by a single \mintinline{Coq}{globals} environment, which is a mapping from a definite set of global variables to \mintinline{Coq}{EXP_pointer}. This additional argument can be seen in the Coq code of Figure~\ref{fig:coq:do_attr}: it is passed along at each call site.
+Instead, we parameterize each function of \CoqR{} by a single \mintinline{Coq}{globals} environment, which is a mapping from a definite set of global variables to \mintinline{Coq}{EXP_pointer}. This additional argument can be seen in the Coq code of Figure~\ref{fig:coq:do_attr}: it is passed along at each call site.
 
 To make definitions more convenient, we use coercions to make Coq implicitly perform a lookup in the \mintinline{Coq}{globals} environment whenever a global variable is read. Therefore, accessing global variables is transparent, as illustrated by the use of \mintinline{C}{do_attr_formals} in Figure~\ref{fig:coq:do_attr}.
 
@@ -666,7 +681,7 @@ Definition do_attr_init globals runs S :=
 In place of the first commented-out part in Figure~\ref{fig:c:do_attr}, the code actually defines the \mintinline{C}{static} variable \mintinline{C}{do_attr_formals}, as shown in Figure~\ref{fig:c:do_attr:formals}. Upon the first call of \mintinline{C}{do_attr}, the variable \mintinline{C}{do_attr_formals} is initialized by a basic language element. The value is kept across calls in order to avoid a costly reallocate at each call.
 %
 Observe that this pattern exactly follows the scheme of the other global variables: the variable is initialized once, and then never changes. Consequently, we treat such a \mintinline{C}{static} variable just like a global variable. We extracted out the part of \mintinline{C}{do_attr} that performs initialization, shown in Figure~\ref{fig:coq:do_attr:formals}.
-This code is executed after the standard global variables are initialized.\et{what if the initialization of a static var uses some argument of the first call? does it ever happen?}
+This code is executed after the standard global variables are initialized.\et{what if the initialization of a static var uses some argument of the first call? does it ever happen?}\mb{I've never seen it. In such a case, I just add these variables in the state (this already happenned, but is rare).}
 
 
 \subsection{Dealing with Non-Termination}
@@ -688,7 +703,7 @@ This record stores all recursive functions as its projections.
 Each recursive call in C are then translated by calling
 the corresponding projection of the record,
 as in a regular fixed-point combinator.
-\mb{I guess that this could be improved a lot…}
+\mb{I guess that this paragraph could be improved a lot\ldots}
 Once all functions have been defined,
 one can then define a function \mintinline{Coq}{runs} taking some fuel:
 at each step, its projections are functions taking a \mintinline{Coq}{runs}
@@ -696,14 +711,14 @@ with less fuel as argument;
 when reaching \(0\), all its projections systematically return \mintinline{Coq}{result_bottom}.
 Figure~\ref{fig:runs} shows its Coq definition.
 %
-\mb{Maybe we just don't want to speak about this ☺}
+\mb{Maybe we just don't want to speak about this:}
 \mbi{
 Note that the symbol table has to be one of the projections of \mintinline{Coq}{runs},
-otherwise a user could make the Coq interpreter loop by giving as argument… not clear,actually.
+otherwise a user could make the Coq interpreter loop by giving as argument\ldots not clear,actually.
 }
 %
 This structure only needs one pattern-matching on fuel
-in the whole CoqR interpreter.
+in the whole \CoqR{} interpreter.
 It is thus a scalable way to organize our Coq project.
 
 \begin{figure}
@@ -732,28 +747,33 @@ Fixpoint runs max_step globals :=
 \subsection{Limitations}
 % About garbage collection.
 The use of the \mintinline{C}{PROTECT} macro in Figure~\ref{fig:c:do_attr} is missing in the Coq translation. This macro use performs a garbage collecting action, namely it saves the object \mintinline{C}{argList} from garbage collection.
-At this stage, we chose not to model the garbage collection aspect of GNU~R in CoqR. Indeed, garbage collection adds complexity to the interpreter, but is not supposed to affect the result of any computation. For now, we focus on the computational part of GNU~R.
+At this stage, we chose not to model the garbage collection aspect of GNU~R in \CoqR{}. Indeed, garbage collection adds complexity to the interpreter, but is not supposed to affect the result of any computation. For now, we focus on the computational part of GNU~R.
 
 % Ignored aspects.
 % As stated in Section~\ref{sec:eyeball:closeness},
 % we chose to ignore some aspects of the source code of GNU~R.
 % All garbage collection commands have been formalized out.
-Additionally, CoqR only considers ASCII strings, and hence does not support various locales and character encodings supported by R. 
-More generally, CoqR ignores any possibility to dynamically
+Additionally, \CoqR{} only considers ASCII strings, and hence does not support various locales and character encodings supported by R. 
+More generally, \CoqR{} ignores any possibility to dynamically
 parametrize the behavior of the interpreter using options
 stored the shell environment.
 
 \mb{Are there other things we should mention?}
 
-Note that the eyeball correspondence between GNU~R and CoqR would pay off in the future if one wants to extend CoqR to account some of these features, such as garbage collection.
+Note that the eyeball correspondence between GNU~R and \CoqR{} would pay off in the future if one wants to extend \CoqR{} to account some of these features, such as garbage collection.
 
 
 
-\subsection{Incremental Development of CoqR}
+\subsection{Incremental Development of \CoqR{}}
 \label{sec:coq:structure}
 
-R is by no means a small language. As a result, the CoqR project spans over 18,000 lines of Coq definitions. This is larger than in the JSCert project.\et{ref + how large is JSCert?}
-Therefore, for pragmatical reasons, it was important to be able to proceed incrementally in the development of CoqR. We hence had to identify a minimal core of R to support initially, and then incrementally extend CoqR. To this end, we exploited the fact that GNU~R is structured around a huge {\em symbol table} that contains all functions present in the initial environment of R, whose code is written natively in C.
+R is by no means a small language.
+As a result, the \CoqR{} project spans over 18,000 lines of Coq definitions.
+This is larger than in the JSCert project~\parencite{popl14jscert}.\et{ref + how large is JSCert?}\mb{We already quote it several times in the paper: isn't it too much?}
+\mbi{For the statistics: \CoqR{} is 18,000 lines of Coq definitions + 1500 lines of Coq proofs.
+    JSCert is 12,500 lines of Coq definitions + 5,000 lines of Coq proofs. Both according to \texttt{coqwc}.
+    It is difficult to compare these figures, but I find the comparizon with JSCert impressive.}
+Therefore, for pragmatical reasons, it was important to be able to proceed incrementally in the development of \CoqR{}. We hence had to identify a minimal core of R to support initially, and then incrementally extend \CoqR{}. To this end, we exploited the fact that GNU~R is structured around a huge {\em symbol table} that contains all functions present in the initial environment of R, whose code is written natively in C.
 
 \begin{figure}
 \begin{minted}{C}
@@ -779,12 +799,13 @@ FUNTAB R_FunTab[] = {
 
 Figure~\ref{fig:names} shows an excerpt of the symbol table. 
 This C array associates the name of each function with the corresponding C function implementing it, along with its arity and some additional information.\footnote{Namely, whether the function is to be directly defined in the initial environment or available in the \mintinline{R}{.Internal} construct, and whether it evaluates lazily or eagerly.}
-The symbol table spans over 800 lines of code.\et{800 table entries?} 
-\et{how much of the 800 entries of the symbol table do we currently support?}
+The symbol table spans over more than 700 table entries.
+\et{how much of the 700 entries of the symbol table do we currently support?}
+\mb{112 out of 722. Some of these functions are only partially implemented, but most of the 112 are completely translated.}
 Interestingly, all syntactic constructs correspond to a C function. This includes constructs like \mintinline{R}{if}, \mintinline{R}{while}, \mintinline{R}{return}, and even assignments: although the parser accepts a seemingly imperative syntax, it is internally replaced by Lisp-style function calls!
 For instance, the two abstract syntax trees generated
 by GNU~R parser for the two lines below are identical\footnote{
-    R uses a lazy evaluation strategy:
+    R frequently uses a lazy evaluation strategy:
     the expression \mintinline{R}{x <- 1} is only evaluated
     when actually used.
     Considering that it performs side effects, results can be unexpected!
@@ -801,7 +822,7 @@ but some assignment functions are as they are used when calling functions.
 All functions in the symbol table are then considered {\em additional features}. The first version of the interpreter only supported the core of R, allowing us to focus the effort on a very restricted sub-language.
 We were then able to add additional features one at a time, by implementing
 the associated function and adding it to the symbol table. 
-In the CoqR development, out of the 18,000 lines, around 5,000 lines are for the core of R,  and 4,000 lines are for additional features.
+In the \CoqR{} development, out of the 18,000 lines, around 5,000 lines are for the core of R,  and 4,000 lines are for additional features.
 \et{what about the other 9000 lines?}
 At the time of this writing, we have integrated support for all the additional features necessary to run the base library of R (see Section~\ref{sec:library}). 
 
@@ -854,7 +875,7 @@ both choosing the second option above in practice.
 
 % Side effects in the grammar
 Another source of difference in behavior
-between GNU~R's and CoqR's parser
+between GNU~R's and \CoqR{}'s parser
 involves new lines.
 There are contexts in R where new lines are significant
 and others where they are not.
@@ -1024,7 +1045,7 @@ Other examples of R functions that had to be implemented
 to run the base library include functions to create new environments,
 logical operators,
 the \mintinline{R}{substitute} function,
-the \mintinline{R}{$} operator \ignore$% Added to help my TeX syntax coloration…
+the \mintinline{R}{$} operator \ignore$% Added to help my TeX syntax hightlighting…
 (which fetches an identifier in a named list or an environments),
 as well as various internal functions.
 \begin{minted}{R}
@@ -1062,7 +1083,6 @@ our denotational semantics should be usable to build proofs about the R language
 Tactic development.
 Given the size of the formalization, some of these proofs would never have been possible
 without some proof automation.
-Automation metric: size of the .vo / size of the .v.
 
 Examples of properties that we have proven with our formalization.
 
@@ -1181,7 +1201,7 @@ this facilitates its reuse for other projects.
 However, this project involved 8 people for a year:
 building both a specification and an interpreter,
 as well as a correctness proof between them, involves a lot of resources.
-We solved this issue in the CoqR specification
+We solved this issue in the \CoqR{} specification
 by defining a denotational semantics:
 the same definition is both executable and syntactically close to its specification.
 
