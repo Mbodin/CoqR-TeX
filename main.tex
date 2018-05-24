@@ -1089,6 +1089,51 @@ Examples of properties that we have proven with our formalization.
 Example of tactic in action:
 computeR after an allocation updating all the \mintinline{Coq}{safe_pointer}, for instance.
 
+\mbi{What follows is an example of tactic usage.}
+\begin{minted}{Coq}
+Lemma PRIMARITY_result : forall S x,
+  safe_pointer S x ->
+  may_have_types S ([SpecialSxp; BuiltinSxp]) x ->
+  result_prop (fun S' _ => S' = S) (fun _ => False) (fun _ _ _ => False)
+    (PRIMARITY runs S x).
+Proof. introv OKx Tx. unfolds PRIMARITY. computeR. cutR read_R_FunTab_result. Qed.
+\end{minted}
+
+Before \mintinline{Coq}{computeR}:
+\begin{minted}{text}
+OKx : safe_pointer S x
+Tx : may_have_types S [SpecialSxp; BuiltinSxp] x
+============================
+result_prop (fun (S' : state) (_ : int) => S' = S) (fun _ : state => False)
+  (fun (_ : state) (_ : nat) (_ : context_type) => False)
+  (add%stack "PRIMARITY" in
+   read%prim _, x_prim := x using S in
+   let%success x_fun := read_R_FunTab runs S (prim_offset x_prim) using S in
+   result_success S (fun_arity x_fun))
+\end{minted}
+
+After \mintinline{Coq}{computeR}:
+\begin{minted}{text}
+Ex0_ : read_SExp S x = Some {|
+  NonVector_SExpRec_header := header;
+  NonVector_SExpRec_data := {| prim_offset := offset |} |}
+OKx0 : safe_pointer S x
+Tx : type header \in [SpecialSxp; BuiltinSxp]
+============================
+result_prop (fun (S' : state) (_ : int) => S' = S) (fun _ : state => False)
+  (fun (_ : state) (_ : nat) (_ : context_type) => False)
+  (let%success x_fun := read_R_FunTab runs S (prim_offset {| prim_offset := offset |}) using S in
+   result_success S (fun_arity x_fun))
+\end{minted}
+
+\begin{minted}{Coq}
+Lemma read_R_FunTab_result : forall S n,                                                                                                                                  
+  safe_offset n ->                                                                                                                                                        
+  result_prop (fun S' _ => S' = S) (fun _ => False) (fun _ _ _ => False)                                                                                                  
+    (read_R_FunTab runs S n).
+\end{minted}
+
+
 \section{Related Work}
 \label{sec:related:work}
 
