@@ -204,11 +204,11 @@ leading to no error thrown.
 \begin{figure}[t]
 \begin{minted}{R}
 f <- function (abc, ab, de) { c (abc, ab, de) }
-f(1, 2, 3)                 # By position
-f(de = 3, abc = 1, ab = 2) # By name
-f(1, d = 3, 2)             # Mixed
-f(3, a = 1, ab = 2)        # a is associated to abc
-f(a = 3, 1, 2)             # error: several prefixes
+f(1, 2, 3)           # By position
+f(de=3, abc=1, ab=2) # By name
+f(1, d=3, 2)         # Mixed
+f(3, a=1, ab=2)      # a is associated to abc
+f(a=3, 1, 2)         # error: several prefixes
 \end{minted}
 \caption{Exploring function calls in R.}
 \label{fig:calls}
@@ -604,123 +604,32 @@ whilst closely mimicking the unguarded accesses of C.
 % line by line.
 % The rest of CoqR was similarly defined.
 
-\subsection{A Scalable Structure}
-\label{sec:coq:structure}
-\eti{need to restructure this section, separate the part on "dealing with globals" from the "core/extension" aspect}
-
-% The project is quite large.
-The CoqR project spans over 18,000 lines of Coq definitions,
-including around 5,000 lines for the core functions
-and 4,000 lines for additional features of R.
-This is larger than in the JSCert project.\et{ref + how large is JSCert?}
-We had to cope with this size to make the whole project scalable.
-This section can be seen as a case-study for a large Coq development.
-
-% We need to identify a core language.
-A first important step was to identify a core for R.
-%
-In GNU~R source code, all syntactic constructs corresponds to a C function.
-This includes constructs like \mintinline{R}{if}, % \mintinline{R}{while},
-\mintinline{R}{return}, or even assignments:
-although the parser accepts a seemingly imperative syntax,
-it is internally replaced by Lisp-style function calls.
-In particular, the two abstract syntax trees generated
-by GNU~R parser for the two lines below are identical\footnote{
-    R uses a lazy evaluation strategy:
-    the expression \mintinline{R}{x <- 1} is only evaluated
-    when actually used.
-    As it performs side effects, results can be unexpected.
-}.
-\begin{minted}{R}
-if (TRUE) x <- 1 else return ()
-"if" (TRUE, "<-" (x, 1), "return" ())
-\end{minted}
-Figure~\ref{fig:names} shows a snippet of GNU~R's source code,
-in its file \texttt{names.c}.
-This C array lists all functions present in the initial environment
-of R whose code is written in C.
-It associates the name of the function with the corresponding C function,
-along with its arity and some additional information
-(whether the function is to be directly defined in the initial environment
-or available in the \mintinline{R}{.Internal} construct,
-and whether it evaluates lazily or eagerly).
-The original array spans over 800 lines of code.
-This array is called the \emph{symbol table}.
-%
-This is an opportunity as this array clearly defines a set of functions
-that can be individually removed from GNU~R without breaking the overall
-interpreter, only breaking the parts using it.
-We thus consider these functions to be additional features:
-the core of the R language consists of the functions used to evaluate R expressions
-that are \emph{not} present in the symbol table.
-
-% We can easily extend the core feature by feature.
-This definition of the core of R enables us to focus
-our formalization effort on a very restricted part of the language
-in a first stage,
-then extend it feature by feature once the project gets mature.
-Core functions include the execution process for function calls,
-environments, closures, promises (delayed evaluation),
-as well as the parts initializing the symbol table.
-Constructs like \mintinline{R}{if} and \mintinline{R}{while}
-are not part of the core,
-but some assignment functions are
-as they are used when calling functions.
-%
-This core is easily extensible:
-we can add any other feature by implementing
-its associated function and adding it to the symbol table.
-We focused on the addition of the functions necessary to
-run R's base library (see Section~\ref{sec:library}).
-
-\begin{figure}
-\begin{minted}{C}
-FUNTAB R_FunTab[] = {
-  {"if",        do_if,       2,  true,  false},
-  {"while",     do_while,    2,  true,  false},
-  {"break",     do_break,    0,  true,  false},
-  {"return",    do_return,   1,  true,  false},
-  {"function",  do_function, -1, true,  false},
-  {"<-",        do_set,      2,  true,  false},
-  {"(",         do_paren,    1,  true,  true},
-  {".Internal", do_internal, 1,  true,  false},
-  {"which",     do_which,    1,  false, true},
-  {"+",         do_arith1,   2,  true,  true},
-  {"-",         do_arith2,   2,  true,  true},
-  {"cos",       do_math20,   1,  true,  true},
-  {"sin",       do_math21,   1,  true,  true},
-  /* ... */ }
-\end{minted}
-    \caption{All features of R listed in GNU~R source code}
-    \label{fig:names}
-\end{figure}
+\subsection{Dealing with Global Variables}
+\label{sec:globals}
 
 % Initialization of R and global variables.
-The initialization of GNU~R's internal variables
-takes a large place in its source code.
+The GNU~R interpreter features over \(80\) global variables that need initialization, and are subsequently unchanged. 
+The initialization of these internal variables
+actually represents a large portion of the source code.
 Even before importing any libraries, a lot of basic language elements
 are created and stored in global variables.
+
 For instance, the often-used variable \mintinline{C}{R_NilValue}
 is set to be a list whose \mintinline{C}{car}, \mintinline{C}{cdr},
 and \mintinline{C}{tag} fields point to \mintinline{C}{R_NilValue} itself.
 This element is used instead of the \mintinline{C}{NULL} pointer
-to mark any non-present element.
-There are over \(80\) such global variables to be initialized.
-These global variables are always initialized once,
-then never changes.
+to mark any non-present element. Another important global variable is 
+\mintinline{C}{R_FunTab}, which is the {\em symbol table} that maps operation and function names to C functions implementing them. (We exploit this structuring of the interpreter for building CoqR in an incremental manner---see Section~\ref{sec:coq:structure}.)
+
 %
-Their initialization is subtle, however:
-most of them perform local computations, calling core functions.
-To avoid this circular dependency (that Coq wouldn't accept),
-one could parametrize each core functions by the value of the global variables it uses.
-This would however not scale to the size of the project.
+The initialization of global variable is fairly subtle. Most initializations perform local computations, calling core functions.
+To avoid this circular dependency---which Coq would not accept---one could parametrize each core function by the value of the global variables it uses.
+This would however not scale, considering the size of the project and the number of global variables involved.
 %
-Instead, we parameterized each function by a unique \mintinline{Coq}{globals}
-environment, which is a mapping from a definite set of global variables
-to \mintinline{Coq}{EXP_pointer}.
-This additional argument can be seen in Figure~\ref{fig:coq:do_attr}.
-Coercions have been used to make Coq implicitly perform a look-up
-in the \mintinline{Coq}{globals} environment whenever a global variable is read.
+Instead, we parameterize each function of CoqR by a single \mintinline{Coq}{globals} environment, which is a mapping from a definite set of global variables to \mintinline{Coq}{EXP_pointer}. This additional argument can be seen in the Coq code of Figure~\ref{fig:coq:do_attr}: it is passed along at each call site.
+
+To make definitions more convenient, we use coercions to make Coq implicitly perform a lookup in the \mintinline{Coq}{globals} environment whenever a global variable is read. Therefore, accessing global variables is transparent, as illustrated by the use of \mintinline{C}{do_attr_formals} in Figure~\ref{fig:coq:do_attr}.
+
 
 \begin{figure*}
     \centering{}
@@ -752,28 +661,13 @@ Definition do_attr_init globals runs S :=
 \end{figure*}
 
 % Static global variables.
-\paragraph{Hidden global variables.}
-There are ways to hide global variables in C.
-This is the case of the \mintinline{C}{static} keyword
-when used inside a function:
-the variable value is persistent across calls,
-as if it were a global variable.
-Let us for instance consider another snippet of the function
-\mintinline{C}{do_attr} in Figure~\ref{fig:c:do_attr:formals},
-defining the \mintinline{C}{static} variable \mintinline{C}{do_attr_formals}.
-It stands in place of the first part commented out in Figure~\ref{fig:c:do_attr}.
-At its first call, the variable is initialized by a basic language element.
-It can be costly to reallocate it at each call,
-and it is kept \mintinline{C}{static} for this reason.
+\paragraph{Hidden global variables.} In fact \mintinline{C}{do_attr_formals} is a {\em hidden} global variable, introduced locally with the C \mintinline{C}{static} keyword inside the \mintinline{C}{do_attr} function. Such a variable is persistent across calls, just like a standard global variable.
+
+In place of the first commented-out part in Figure~\ref{fig:c:do_attr}, the code actually defines the \mintinline{C}{static} variable \mintinline{C}{do_attr_formals}, as shown in Figure~\ref{fig:c:do_attr:formals}. Upon the first call of \mintinline{C}{do_attr}, the variable \mintinline{C}{do_attr_formals} is initialized by a basic language element. The value is kept across calls in order to avoid a costly reallocate at each call.
 %
-This exactly follows the scheme of the other global variables:
-it is initialized once, then never changes.
-We treat it as such.
-We extracted out the part of \mintinline{C}{do_attr}
-initializing it, as shown in Figure~\ref{fig:coq:do_attr:formals}.
-This code is executed after the normal global variables are initialized.
-Thanks to coercions,
-this variable is then used transparently in Figure~\ref{fig:coq:do_attr}.
+Observe that this pattern exactly follows the scheme of the other global variables: the variable is initialized once, and then never changes. Consequently, we treat such a \mintinline{C}{static} variable just like a global variable. We extracted out the part of \mintinline{C}{do_attr} that performs initialization, shown in Figure~\ref{fig:coq:do_attr:formals}.
+This code is executed after the standard global variables are initialized.\et{what if the initialization of a static var uses some argument of the first call? does it ever happen?}
+
 
 \subsection{Dealing with Non-Termination}
 \label{sec:fuel}
@@ -852,6 +746,65 @@ stored the shell environment.
 \mb{Are there other things we should mention?}
 
 Note that the eyeball correspondence between GNU~R and CoqR would pay off in the future if one wants to extend CoqR to account some of these features, such as garbage collection.
+
+
+
+\subsection{Incremental Development of CoqR}
+\label{sec:coq:structure}
+
+R is by no means a small language. As a result, the CoqR project spans over 18,000 lines of Coq definitions. This is larger than in the JSCert project.\et{ref + how large is JSCert?}
+Therefore, for pragmatical reasons, it was important to be able to proceed incrementally in the development of CoqR. We hence had to identify a minimal core of R to support initially, and then incrementally extend CoqR. To this end, we exploited the fact that GNU~R is structured around a huge {\em symbol table} that contains all functions present in the initial environment of R, whose code is written natively in C.
+
+\begin{figure}
+\begin{minted}{C}
+FUNTAB R_FunTab[] = {
+  {"if",        do_if,       2,  true,  false},
+  {"while",     do_while,    2,  true,  false},
+  {"break",     do_break,    0,  true,  false},
+  {"return",    do_return,   1,  true,  false},
+  {"function",  do_function, -1, true,  false},
+  {"<-",        do_set,      2,  true,  false},
+  {"(",         do_paren,    1,  true,  true},
+  {".Internal", do_internal, 1,  true,  false},
+  {"which",     do_which,    1,  false, true},
+  {"+",         do_arith1,   2,  true,  true},
+  {"-",         do_arith2,   2,  true,  true},
+  {"cos",       do_math20,   1,  true,  true},
+  {"sin",       do_math21,   1,  true,  true},
+  /* ... */ }
+\end{minted}
+    \caption{Symbol table of GNU~R}
+    \label{fig:names}
+\end{figure}
+
+Figure~\ref{fig:names} shows an excerpt of the symbol table. 
+This C array associates the name of each function with the corresponding C function implementing it, along with its arity and some additional information.\footnote{Namely, whether the function is to be directly defined in the initial environment or available in the \mintinline{R}{.Internal} construct, and whether it evaluates lazily or eagerly.}
+The symbol table spans over 800 lines of code.\et{800 table entries?} 
+\et{how much of the 800 entries of the symbol table do we currently support?}
+Interestingly, all syntactic constructs correspond to a C function. This includes constructs like \mintinline{R}{if}, \mintinline{R}{while}, \mintinline{R}{return}, and even assignments: although the parser accepts a seemingly imperative syntax, it is internally replaced by Lisp-style function calls!
+For instance, the two abstract syntax trees generated
+by GNU~R parser for the two lines below are identical\footnote{
+    R uses a lazy evaluation strategy:
+    the expression \mintinline{R}{x <- 1} is only evaluated
+    when actually used.
+    Considering that it performs side effects, results can be unexpected!
+}.
+\begin{minted}{R}
+if (TRUE) x <- 1 else return ()
+"if" (TRUE, "<-" (x, 1), "return" ())
+\end{minted}
+
+The symbol table provides us with an opportunity for incremental development, because this array clearly defines a set of functions that can be individually removed from GNU~R without breaking the overall interpreter---only the parts using them. We therefore consider the {\em core} of the R language to consist of the functions used to evaluate R expressions that are \emph{not} present in the symbol table. Core functions include the execution process for function calls, environments, closures, promises (delayed evaluation),
+as well as the parts initializing the symbol table. Constructs like \mintinline{R}{if} and \mintinline{R}{while} are not part of the core,
+but some assignment functions are as they are used when calling functions.
+
+All functions in the symbol table are then considered {\em additional features}. The first version of the interpreter only supported the core of R, allowing us to focus the effort on a very restricted sub-language.
+We were then able to add additional features one at a time, by implementing
+the associated function and adding it to the symbol table. 
+In the CoqR development, out of the 18,000 lines, around 5,000 lines are for the core of R,  and 4,000 lines are for additional features.
+\et{what about the other 9000 lines?}
+At the time of this writing, we have integrated support for all the additional features necessary to run the base library of R (see Section~\ref{sec:library}). 
+
 
 \eti{I'm here (haven't gone through all text of section 2 above yet, but haven't looked at parsing at all)}
 
