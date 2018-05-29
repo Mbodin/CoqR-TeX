@@ -8,7 +8,7 @@
     review, % Note: remove the [review] option for the final document.
     natbib=false % Note: This ishere to be able to use Biber.
  ]{acmart}
-\let\citename\relax
+%\let\citename\relax
 
 \settopmatter{printfolios=true,printccs=false,printacmref=false}
 
@@ -545,9 +545,9 @@ and not following it in memory as in C.
 \begin{figure}
 \begin{minted}{Coq}
 Record ListStruct := make_ListStruct {
-    lSist_carval : EXP_pointer ;
-    lSist_cdrval : EXP_pointer ;
-    lSist_tagval : EXP_pointer
+    list_carval : EXP_pointer ;
+    list_cdrval : EXP_pointer ;
+    list_tagval : EXP_pointer
   }.
 
 Record Vector_EXP (A : Type) := make_Vector_EXP {
@@ -1044,7 +1044,7 @@ Other examples of R functions that had to be implemented
 to run the base library include functions to create new environments,
 logical operators,
 the \mintinline{R}{substitute} function,
-the \mintinline{R}{$} operator \ignore$% Added to help my TeX syntax hightlighting…
+the \mintinline{R}{$} operator \ignore$% Added to help my TeX syntax highlighting…
 (which fetches an identifier in a named list or an environments),
 as well as various internal functions.
 \begin{minted}{R}
@@ -1100,7 +1100,7 @@ and is used to end lists or indicate a missing information.
 Similarly, the constructor states that the tag
 of a list is either a character vector or \mintinline{Coq}{NilSxp}.
 No constraint is given to the first element \mintinline{Coq}{car}
-of the list.
+of the list (lists are untyped in R).
 %
 The constructor \mintinline{Coq}{safe_StrStruct} states that
 a string vector contains an array of C pointers,
@@ -1123,7 +1123,73 @@ Inductive safe_SExp S : SExp -> Prop :=
     \label{fig:invariants:definition}
 \end{figure}
 
-\todo{}
+Such invariants are relatively simple,
+but given the size of the formalization,
+they are quite long to prove.
+To cope with this difficulty, we defined various Coq tactics
+to ease the proof process.
+These tactics were mainly useful to propagate known information
+through state changes:
+such operation would have been long and cumbersome for the user,
+and it automates relatively easily.
+
+\begin{figure}
+\begin{minted}{Coq}
+Lemma do_attr_result : forall S globals call op args env,
+  safe_state S ->
+  safe_globals S globals ->
+  safe_pointer S args ->
+  may_have_types S [NilSxp; ListSxp] args ->
+  (* ... *)
+  result_prop (fun S' ans =>
+      safe_state S' /\ safe_globals S' globals /\ safe_pointer S' ans)
+    (fun S' => False)
+    (do_attr globals runs S call op args env).
+Proof.
+  introv OKS OKglobals OKargs Targs. unfolds do_attr.
+  cutR R_length_result. computeR.
+  cutR matchArgs_result.
+  (* ... *)
+Qed.
+\end{minted}
+    \caption{Example of tactic usage}
+    \label{fig:do_attr_result}
+\end{figure}
+
+Let us consider Figure~\ref{fig:do_attr_result}.
+It is a proof that the \mintinline{Coq}{do_attr} function
+defined in Figure~\ref{fig:coq:do_attr} produces a result
+satisfying the invariants.
+%
+The \mintinline{Coq}{safe_state} predicate states
+that the given state only stores objects satisfying our invariants.
+Similarly, \mintinline{Coq}{safe_globals} states that the global variables
+of \mintinline{Coq}{globals} satisfy our invariants.
+The arguments \mintinline{Coq}{call}, \mintinline{Coq}{op},
+\mintinline{Coq}{args}, and \mintinline{Coq}{env} of \mintinline{Coq}{do_attr}
+are also assumed to satisfy these invariants,
+as well as being of the expected type.
+%
+The \mintinline{Coq}{result_prop} predicates enables us
+to specify what the resulting state of \mintinline{Coq}{do_attr}
+satisfy in both the normal result and the error result.
+In the normal result, we states that the invariants are still satisfied.
+We states that \mintinline{Coq}{False} is satisfied in the error result:
+under our assumptions, the \mintinline{Coq}{do_attr} function
+can not return any error.
+
+The proof closely the source code of \mintinline{Coq}{do_attr}.
+After introducing the hypotheses, the function \mintinline{Coq}{do_attr}
+is unfolded, replaced by its definition.
+In Figure~\ref{fig:coq:do_attr}, we can see that \mintinline{Coq}{do_attr}
+starts by calling \mintinline{Coq}{R_length}.
+We here call the \mintinline{Coq}{cutR} tactic with a lemma about \mintinline{Coq}{R_length}.
+\mb{TODO}
+We then call the \mintinline{Coq}{computeR} tactic.
+This is our most important tactic:
+it moves forwards in the current expression,
+propagating everything that can be propagated.
+This first invocation of \mintinline{Coq}{computeR}
 
 Tactic development.
 Given the size of the formalization, some of these proofs would never have been possible
@@ -1134,49 +1200,7 @@ Examples of properties that we have proven with our formalization.
 Example of tactic in action:
 computeR after an allocation updating all the \mintinline{Coq}{safe_pointer}, for instance.
 
-\mbi{What follows is an example of tactic usage.}
-\begin{minted}{Coq}
-Lemma PRIMARITY_result : forall S x,
-  safe_pointer S x ->
-  may_have_types S ([SpecialSxp; BuiltinSxp]) x ->
-  result_prop (fun S' _ => S' = S) (fun _ => False) (fun _ _ _ => False)
-    (PRIMARITY runs S x).
-Proof. introv OKx Tx. unfolds PRIMARITY. computeR. cutR read_R_FunTab_result. Qed.
-\end{minted}
-
-Before \mintinline{Coq}{computeR}:
-\begin{minted}{text}
-OKx : safe_pointer S x
-Tx : may_have_types S [SpecialSxp; BuiltinSxp] x
-============================
-result_prop (fun (S' : state) (_ : int) => S' = S) (fun _ : state => False)
-  (fun (_ : state) (_ : nat) (_ : context_type) => False)
-  (add%stack "PRIMARITY" in
-   read%prim _, x_prim := x using S in
-   let%success x_fun := read_R_FunTab runs S (prim_offset x_prim) using S in
-   result_success S (fun_arity x_fun))
-\end{minted}
-
-After \mintinline{Coq}{computeR}:
-\begin{minted}{text}
-Ex0_ : read_SExp S x = Some {|
-  NonVector_SExpRec_header := header;
-  NonVector_SExpRec_data := {| prim_offset := offset |} |}
-OKx0 : safe_pointer S x
-Tx : type header \in [SpecialSxp; BuiltinSxp]
-============================
-result_prop (fun (S' : state) (_ : int) => S' = S) (fun _ : state => False)
-  (fun (_ : state) (_ : nat) (_ : context_type) => False)
-  (let%success x_fun := read_R_FunTab runs S (prim_offset {| prim_offset := offset |}) using S in
-   result_success S (fun_arity x_fun))
-\end{minted}
-
-\begin{minted}{Coq}
-Lemma read_R_FunTab_result : forall S n,                                                                                                                                  
-  safe_offset n ->                                                                                                                                                        
-  result_prop (fun S' _ => S' = S) (fun _ => False) (fun _ _ _ => False)                                                                                                  
-    (read_R_FunTab runs S n).
-\end{minted}
+Other proofs are probably possible.
 
 
 \section{Related Work}
