@@ -465,7 +465,6 @@ instead of \mintinline{C}{CAR} in the C version, and the fact that the use of th
 \subsection{Modeling the Heap}
 \label{sec:heap}
 
-
 \begin{figure}
     \centering{}
     \begin{tikzpicture}
@@ -1075,8 +1074,39 @@ and as such served as a real-world case study for the framework.
     as the base library results are much better and should be kept for the end.}
 
 In this section,
-we answer the objectives stated in the introduction:
-our denotational semantics should be usable to build proofs about the R language.
+we answer one of the objective stated in the introduction:
+our operational semantics should be usable to build proofs about the R language.
+This section describes a use-case:
+proving that some invariants hold in the interpreter's memory.
+
+As said in Section~\ref{sec:heap},
+each basic language element in R are associated one of 24 types,
+and each of these types are differently stored in memory.
+
+\begin{minted}{Coq}
+Inductive safe_SExp_type S : SExpType -> SExpRec -> Prop :=
+  | safe_NilSxp : forall car cdr tag,
+    may_have_types S ([NilSxp]) car ->
+    may_have_types S ([NilSxp]) cdr ->
+    may_have_types S ([NilSxp]) tag ->
+    safe_SExp_type S NilSxp (make_NonVector_SExpRec header (make_ListSxp_struct car cdr tag))
+  | safe_SymSxp : forall header pname value internal,
+    may_have_types S ([CharSxp]) pname ->
+    may_have_types S ([NilSxp ; BuiltinSxp ; SpecialSxp]) internal ->
+    safe_SExp_type S SymSxp (make_NonVector_SExpRec header (make_SymSxp_struct pname value internal))
+  | safe_ListSxp : forall header car cdr tag,
+    may_have_types S all_storable_SExpTypes car ->
+    may_have_types S ([NilSxp ; ListSxp]) cdr ->
+    may_have_types S ([NilSxp ; CharSxp]) tag ->
+    safe_SExp_type S ListSxp (make_NonVector_SExpRec header (make_ListSxp_struct car cdr tag))
+  | safe_StrSxp : forall header array,
+    (forall a,
+      Mem a (ArrayList.to_list array) ->
+      may_have_types S ([CharSxp]) a) ->
+    safe_SExp_type S StrSxp
+      (SExpRec_VectorPointer (make_Vector_SExpRec header
+        (make_VecSxp_struct (ArrayList.length array) (ArrayList.length array) array))).
+\end{minted}
 
 \todo{}
 
