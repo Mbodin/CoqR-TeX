@@ -126,7 +126,7 @@
     as these corner-cases can lead to unexpected behavior.
     We believe that a Coq formalization of the language would help.
 
-    We introduce \CoqR{}, an R interpreter (or denotational semantics) written in Coq.
+    We introduce \CoqR{}, an R interpreter written in Coq.
     This interpreter has been related to the reference R interpreter
     GNU~R by two ways.
     First, the Coq code has been written to mimic the source code of GNU~R.
@@ -139,34 +139,34 @@
     and we believe that it can be reused by other interpreters.
 \end{abstract}
 
-% %% 2012 ACM Computing Classification System (CSS) concepts
-% %% Generate at 'http://dl.acm.org/ccs/ccs.cfm'.
-\begin{CCSXML}
-  <ccs2012>
-    <concept>
-      <concept_id>10003752.10010124.10010131.10010133</concept_id>
-      <concept_desc>Theory of computation~Denotational semantics</concept_desc>
-      <concept_significance>500</concept_significance>
-    </concept>
-    <concept>
-      <concept_id>10011007.10011006.10011066.10011070</concept_id>
-      <concept_desc>Software and its engineering~Application specific development environments</concept_desc>
-      <concept_significance>300</concept_significance>
-    </concept>
-    <concept>
-      <concept_id>10011007.10011074.10011099.10011692</concept_id>
-      <concept_desc>Software and its engineering~Formal software verification</concept_desc>
-      <concept_significance>100</concept_significance>
-    </concept>
-  </ccs2012>
-\end{CCSXML}
+% % %% 2012 ACM Computing Classification System (CSS) concepts
+% % %% Generate at 'http://dl.acm.org/ccs/ccs.cfm'.
+% \begin{CCSXML}
+%   <ccs2012>
+%     <concept>
+%       <concept_id>10003752.10010124.10010131.10010133</concept_id>
+%       <concept_desc>Theory of computation~Denotational semantics</concept_desc>
+%       <concept_significance>500</concept_significance>
+%     </concept>
+%     <concept>
+%       <concept_id>10011007.10011006.10011066.10011070</concept_id>
+%       <concept_desc>Software and its engineering~Application specific development environments</concept_desc>
+%       <concept_significance>300</concept_significance>
+%     </concept>
+%     <concept>
+%       <concept_id>10011007.10011074.10011099.10011692</concept_id>
+%       <concept_desc>Software and its engineering~Formal software verification</concept_desc>
+%       <concept_significance>100</concept_significance>
+%     </concept>
+%   </ccs2012>
+% \end{CCSXML}
 
-\ccsdesc[500]{Theory of computation~Denotational semantics}
-\ccsdesc[300]{Software and its engineering~Application specific development environments}
-\ccsdesc[100]{Software and its engineering~Formal software verification}
-% %% End of generated code
+% \ccsdesc[500]{Theory of computation~Denotational semantics}
+% \ccsdesc[300]{Software and its engineering~Application specific development environments}
+% \ccsdesc[100]{Software and its engineering~Formal software verification}
+% % %% End of generated code
 
-\keywords{R, Coq, Formalization, Testing}
+% \keywords{R, Coq, Formalization, Testing}
 
 \maketitle
 
@@ -250,7 +250,7 @@ to be done properly~\parencite{leroy2014pip}.
 
 \paragraph{Contributions.} 
 We present \CoqR{}, a trustworthy formalization of the R programming language in the Coq proof assistant.
-The formalization is a denotational semantics, in the form of an interpreter.
+The formalization is a big-step operational semantics, in the form of an interpreter.
 This interpreter is trustworthy because we have followed two complementary techniques to maximize trust, inspired by the JSCert project~\parencite{popl14jscert}.
 First, the Coq interpreter has been written using a monadic encoding that allows for a direct eyeball correspondence with the C source code of GNU~R.
 Second, we have extensively tested the interpreter against the R reference interpreter.\et{using the standard test suites? and additional ones?}\mb{I think that we can cite the FastR paper at this stage~\parencite{kalibera2014fast}: they talk about their test suite.}
@@ -283,7 +283,7 @@ We report on the process of scaling up our interpreter in order to be able to im
 % Outlines.
 \eti{update when paper is stable:}
 This paper is organized as follows.
-Section~\ref{sec:coq:interp} presents the Coq denotational semantics.
+Section~\ref{sec:coq:interp} presents the Coq interpreter.
 In particular, Section~\ref{sec:eyeball:closeness} presents
 how this semantics is syntactically close to the C source code of R.
 Section~\ref{sec:testing:architecture} then presents our testing architecture.
@@ -298,11 +298,9 @@ using our language formalization.
 \section{Coq Interpreter}
 \label{sec:coq:interp}
 
-Our semantics of R is presented on the form of an interpreter
-and is thus denotational.
-Denotational semantics are usually not the best fit for Coq proofs---%
-inductive operational semantics are usually more adapted---%
-but it comes with a crucial advantage:
+Our semantics of R is presented on the form of an interpreter, 
+and is thus a big-step operational semantics.
+Operational semantics written as a function is usually not the best fit for Coq proofs---an inductive definition of the operational semantics is usually more adapted---but our approach comes with a crucial advantage:
 it can be run, and thus tested.
 
 In this section, we show how we define the Coq interpreter in order to achieve the first of the two mechanisms in place for trust, namely the eyeball correspondence with the GNU~R interpreter.
@@ -1345,7 +1343,7 @@ However, this project involved 8 people for a year:
 building both a specification and an interpreter,
 as well as a correctness proof between them, involves a lot of resources.
 We solved this issue in the \CoqR{} specification
-by defining a denotational semantics:
+by defining the big-step operational semantics as an interpreter:
 the same definition is both executable and syntactically close to its specification.
 
 % CompCert.
