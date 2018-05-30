@@ -1081,7 +1081,7 @@ proving that some invariants hold in the interpreter's memory
 and the associated need for proof automation.
 
 As said in Section~\ref{sec:heap},
-each basic language element in R are associated one of 24 types,
+each basic language element in R is associated one of 24 types,
 and each of these types are differently stored in memory.
 Figure~\ref{fig:invariants:definition} shows a snippet
 of our invariants.
@@ -1093,14 +1093,14 @@ whose type is in the list \mintinline{Coq}{l}.
 %
 The constructor \mintinline{Coq}{safe_ListStruct}
 thus states that the queue of a list is either a list
-or has the type \mintinline{Coq}{NilSxp}.
+or a \mintinline{Coq}{NilSxp}-element.
 This last type is this of the \mintinline{Coq}{R_NilValue}
 global variable (see Section~\ref{sec:globals})
 and is used to end lists or indicate a missing information.
 Similarly, the constructor states that the tag
-of a list is either a character vector or \mintinline{Coq}{NilSxp}.
-No constraint is given to the first element \mintinline{Coq}{car}
-of the list (lists are untyped in R).
+of a list is either a character vector or a \mintinline{Coq}{NilSxp}-element.
+No constraint is given to the first element \mintinline{Coq}{car} of the list:
+lists are untyped in R and can hold various kinds of elements.
 %
 The constructor \mintinline{Coq}{safe_StrStruct} states that
 a string vector contains an array of C pointers,
@@ -1144,7 +1144,6 @@ Lemma do_attr_result : forall S globals call op args env,
   result_prop (fun S' ans =>
       safe_state S' /\ safe_globals S' globals
       /\ safe_pointer S' ans)
-    (fun S' => False)
     (do_attr globals runs S call op args env).
 Proof.
   introv OKS OKglobals OKargs Targs. unfolds do_attr.
@@ -1172,40 +1171,44 @@ are also assumed to satisfy these invariants,
 as well as being of the expected type.
 %
 The \mintinline{Coq}{result_prop} predicates enables us
-to specify what the resulting state of \mintinline{Coq}{do_attr}
-satisfy in both the normal result and the error result.
+to specify what the resulting state of \mintinline{Coq}{do_attr} should satisfy,
+whilst ignoring non-interesting cases
+such as \mintinline{Coq}{result_not_implemented} or \mintinline{Coq}{result_bottom}.
+Indeed, reaching one of these results means that the result is out of scope for our interpreter.
+This is the reason why these were not considered harmful
+during the testing process (see Section~\ref{sec:test:methodology}).
 In the normal result, we states that the invariants are still satisfied.
-We states that \mintinline{Coq}{False} is satisfied in the error result:
-under our assumptions, the \mintinline{Coq}{do_attr} function
-can not return any error.
 
-\mb{Maybe we can even remove the error case.}
 The proof closely the source code of \mintinline{Coq}{do_attr}.
-After introducing the hypotheses, the function \mintinline{Coq}{do_attr}
-is unfolded, replaced by its definition.
+After introducing the hypotheses, the function \mintinline{Coq}{do_attr} is unfolded,
+leaving its definition ready to be processed by further tactics.
 In Figure~\ref{fig:coq:do_attr}, we can see that \mintinline{Coq}{do_attr}
 starts by calling \mintinline{Coq}{R_length}.
 We here call the \mintinline{Coq}{cutR} tactic with a lemma about \mintinline{Coq}{R_length}.
-This tactic discharges the premises of the lemma and introduces the resulting state.
-As for \mintinline{Coq}{do_attr}, the error case yields \mintinline{Coq}{False}
-and is discharged by the tactic.
-We thus rewrote the call to \mintinline{Coq}{R_length}
-as \mintinline{Coq}{let%success nargs := result_success S' n using S in (* ... *)},
+This tactic discharges the premises of the lemma and introduces the resulting state:
+only the success case is left, the other kinds of results being propagated.
+% As for \mintinline{Coq}{do_attr}, the error case yields \mintinline{Coq}{False}
+% and is discharged by the tactic.
+The call to \mintinline{Coq}{R_length} is thus rewritten
+to a simple expression of the form 
+\mintinline{Coq}{result_success S' n},
 where \mintinline{Coq}{n} is the number returned by \mintinline{Coq}{R_length}.
 %
 We then call the \mintinline{Coq}{computeR} tactic.
 This is our most important tactic:
 it moves forwards in the current expression,
 propagating everything that can be propagated.
-In our example, it unfolds the \mintinline{Coq}{let%success} monadic binder
-and updates all properties known to hold for the previous state \mintinline{Coq}{S}
+In our example, it unfolds the \mintinline{Coq}{let%success} monadic binder,
+as this binder is now associated by a fully computed result
+(thanks to the \mintinline{Coq}{cutR} tactic).
+It also updates all properties known to hold for the previous state \mintinline{Coq}{S}
 to the new state \mintinline{Coq}{S'} using the results
 of the \mintinline{Coq}{R_length_result} lemma.
-For instance, the hypothesis \mintinline{Coq}{OKargs : safe_pointer S args}
-is replaced by \mintinline{Coq}{OKargs : safe_pointer S' args}.
+For instance, the hypothesis \mintinline{Coq}{safe_pointer S args}
+is replaced by \mintinline{Coq}{safe_pointer S' args}.
 This transition is not particularly difficult to prove
 given the right lemmae,
-but it can be extremely cumbersome to manually apply this transition
+but it can be extremely cumbersome to manually perform this transition
 to all available hypotheses.
 %
 We then continue by calling the tactic \mintinline{Coq}{cutR} again
@@ -1216,11 +1219,12 @@ We have proven that our invariants are safely propagated thorough the execution
 of some chosen functions.
 Our proof for the whole formalization is still in progress.
 Given the size of the formalization,
-we consider that even the part that we indeed prove
-was already too big to be manually proven:
-automation is necessary to cope with such sizes.
+we consider that proving such simple typing invariants
+was already too big to be entirely manually proven:
+automation was necessary to ease the proving process
+and deal with such sizes.
 %
-However, we found that building the \mintinline{Coq}{cutR}
+We also found that building the \mintinline{Coq}{cutR}
 and \mintinline{Coq}{computeR} in Ltac---%
 the tactic language of Coq---%
 was relatively straightforward.
