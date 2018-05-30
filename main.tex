@@ -1142,13 +1142,14 @@ Lemma do_attr_result : forall S globals call op args env,
   may_have_types S [NilSxp; ListSxp] args ->
   (* ... *)
   result_prop (fun S' ans =>
-      safe_state S' /\ safe_globals S' globals /\ safe_pointer S' ans)
+      safe_state S' /\ safe_globals S' globals
+      /\ safe_pointer S' ans)
     (fun S' => False)
     (do_attr globals runs S call op args env).
 Proof.
   introv OKS OKglobals OKargs Targs. unfolds do_attr.
   cutR R_length_result. computeR.
-  cutR matchArgs_result.
+  cutR matchArgs_result. computeR.
   (* ... *)
 Qed.
 \end{minted}
@@ -1178,29 +1179,53 @@ We states that \mintinline{Coq}{False} is satisfied in the error result:
 under our assumptions, the \mintinline{Coq}{do_attr} function
 can not return any error.
 
+\mb{Maybe we can even remove the error case.}
 The proof closely the source code of \mintinline{Coq}{do_attr}.
 After introducing the hypotheses, the function \mintinline{Coq}{do_attr}
 is unfolded, replaced by its definition.
 In Figure~\ref{fig:coq:do_attr}, we can see that \mintinline{Coq}{do_attr}
 starts by calling \mintinline{Coq}{R_length}.
 We here call the \mintinline{Coq}{cutR} tactic with a lemma about \mintinline{Coq}{R_length}.
-\mb{TODO}
+This tactic discharges the premises of the lemma and introduces the resulting state.
+As for \mintinline{Coq}{do_attr}, the error case yields \mintinline{Coq}{False}
+and is discharged by the tactic.
+We thus rewrote the call to \mintinline{Coq}{R_length}
+as \mintinline{Coq}{let%success nargs := result_success S' n using S in (* ... *)},
+where \mintinline{Coq}{n} is the number returned by \mintinline{Coq}{R_length}.
+%
 We then call the \mintinline{Coq}{computeR} tactic.
 This is our most important tactic:
 it moves forwards in the current expression,
 propagating everything that can be propagated.
-This first invocation of \mintinline{Coq}{computeR}
+In our example, it unfolds the \mintinline{Coq}{let%success} monadic binder
+and updates all properties known to hold for the previous state \mintinline{Coq}{S}
+to the new state \mintinline{Coq}{S'} using the results
+of the \mintinline{Coq}{R_length_result} lemma.
+For instance, the hypothesis \mintinline{Coq}{OKargs : safe_pointer S args}
+is replaced by \mintinline{Coq}{OKargs : safe_pointer S' args}.
+This transition is not particularly difficult to prove
+given the right lemmae,
+but it can be extremely cumbersome to manually apply this transition
+to all available hypotheses.
+%
+We then continue by calling the tactic \mintinline{Coq}{cutR} again
+with a lemma about \mintinline{Coq}{matchArgs},
+then \mintinline{Coq}{computeR} to propagate our hypotheses.
 
-Tactic development.
-Given the size of the formalization, some of these proofs would never have been possible
-without some proof automation.
-
-Examples of properties that we have proven with our formalization.
-
-Example of tactic in action:
-computeR after an allocation updating all the \mintinline{Coq}{safe_pointer}, for instance.
-
-Other proofs are probably possible.
+We have proven that our invariants are safely propagated thorough the execution
+of some chosen functions.
+Our proof for the whole formalization is still in progress.
+Given the size of the formalization,
+we consider that even the part that we indeed prove
+was already too big to be manually proven:
+automation is necessary to cope with such sizes.
+%
+However, we found that building the \mintinline{Coq}{cutR}
+and \mintinline{Coq}{computeR} in Ltac---%
+the tactic language of Coq---%
+was relatively straightforward.
+As a consequence, we do not expect major difficulties
+to adapt or build similar tactics for other kinds of proofs.
 
 
 \section{Related Work}
