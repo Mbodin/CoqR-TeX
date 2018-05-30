@@ -40,7 +40,7 @@
 \addbibresource{biblio.bib}
 
 \usepackage{minted}
-\setminted{encoding=utf8}
+\setminted{encoding=utf8,fontsize=\small}
 
 \usepackage{tikz}
 \usetikzlibrary{positioning}
@@ -964,8 +964,7 @@ Inductive safe_SExp S : SExp -> Prop :=
 
 \begin{figure}
 \begin{minted}{Coq}
-Lemma do_attr_result : 
- forall S globals call op args env,
+Lemma do_attr_result : forall S globals call op args env,
   safe_state S ->
   safe_globals S globals ->
   safe_pointer S args ->
