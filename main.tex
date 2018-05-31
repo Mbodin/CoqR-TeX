@@ -40,7 +40,7 @@
 \addbibresource{biblio.bib}
 
 \usepackage{minted}
-\setminted{encoding=utf8,fontsize=\small}
+\setminted{encoding=utf8,fontsize=\small,breaklines}
 
 \usepackage{tikz}
 \usetikzlibrary{positioning}
@@ -186,8 +186,8 @@ the semantics of R is subtle and contains numerous corner cases that can result 
 The reasons for these corner cases are numerous, ranging from backward compatibility to the desire to accommodate the use of R as both a traditional programming language and an interactive shell.
 Even a feature as basic as function calls can be the source of surprises in R. 
 Indeed, there are many ways to call a function, and in particular there are two ways to provide an argument: either by position or by name.\footnote{
-    To simplify, here we ignore the \mintinline{R}{...} notation
-    as well as default arguments, which both have non-trivial interactions with the function call mechanisms.}
+    To simplify, we ignore the \mintinline{R}{...} construct
+    as well as default arguments, which both have non-trivial interactions with the other constructs.}
 
 Figure~\ref{fig:calls} defines a function \mintinline{R}{f} that concatenates its three arguments. The first call associates arguments by position, and the second by name. The third call mixes both mechanisms. But in R, 
 association by name can be made {\em by prefix}:
@@ -350,12 +350,32 @@ these errors are not catchable and immediately end the execution.
 A \mintinline{Coq}{string} is provided to help the debugging process.
 %
 \item The constructor \mintinline{Coq}{result_longjump}
-appears in constructs involving non-local jumps like \mintinline{R}{break}
-or \mintinline{R}{return}.
-We do not give much details about this constructor in this paper.\et{why not?}\mb{If we have space, I can add some details. But it really boils down to a specific C behavior that is not that much used in the interpreter (mainly in one place in function calls).}
+corresponds to a call to the \mintinline{C}{longjmp}
+C function in GNU~R source code.
+It only appears in constructs involving non-local jumps,
+such as \mintinline{R}{break} or \mintinline{R}{return}.
+The \mintinline{C}{longjmp} jumps to the corresponding
+\mintinline{C}{setjmp} function,
+which typically appears in loops and function calls.
+For instance, Figure~\ref{fig:do_repeat:c} shows the C code
+of the \mintinline{R}{repeat} feature of R,
+which keeps on executing its argument.
+Once a \mintinline{C}{longjmp} is executed
+(for instance by a \mintinline{R}{break}),
+the current program point is set to be Line~\ref{line:do_repeat:c:setjmp}.
+The \mintinline{C}{setjmp} function then returns
+the argument of the \mintinline{C}{longjmp}.
+% This enables the interpreter to differenciate on the kind of non-local behavior.
+We needed to add a special constructor
+to translate this specific behavior of C.
 %
-\item Unspecified C behaviors are translated into \mintinline{Coq}{result_impossible}. This typically includes dereferencing an invalid pointer.
-Getting this result immediately ends the Coq interpreter: it is meant to be unreachable. Observing such a result means that a bug in GNU~R has been found.\et{has this happened? I guess not}\mb{No it hasn't. What I meant but that is that in \CoqR{}, such a mistake always result in an error, whilst in GNU~R, this could result in a silent error due to compiler optimizations: we are in theory able to catch bugs that direct testing on GNU~R wouldn't be able to catch.}
+\item Unspecified C behaviors
+(for instance, dereferencing an invalid pointer)
+are translated into
+\mintinline{Coq}{result_impossible}.
+Getting this result immediately ends the Coq interpreter:
+it is meant to be unreachable.
+Observing such a result means that a bug in GNU~R has been found.\et{has this happened? I guess not}\mbi{No it hasn't. What I meant but that is that in \CoqR{}, such a mistake always result in a special error, whilst in GNU~R, this could result in a silent error due to compiler optimizations: we are in theory able to catch bugs that direct testing on GNU~R wouldn't be able to catch.}
 %
 \item Given the size of the interpreter\et{not mentioned before},
 it is important to be able to execute it without it being complete.
@@ -367,11 +387,34 @@ to end the execution when reaching the maximum number of executed instructions
 (also called \emph{fuel}). This is meant to artificially make our interpreter terminate, despite the fact that the interpreted R program may not.
 \end{itemize}
 
+\begin{figure}
+\begin{minted}[escapeinside=@@]{C}
+SEXP do_repeat (EXP* call, EXP* op,
+                EXP* args, EXP* rho){
+  EXP* body;
+  RCNTXT cntxt;
+  checkArity (op, args);
+  body = CAR (args);
+  begincontext (&cntxt, CTXT_LOOP, rho, R_BaseEnv);
+  if (setjmp (cntxt.cjmpbuf) != CTXT_BREAK) {@\label{line:do_repeat:c:setjmp}@
+    for (;;) eval (body, rho);
+  }
+  endcontext (&cntxt);
+  return R_NilValue;
+}
+\end{minted}
+    \caption{C code of the \mintinline{C}{do_repeat} function}
+    \label{fig:do_repeat:c}
+\end{figure}
+
 The result monad is associated with a monadic binder,
 written \mintinline{Coq}{let%success}.
 This binder expects its argument to evaluate to a result of the form
 \mintinline{Coq}{result_success}. If so, it binds the carried result to a name, and transparently propagates the possibly-updated state.
-All other kinds of results are transparently propagated to the top-level. This obliviousness to global state, errors and non-termination is what enables a close correspondence between a program written in both languages.
+All other kinds of results are transparently propagated to the top-level.
+A similar monadic binder has been defined to handle
+the special semantics of \mintinline{C}{setjmp}.
+This obliviousness to global state, errors and non-termination is what enables a close correspondence between a program written in both languages.
 
 % We believe that this helps to find bugs in \CoqR{}
 % and to convey trust to the overall R semantics.
@@ -1152,36 +1195,47 @@ which <- function (x, arr = FALSE, names = TRUE) {
 \end{minted}
 
 % About the not-implemented results.
-These functions are easily run:
+These definitions are easily run:
 only the \mintinline{R}{function} keyword is necessary
 to define the function \mintinline{R}{which}.
-Of course, once the base library run,
-if one actually calls the function \mintinline{R}{which},
-a not-implemented exception will be thrown:
-the internal function \mintinline{R}{function (x) .Internal (which (x))}
-has not been implemented.
+However, once the base library has been executed,
+a not-implemented exception will be thrown
+if one actually calls the function \mintinline{R}{which}.
+Indeed,
+the internal function \mintinline{R}{.Internal (which (x))}
+has not yet been implemented.
 %
-\todo{What follows is to be entirely rewritten, I'm afraid.}
-We consider that this behavior is expected:
-the main reason to run the base library is to correctly
-classify the results of our interpreter.
-For instance, the difference of behavior of the program \mintinline{R}{T}
-before and after running the base library is problematical:
-the reason our interpreter would fail in this program without the base library
-is not due to our interpreter itself, but because the base library is missing.
-Classify the internal function \mintinline{R}{which} as being not implemented
-is a correct classification for our interpreter.
+% This behavior is expected.
+It may seem pointless to execute a function definition
+that our interpreter can not execute without failing.
+The reason is that failing because of non-implemented features
+is harmless:
+we know that this result can be safely ignored,
+and our testing framework reports it as such.
+On the other hand,
+if we would not have executed the base library,
+then the interpreter might fail with an error---%
+stating for instance that the \mintinline{R}{which} function
+does not exist---%
+whilst GNU~R runs successfully.
+Such a difference of behavior would be reported
+as a bug by our testing framework,
+whilst a not-implemented exception would not.
+Being able to run the base library thus ensures
+that the testing framework correctly classifies
+the results of \CoqR{}.
 
 % Computational content in the base library.
 The base library also prepares the base environment.
 For instance, the file \texttt{constants.R} of the base library
-contains the following line.
-Such lines are more complex as they involve computations:
+contains the definition below.
+Such definitions are more complex as they involve computations:
 to be able to run the base library,
 we need to implement the \mintinline{R}{atan} function---%
 in this case, using an OCaml hook.
-Other examples of R functions that had to be implemented
-to run the base library include functions to create new environments,
+Other features that had to be implemented
+to run the base library
+include functions to create new environments,
 logical operators,
 the \mintinline{R}{substitute} function,
 the \mintinline{R}{$} operator \ignore$% Added to help my TeX syntax highlighting…
