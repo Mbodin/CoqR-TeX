@@ -859,74 +859,57 @@ In the current \CoqR{} development, out of the 18,000 lines, around 5,000 lines 
 \et{what about the other 9000 lines?}
 At the time of writing, we support 112 entries from the symbol table, which is enough to run the entire base library of R (Section~\ref{sec:library}).
 
-\eti{I'm here (haven't gone through all text of section 2 above yet, but haven't looked at parsing at all)}
+% \eti{I'm here (haven't gone through all text of section 2 above yet, but haven't looked at parsing at all)}
 
 \subsection{Parsing R}
 \label{sec:shim}
 
+Verified software, e.g. written in Coq, needs to interact with less trusted code, for instance for performing input/output. This additional code is called the \emph{shim}, and unfortunately, it usually concentrates most bugs in certified software~\parencite{Yang:2011:FUB:1993498.1993532}. 
 % Why the shim is important.
-Bugs can still appear in verified softwares.
-Indeed, such softwares are not entirely formalized in Coq:
-some additional code is added to perform the program's inputs and outputs.
-This additional code is called the \emph{shim},
-and it usually concentrates bugs in certified softwares~\parencite{Yang:2011:FUB:1993498.1993532}.
+% Bugs can still appear in verified softwares.
+% Indeed, such softwares are not entirely formalized in Coq:
+% some additional code is added to perform the program's inputs and outputs.
+In the case of \CoqR{}, a particularly important part of the shim is the R parser. Parsing real-world programming languages is known to be challenging, so in order to maximize trust, we first tried to develop the parser in Coq
+using the Menhir tool~\parencite{jourdan2012validating} in order to obtain a formally-verified parser. Unfortunately, the grammar of GNU~R (defined in Bison) does not respect the grammar constraints of Menhir's Coq front-end. We thus had to fall back on Menhir's OCaml front-end, making the parser part of the shim.
 
+In order to achieve high confidence in the parser implementation, we nevertheless can follow the eyeball correspondence methodology. 
 % Parsing in the shim.
-A particularly important part of our shim consists of our parser.
-Parsing real-world programming languages is known to be challenging.
-As a consequence, we wanted our parser to be as close as possible to GNU~R's parser,
-instantiating again our methodology.
-Unfortunately, our parser could not be implemented in Coq
-through the Menhir tool~\parencite{jourdan2012validating}
-as the Bison grammar of GNU~R does not respect the grammar constraints
-of Menhir's Coq front-end.
-We thus fell back to its OCaml front-end,
-making our parser part of the shim.
+Consequently, we did not optimize or change GNU~R's grammar in any way. While doing so might have enabled us to use the Coq front-end of Menhir, it would have resulted in a very different grammar from GNU~R's, and spotting bugs and inconsistencies between both grammars would have been challenging.
 
-% Ambiguities in the grammar.
-Following our line-to-line methodology,
-we did not optimize GNU~R's grammar in any way.
-This is a first issue with our parser
-as the Bison grammar of GNU~R is ambiguous,
-with 27 shift/reduce conflicts.
-These conflicts typically appear in expressions such as
-\mintinline{R}{repeat 4 * break},
-which could be read as \mintinline{R}{(repeat 4) * break}
-(which would loop)
-or \mintinline{R}{repeat (4 * break)}
-(which would terminate immediately),
-depending on your interpretation.
-\mbi{I'm not confident about this example.
-    This is the example given by Menhir using the \texttt{explain} option,
-    but I believe that the real issue is somewhere else.
-    Is it an issue if we don't provide an example for this paragraph?}
+Sticking to the original grammar has its own downside, though. First, the Bison grammar of GNU~R is ambiguous, with 27 shift/reduce conflicts.
+% These conflicts typically appear in expressions such as
+% \mintinline{R}{repeat 4 * break},
+% which could be read as \mintinline{R}{(repeat 4) * break}
+% (which would loop)
+% or \mintinline{R}{repeat (4 * break)}
+% (which would terminate immediately),
+% depending on the interpretation.
+% \mbi{I'm not confident about this example.
+%     This is the example given by Menhir using the \texttt{explain} option,
+%     but I believe that the real issue is somewhere else.
+%     Is it an issue if we don't provide an example for this paragraph?}
 As a consequence, both Bison and Menhir make some arbitrary choices,
-and they could be different.
-We checked during testing that they do not,
-both choosing the second option above in practice.
-
+which could in theory be different (we checked through testing that they do not).
+% both choosing the second option above in practice.
 % Side effects in the grammar
-Another source of difference in behavior
-between GNU~R's and \CoqR{}'s parser
-involves new lines.
+Another source of potential mismatch
+between the parsers of GNU~R \CoqR{} are new lines.
 There are contexts in R where new lines are significant
 and others where they are not.
 For instance, in \mintinline{R}{{ function () break + 1 }},
-adding a new line after the \mintinline{R}{function} or \mintinline{R}{+} keywords
-does not change the final result,
+adding a new line after the \mintinline{R}{function} or \mintinline{R}{+} keywords does not change the final result,
 but adding a new line after the \mintinline{R}{break} keyword does.
 %
 In such situations, lexers usually produce the new line token
 nevertheless, leaving to the parser the choice to ignore it or not.
 However, in GNU~R, the lexer reads a global boolean variable %\mintinline{C}{eatLines}
-whenever it encounters a new line.
-This global variable indicates whether the lexer should ignore the new line.
+whenever it encounters a new line, which indicates whether the lexer should ignore the new line.
 This variable is controlled by the parser:
 the lexer and the parser thus communicate through side-effects.
 %
 Such effects are usually considered to be bad practice
 as they heavily depend on when the parser calls the lexer
-(or they might get synchronised out).
+(and they might become get desynchronized).
 %
 To keep the line-to-line correspondence,
 we nevertheless built the same communication channel
@@ -941,18 +924,12 @@ by the equivalent R constant \mintinline{R}{NULL}.
 
 Despite the few differences of behavior,
 we believe that our methodology helped us
-reducing the amount of bugs in our parser.
+reduce the amount of bugs in the parser.
 The differences of behavior are precisely known
-and easily fixable in the executed R code.
+and easily fixable in the parsed R code.
 %
-The alternative would have been
-to heavily rewrite the grammar,
-resulting in a very different grammar than GNU~R's.
-Bugs in such a grammar would certainly exist
-and would be difficult to spot.
 %
-We thus believe that our methodology also applies to the parser,
-and more generally to the whole shim.
+
 
 \section{Formal Reasoning about R}
 \label{sec:proofs}
@@ -967,7 +944,7 @@ and each of these types are differently stored in memory.
 Figure~\ref{fig:invariants:definition} shows a snippet
 of our invariants defined by the \mintinline{Coq}{safe_SExp} inductive property.
 %
-The constructor \mintinline{Coq}{safe_ListStruct} captures the requirements on well-formed lists. The requirements are expressed using he predicate \mintinline{Coq}{may_have_types S l p}, which 
+The constructor \mintinline{Coq}{safe_ListStruct} captures the requirements on well-formed lists. The requirements are expressed using the predicate \mintinline{Coq}{may_have_types S l p}, which 
 states that the pointer \mintinline{Coq}{p}
 is associated in the state \mintinline{Coq}{S} with an object
 whose type is in the list \mintinline{Coq}{l}. Hence, the hypothesis on \mintinline{Coq}{cdr} states that the tail of a list is either a list
