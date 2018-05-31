@@ -1267,25 +1267,25 @@ but these parts are used by real-world R programs.
 Furthermore, the diversity of R users is such that different R programs
 will use very different libraries and features,
 as the generally accepted guideline~\parencite{RGuidelines}
-doesn't restrain users about them.
-This makes tools difficult to build for R,
+does not restrain users about them.
+This makes it difficult to build tools for R,
 and as a consequence, relatively few tools for R exist
 in comparison to the size of its community.
 
 % Genthat.
-As a consequence,
-there exist few testing framework in R.
+In particular,
+there exist few testing frameworks in R.
 The testR~\parencite{maj2013testr, 2014testr} project,
-which later evolved into Genthat~\parencite{genthat} library,
+which later evolved into the Genthat~\parencite{genthat} library,
 is however based on an interesting way of generating unit tests for R functions.
-It start from a program using the functions to be tested.
+It starts from a program using the functions to be tested.
 It then annotates and executes this program,
 storing the trace of the calls to the functions to be tested.
 Unit tests are then generated from this trace.
 The Genthat library is thus useful to generate tests for a library
 given some program using it,
 which can then be used to ensure that further versions of the library
-don't break already existing code.
+do not break existing code.
 
 % FastR
 GNU~R is not the only R interpreter that exist.
@@ -1294,28 +1294,24 @@ but use different libraries for linear algebra,
 usually optimized for a given usage.
 %
 The FastR~\parencite{kalibera2014fast} project takes a different approach
-as it also reimplemented the core code.
-It is based on the Truffle~\parencite{wuerthingertruffle}
-self-optimizing framework.
-Their tool is faster than the reference interpreter
-in the language interpretation, and not only the linear-algebraic part.
+as it also reimplemented the core of the R interpreter.
+It is based on the Truffle self-optimizing framework~\parencite{wuerthingertruffle}.
+FastR is faster than the reference interpreter not only in the linear-algebraic part, but also in the language interpretation layer.
 %
 In both cases, a difference of behavior between GNU~R
 and the specialized interpreter is considered as a bug.
-We believe that this support our choice of strongly basing
-our work on this interpreter.
+We believe that this supports our choice of basing
+our work on the GNU~R interpreter.
 
 % JavaScript semantics and their trust sources.
-To the extent of our knowledge,
-we are the first to provide a mechanized specification of R.
-But the general goal of formalizing full real-world languages---%
+To the best of our knowledge, we are the first to provide a mechanized specification of R. But the general goal of formalizing full real-world languages---%
 as opposed to small subsets---is not new.
 %
-JavaScript is a particular relevant example.
-Indeed, empirical analyses~\parencite{RichardsHBV11}
+JavaScript is a particularly relevant example.
+Indeed, empirical analyses
 have confirmed that the language features
-that are usually ignored in the formalised subsets of R
-are actually important for actual web developers.
+that are usually ignored in the formalised subsets of JavaScript
+are actually important for actual web developers~\parencite{RichardsHBV11}.
 %
 In the case of JavaScript, there are several trust sources.
 First, the language is precisely specified by the ECMAScript specification~\parencite{es2019}.
@@ -1325,18 +1321,17 @@ As a consequence, various formal specifications of JavaScript exist,
 each related with different of its trust sources.
 
 % Maffeis et al.
-The first full formal semantics~\parencite{aplas08}
+The first full formal semantics of JavaScript~\parencite{aplas08}
 is a semantics related to the third version of the ECMAScript specification.
 It had a major influence on the definitions of further JavaScript formal
-specification~\parencite{ses, popl14jscert, popl12-Towards, usenix}.
-It served as the formal basis to prove the soundness of security-related
+specifications~\parencite{ses, popl14jscert, popl12-Towards, usenix}.
+It also served as the formal basis to prove the soundness of security-related
 JavaScript subsets~\parencite{MMT-CSF-TR09, mmt-esorics09, mmt-oakland10}.
-This work was however not mechanized, making it difficult to be used
-as a basis for other formal works.
+This work was however not mechanized, making it difficult to be used as a basis for other formalization work.
 
 % The Essence of JavaScript.
-In parallel, several formal semantics~\parencite{js-ml, Guha2010, Politz:S5, kjs}
-for JavaScript were based on a JavaScript interpreter.
+In parallel, several formal semantics
+for JavaScript were based on a JavaScript interpreter~\parencite{js-ml, Guha2010, Politz:S5, kjs}.
 These semantics are related to JavaScript test suites,
 either by comparing the results with the expected result,
 or by comparing results with widely used JavaScript interpreters.
@@ -1344,18 +1339,14 @@ These formalizations tend to be easier to build
 as testing frameworks already exist.
 Furthermore, they are usually easier to understand by non-specialists.
 However, such formalizations suffer from all the issues of test suites:
-in JavaScript, the \mintinline{javascript}{for}-\mintinline{javascript}{in}
-feature was then loosely tested,
+for instance, in JavaScript the \mintinline{javascript}{for}-\mintinline{javascript}{in} feature was then loosely tested,
 and its behavior varied from interpreters to interpreters.
 
 % JSCert.
 The JSCert formalization~\parencite{popl14jscert}
 is an interesting step forward as it was designed
 to be related with both the ECMAScript specification and the JavaScript test suites.
-The formalization is composed of two parts:
-a mechanized specification and an interpreter.
-The JSCert specification is syntactically related with the ECMAScript specification
-and the interpreter passes its test suites.
+The formalization is composed of two parts: a mechanized specification and an interpreter. The JSCert specification is syntactically related with the ECMAScript specification through an eyeball correspondence, and the interpreter passes its test suites.
 The specification and the interpreter are related to each other by a Coq proof.
 This double-relation provides a large amount of trust to JSCert.
 In practice, both relations served to find issues in the JSCert specification,
@@ -1366,27 +1357,24 @@ this facilitates its reuse for other projects.
 However, this project involved 8 people for a year:
 building both a specification and an interpreter,
 as well as a correctness proof between them, involves a lot of resources.
-We solved this issue in the \CoqR{} specification
-by defining the big-step operational semantics as an interpreter:
-the same definition is both executable and syntactically close to its specification.
+In \CoqR, we solved this issue by defining the big-step operational semantics as an interpreter: the same definition is both executable and syntactically close to its specification (the GNU~R interpreter).
 
 % CompCert.
 The Coq proof assistant has already been used
 in a variety of mechanized language formalization projects.
-The most known is the CompCert project~\cite{Leroy-Compcert-CACM}:
-this project features an optimizing compiler for C.
+The most well-known is the CompCert project~\cite{Leroy-Compcert-CACM}, 
+a verified optimizing compiler for C.
 This compiler is proven to be free of compilation bugs,
 leading to safer programs in critical software.
-This projects comes with a formalization of the C programming language,
+This project comes with a formalization of the C programming language,
 as well as the formalizations of the intermediate compilation languages.
 %
-Due to the compiling nature of the CompCert project,
+Due to the compilation nature of the CompCert project,
 it was acceptable to restrict the behaviors of the C programming language
 in their formalization,
 restricting it to the behaviors that will actually be compiled by CompCert.
 The Formalin project~\parencite{formalin} is another formalization
-of the C language:
-it aims at precisely listing all the possible behaviors of a C program.
+of the C language, which aims at precisely listing all the possible behaviors of a C program. 
 
 \section{Conclusion and Future Work}
 \label{sec:conclusion}
