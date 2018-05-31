@@ -225,8 +225,8 @@ Formal methods offer a solution to the trust issue:
 proof assistants such as Coq~\parencite{Coq} enable us
 to formally prove program properties with a high amount of trust.
 But to formally prove that an R program meets its specification,
-we first need a formal semantics of R. \et{mention the on-going spec effort and its limits} 
-In particular, the formal semantics should account for all the subtle cases of the R semantics, such as function call conventions described above, implicit type conversions, and so on.
+we first need a formal semantics of R. While there exists a language definition document~\parencite{R}, this document is unfit for serving as the basis of a verification effort; it is both a specification effort and a manual, written in plain English, with ambiguities and incomplete at times. Additionally, we found several mismatches between the text description and the behavior of the reference interpreter, GNU~R~\parencite{Rwebsite}.\footnote{For instance, according to the language definition, \mintinline{R}{if ("TRUE") 42} should raise an error, while the interpreter returns \mintinline{R}{42}.}
+Crucially, the formal semantics should account for all the subtle cases of the R semantics, such as function call conventions described above, implicit type conversions, and so on.
 This is necessary because these corner cases are indeed a typical place were bugs appear and are hard to track. 
 A complete semantics for the full R language will inevitably be complex,
 because of the large amount of such corner cases.
@@ -295,28 +295,24 @@ Section~\ref{sec:related:work} discusses related work and Section~\ref{sec:concl
 \section{Coq Interpreter}
 \label{sec:coq:interp}
 
-Our semantics of R is presented on the form of an interpreter, 
-and is thus a big-step operational semantics.
-Operational semantics written as a function is usually not the best fit for Coq proofs---an inductive definition of the operational semantics is usually more adapted---but our approach comes with a crucial advantage:
-it can be run, and thus tested.
-
+We develop the formal semantics of R in the form of an interpreter defined in Coq; therefore, this is a big-step operational semantics.
+Operational semantics written as a Coq recursive function is usually not the best fit for Coq proofs---an inductive definition of the operational semantics is usually more convenient for reasoning---but our approach comes with a crucial advantage: it can be run, and thus tested.
+%
 In this section, we show how we define the Coq interpreter in order to achieve the first of the two mechanisms in place for trust, namely the eyeball correspondence with the GNU~R interpreter.
 
 \subsection{Bridging the Gap between C and Coq}
 \label{sec:monad}
 
-The basic principle of eyeball correspondence is that every one or two lines of the Coq interpreter should correspond to one or two lines of the C reference interpreter.
+The basic principle of the eyeball correspondence is that every one or two lines of the Coq interpreter should correspond to one or two lines of the C reference interpreter.
 
-Of course, achieving a close correspondence between C and Coq versions of the same program is challenging, because C and Coq are widely different programming languages:
+Of course, achieving a close correspondence between C and Coq versions of the same program is quite challenging, because C and Coq are widely different programming languages:
 Coq is purely functional
 whilst global side-effects are frequent in C.
 Furthermore, Coq is designed to reject any function
 whose behavior is not entirely defined
 (it is for instance impossible to miss a case in a pattern-matching),
 whilst C is known for its undefined behaviors.
-Finally, contrary to C,
-Coq programs are required to terminate.
-
+Finally, contrary to C, Coq programs are required to terminate.
 
 \begin{figure}[t]
 \begin{minted}{Coq}
@@ -332,8 +328,9 @@ Inductive result (A : Type) :=
 \label{fig:result}
 \end{figure}
 
-In order to limit the impact that these differences can have on the eyeball correspondence, we introduce a {\em result monad}, which combines both the state, error, and fuel monads (Figure~\ref{fig:result}), and allows us to program in Coq ``as if it were C''. 
-\et{add some basic introductory level stuff on monads, and each of these...}
+In order to limit the impact that these differences can have on the eyeball correspondence, we introduce a {\em result monad}, which combines both the state, error, and fuel monads (Figure~\ref{fig:result}), and allows us to program in Coq ``as if it were C''.%
+%
+\footnote{Recall that monads allow purely functional programs to account for effectful computation, by means of implicit threading of information using a {\em binder}~\parencite{wadler:mscs1992}. For instance, the state monad threads a piece of state through a functional computation, accessible via monadic operations like \mintinline{Coq}{put} and \mintinline{Coq}{get}, thereby simulating a mutable store.}
 More precisely, the result monad features the following constructors:\footnote{The result monad is similar to the one used in the JSExplain project~\parencite{JSExplain}, which aims at defining a JavaScript interpreter in Coq, readable by non-specialists. 
 }
 \begin{itemize}
