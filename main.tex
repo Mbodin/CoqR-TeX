@@ -176,24 +176,22 @@
 % R is used a lot.
 The R programming language~\parencite{R, ihaka1996r, Rwebsite}
 has gotten a lot of traction in recent years, being used by millions of users in areas as varied as biology and finance. This diversity among R programmers results in largely different programming styles. In fact, the language itself is community driven and reflects this diversity.
-
 % R is complex and we need to certify R softwares.
 The R programming language is meant to be both expressive and powerful,
 able to express complex notions in few keystrokes.
-This sometimes comes at the cost of readability. Indeed, 
+This sometimes comes at the cost of readability and predictability. Indeed, 
 the semantics of R is subtle and contains numerous corner cases that can result in unexpected behavior. 
 
 The reasons for these corner cases are numerous, ranging from backward compatibility to the desire to accommodate the use of R as both a traditional programming language and an interactive shell.
 Even a feature as basic as function calls can be the source of surprises in R. 
 Indeed, there are many ways to call a function, and in particular there are two ways to provide an argument: either by position or by name.\footnote{
     To simplify, we ignore the \mintinline{R}{...} construct
-    as well as default arguments, which both have non-trivial interactions with the other constructs.}
-
-Figure~\ref{fig:calls} defines a function \mintinline{R}{f} that concatenates its three arguments. The first call associates arguments by position, and the second by name. The third call mixes both mechanisms. But in R, 
-association by name can be made {\em by prefix}:
-observe that the third call associates \mintinline{R}{d} to \mintinline{R}{de}
+    as well as default arguments, which both have non-trivial interactions with the other constructs.} While this per se is fairly common, the way R supports it is not; in particular it supports matching names {\em by prefix}. 
+% 
+To illustrate some subtleties that follow from this feature, 
+Figure~\ref{fig:calls} defines a function \mintinline{R}{f} that concatenates its three arguments. The first call associates arguments by position, and the second by name. The third call mixes both mechanisms, and exploits the prefix feature: \mintinline{R}{d} is associated to \mintinline{R}{de}
 because it is the only argument whose name starts with \mintinline{R}{d}.
-If more than one argument matches by prefix,
+Now, if more than one argument matches by prefix,
 then R rejects the call and throws an error,
 as in the fifth call in Figure~\ref{fig:calls}.
 However, exact matches are not counted in this process:
@@ -221,7 +219,7 @@ Debugging tools exist~\parencite{mcpherson2014},
 but they cannot always compensate for the complex semantics of R.
 Consequently, surprising bugs occur in R programs
 and fully trusting such programs can be difficult.
-
+%
 % We need a formalization of the language.
 Formal methods offer a solution to the trust issue:
 proof assistants such as Coq~\parencite{Coq} enable us
@@ -236,26 +234,25 @@ because of the large amount of such corner cases.
 % This formalization is quite large, and we need to certify it.
 This complexity in turn raises a meta-trust issue: 
 how can a large semantics (and consequently the proofs made from it)
-be trusted?
-The approach we take in this work
-\eti{in line with prior work on JavaScript (lambdaJS in particular, can we say the same of JSCert?), also C? what else?}
-\mbi{
-    We can say the same for lambdaJS/ES5 and KJS, although we are then only talking about testing and not line-to-line correspondence.
-    We also can for JSCert, although it was tested against test suites and not a reference interpreter.
-    I don't think that we can say the same for CompCert or Formalin, as they only considered the C specification.
-    Maybe CompCertS falls into this category as it tried to mimic the behavior of real-world compilers, but I don't remember that it was actually tested.}
-is to relate the formal semantics to the reference interpreter of R, GNU~R~\parencite{Rwebsite}. In the absence of a standardized formal semantics, GNU~R is the reference point that defines what the R language really is.
-Being able to relate the formalism to trust sources is a crucial aspect of the formalization process, and often requires a large amount of work
-to be done properly~\parencite{leroy2014pip}.
+be trusted? Being able to relate a formalism to {\em trust sources} is a crucial aspect of the formalization process, and often requires a large amount of work to be done properly~\parencite{leroy2014pip}. This challenge has been faced repeatedly in attempts to provide formal foundations to JavaScript.
+%
+Some formalization approaches like $\lambda_{JS}$~\cite{Guha2010} and KJS~\cite{kjs} augment trust through extensive testing and comparison with existing implementations. JSCert~\parencite{popl14jscert} only uses testing, without directly comparing to an existing implementation, but further augments trust through the notion of a so-called {\em eyeball correspondence}, i.e.~a line-to-line syntactic connection, between the formalization (in Coq) and the ECMAScript specification (in English and pseudo-code).
 
 \paragraph{Contributions.} 
 We present \CoqR{}, a trustworthy formalization of the R programming language in the Coq proof assistant.
-The formalization is a big-step operational semantics, in the form of an interpreter.
-This interpreter is trustworthy because we have followed two complementary techniques to maximize trust, inspired by the JSCert project~\parencite{popl14jscert}.
-First, the Coq interpreter has been written using a monadic encoding that allows for a direct eyeball correspondence with the C source code of GNU~R.
-Second, we have extensively tested the interpreter against the R reference interpreter.\et{using the standard test suites? and additional ones?}\mb{I think that we can cite the FastR paper at this stage~\parencite{kalibera2014fast}: they talk about their test suite.}
-To this end, we have developed a testing framework that streamlines the process of running both the Coq interpreter and GNU~R on a set of test cases and report on mismatches and errors.
-We report on the process of scaling up our interpreter in order to be able to import existing R libraries.
+The formalization is a big-step operational semantics, in the form of an interpreter (Section~\ref{sec:coq:interp}). 
+
+We say that this interpreter is {\em trustworthy} because we have followed two complementary techniques to maximize trust.
+First, inspired by JSCert, the Coq interpreter has been written using a monadic encoding that allows for a direct {\em eyeball correspondence} with the C source code of GNU~R~\parencite{Rwebsite}. In the absence of a standardized formal semantics, GNU~R is the reference point that defines what  R really is.
+
+Second, we have extensively {\em tested} the Coq interpreter against the GNU~R reference interpreter, using three test suites: the test suite of GNU~R itself (aprox. 3600 loc), the test suite of the FastR implementation (aprox. 1300 loc)~\parencite{kalibera2014fast}, and a custom test suite that we developed ourselves to exercise corner cases (aprox. 900 loc). 
+%We note that these test suites have very little redundancy between themselves.
+To this end, we have developed a testing framework that streamlines the process of running both the Coq interpreter and GNU~R on a set of test cases and report on mismatches and errors (Section~\ref{sec:testing:architecture}).
+
+We also report on a proof effort to establish that memory invariants are preserved during execution, including some specific proof automation (Section~\ref{sec:proofs}). 
+Finally, we report on the process of scaling up our interpreter in order to be able to import existing R libraries (Section~\ref{sec:library}), in particular the R base library (aprox. 19000 loc).
+
+Section~\ref{sec:related:work} discusses related work and Section~\ref{sec:conclusion} concludes.
 
 % Given the size of our formalization,
 % we consider this part to be the most important of our contributions.
@@ -280,20 +277,20 @@ We report on the process of scaling up our interpreter in order to be able to im
 
 
 
-% Outlines.
-\eti{update when paper is stable:}
-This paper is organized as follows.
-Section~\ref{sec:coq:interp} presents the Coq interpreter.
-In particular, Section~\ref{sec:eyeball:closeness} presents
-how this semantics is syntactically close to the C source code of R.
-Section~\ref{sec:testing:architecture} then presents our testing architecture.
-Not only this architecture is used as a way to relate our semantics
-with R reference interpreter,
-it also provided immediate benefits during the development of the semantics.
-Section~\ref{sec:driving:development} presents these benefits.
-The testing results are shown in Section~\ref{sec:test:results}.
-Finally, Section~\ref{sec:proofs} presents some proofs that have been done
-using our language formalization.
+% % Outlines.
+% \eti{update when paper is stable:}
+% This paper is organized as follows.
+% Section~\ref{sec:coq:interp} presents the Coq interpreter.
+% In particular, Section~\ref{sec:eyeball:closeness} presents
+% how this semantics is syntactically close to the C source code of R.
+% Section~\ref{sec:testing:architecture} then presents our testing architecture.
+% Not only this architecture is used as a way to relate our semantics
+% with R reference interpreter,
+% it also provided immediate benefits during the development of the semantics.
+% Section~\ref{sec:driving:development} presents these benefits.
+% The testing results are shown in Section~\ref{sec:test:results}.
+% Finally, Section~\ref{sec:proofs} presents some proofs that have been done
+% using our language formalization.
 
 \section{Coq Interpreter}
 \label{sec:coq:interp}
@@ -1000,7 +997,7 @@ Inductive safe_SExp S : SExp -> Prop :=
     safe_SExp S (make_StrStruct data)
   (* ... *).
 \end{minted}
-    \caption{Typing invariants holding thorough R execution}
+    \caption{Typing invariants for memory during R execution}
     \label{fig:invariants:definition}
 \end{figure}
 
