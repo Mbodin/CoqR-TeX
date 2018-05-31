@@ -369,7 +369,10 @@ are translated into
 \mintinline{Coq}{result_impossible}.
 Getting this result immediately ends the Coq interpreter:
 it is meant to be unreachable.
-Observing such a result means that a bug in GNU~R has been found.\et{has this happened? I guess not}\mbi{No it hasn't. What I meant but that is that in \CoqR{}, such a mistake always result in a special error, whilst in GNU~R, this could result in a silent error due to compiler optimizations: we are in theory able to catch bugs that direct testing on GNU~R wouldn't be able to catch.}
+Observing such a result means that a bug in GNU~R has been found.\et{has this happened? I guess not}
+\mbi{No it hasn't. What I meant is that in \CoqR{}, undefined behaviors always result in a special error,
+     whilst in GNU~R, this could result in a silent error due to compiler optimizations:
+     we are in theory able to catch ``bugs'' that direct testing on GNU~R wouldn't be able to catch.}
 %
 \item Given the size of the interpreter\et{not mentioned before},
 it is important to be able to execute it without it being complete.
@@ -748,7 +751,8 @@ Figure~\ref{fig:runs} shows its Coq definition.
 \mb{Maybe we just don't want to speak about this:}
 \mbi{
 Note that the symbol table has to be one of the projections of \mintinline{Coq}{runs},
-otherwise a user could make the Coq interpreter loop by giving as argument\ldots not clear,actually.
+otherwise a strangely-written function could in theory fetches itself from the symbol table
+and executes it, leading to an unwanted loop.
 }
 %
 This structure only needs one pattern-matching on fuel
@@ -838,12 +842,13 @@ The symbol table spans over more than 700 table entries.
 \mb{112 out of 722. Some of these functions are only partially implemented, but most of the 112 are completely translated.}
 Interestingly, all syntactic constructs correspond to a C function. This includes constructs like \mintinline{R}{if}, \mintinline{R}{while}, \mintinline{R}{return}, and even assignments: although the parser accepts a seemingly imperative syntax, it is internally replaced by Lisp-style function calls!
 For instance, the two abstract syntax trees generated
-by GNU~R parser for the two lines below are identical\footnote{
-    R frequently uses a lazy evaluation strategy:
+by GNU~R parser for the two lines below are identical.\footnote{
+    R usually uses a lazy evaluation strategy:
     the expression \mintinline{R}{x <- 1} is only evaluated
     when actually used.
-    Considering that it performs side effects, results can be unexpected!
-}.
+    Performing side effects in function arguments can yield to unexpected results,
+    but is acceptable for an \mintinline{R}{if}.
+}
 \begin{minted}{R}
 if (TRUE) x <- 1 else return ()
 "if" (TRUE, "<-" (x, 1), "return" ())
@@ -1001,7 +1006,8 @@ Inductive safe_SExp S : SExp -> Prop :=
 
 \begin{figure}
 \begin{minted}{Coq}
-Lemma do_attr_result : forall S globals call op args env,
+Lemma do_attr_result :
+  forall S globals call op args env,
   safe_state S ->
   safe_globals S globals ->
   safe_pointer S args ->
@@ -1102,11 +1108,21 @@ to adapt or build similar tactics for other kinds of proofs.
 \section{Testing Architecture}
 \label{sec:testing:architecture}
 
-\todo{}
-
-Two goals.
-First providing trust to the formalization by certifying the absence of bugs.
-Second, help the development of the formalization by catching bugs early.
+Being able to syntactically relate our interpreter
+with the source code of GNU~R helped us catch numerous bugs---%
+in some sense as a variant of Linus's law.
+However, given the small number of people
+involved in the \CoqR{} project compared to the size of the produced interpreter,
+some bugs may be left unnoticed.
+% A relevant commit: https://github.com/Mbodin/proveR/commit/03708d1bc5f5ab6af5fd5668845472ffc9d9a6fb
+To be really able to state that the \CoqR{} interpreter is trustable,
+we need to test it.
+%
+We developed a testing framework with two different goals.
+First, being able to certify the absence of bugs in our interpreter:
+no bug should be left unnoticed by the testing framework.
+Second, helping our development by providing useful reports.
+In particular, as few safe results as possible should be marked as bugs.
 
 \subsection{Methodology}
 \label{sec:test:methodology}
@@ -1117,8 +1133,16 @@ Various kinds of tests (multiline, line-by-line, tests that are expected to fail
 
 What is considered to be a failure.
 
+We believe that this scheme can be reused in other projects.
+
 \subsection{Driving the Development Process}
 \label{sec:driving:development}
+
+\begin{figure}
+    \includegraphics[width=.5\textwidth]{framework.png}
+    \caption{Graphical interface of the testing framework}
+    \label{fig:testing:interface}
+\end{figure}
 
 \todo{}
 
@@ -1137,6 +1161,8 @@ Bugs found (and where).
 
 How much tests are passed and failed.
 What does this mean (one line can trigger more than one pass).
+
+GNU~R test stuites (3,600 lines), FastR (1,300 lines), and ours (900 lines).
 
 We extended the testing framework during development by adding new kinds of recognised
 data structure.
