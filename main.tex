@@ -252,12 +252,12 @@ The formalization is a big-step operational semantics, in the form of an interpr
 We say that this interpreter is {\em trustworthy} because we have followed two complementary techniques to maximize trust.
 First, inspired by JSCert, the Coq interpreter has been written using a monadic encoding that allows for a direct {\em eyeball correspondence} with the C source code of GNU~R~\parencite{Rwebsite}. In the absence of a standardized formal semantics, GNU~R is the reference point that defines what  R really is.
 
-Second, we have extensively {\em tested} the Coq interpreter against the GNU~R reference interpreter, using three test suites: the test suite of GNU~R itself (aprox. 3,600 loc), the test suite of the FastR implementation (aprox. 1,300 loc)~\parencite{kalibera2014fast}, and a custom test suite that we developed ourselves to exercise corner cases (aprox. 900 loc).
+Second, we have extensively {\em tested} the Coq interpreter against the GNU~R reference interpreter, using three test suites: the test suite of GNU~R itself (aprox.\ 3,600 loc), the test suite of the FastR implementation (aprox.\ 1,300 loc)~\parencite{kalibera2014fast}, and a custom test suite that we developed ourselves to exercise corner cases (aprox.\ 1,100 loc).
 %We note that these test suites have very little redundancy between themselves.
 To this end, we have developed a testing framework that streamlines the process of running both the Coq interpreter and GNU~R on a set of test cases and report on mismatches and errors (Section~\ref{sec:testing:architecture}).
 
 We also report on a proof effort to establish that memory invariants are preserved during execution, including some specific proof automation (Section~\ref{sec:proofs}).
-Finally, we report on the process of scaling up our interpreter in order to be able to import existing R libraries (Section~\ref{sec:library}), in particular the R base library (aprox. 19,000 loc).
+Finally, we report on the process of scaling up our interpreter in order to be able to import existing R libraries (Section~\ref{sec:library}), in particular the R base library (aprox.\ 19,000 loc).
 
 Section~\ref{sec:related:work} discusses related work and Section~\ref{sec:conclusion} concludes.
 
@@ -913,7 +913,7 @@ At the time of writing, we support 112 entries from the symbol table, which is e
 % \eti{I'm here (haven't gone through all text of section 2 above yet, but haven't looked at parsing at all)}
 
 \subsection{Parsing R}
-\label{sec:shim}
+\label{sec:parsing}
 
 Verified software, e.g. written in Coq, needs to interact with less trusted code, for instance for performing input/output. This additional code is called the \emph{shim}, and unfortunately, it usually concentrates most bugs in certified software~\parencite{Yang:2011:FUB:1993498.1993532}.
 % Why the shim is important.
@@ -1134,8 +1134,8 @@ Being able to syntactically relate our interpreter
 with the source code of GNU~R helped us catch numerous bugs---%
 in some sense as a variant of Linus's law.
 However, given the small number of people
-involved in the \CoqR{} project compared to the size of the produced interpreter,
-some bugs may be left unnoticed.
+involved in the \CoqR{} project compared to the size of our interpreter,
+some bugs may have been unnoticed.
 % A relevant commit: https://github.com/Mbodin/proveR/commit/03708d1bc5f5ab6af5fd5668845472ffc9d9a6fb
 To be really able to state that the \CoqR{} interpreter is trustable,
 we need to test it.
@@ -1149,13 +1149,115 @@ In particular, as few safe results as possible should be marked as bugs.
 \subsection{Methodology}
 \label{sec:test:methodology}
 
-\todo{}
+% Test suite sources.
+We based ourselves on two existing test suites:
+the test suite of GNU~R itself (aprox.\ 3,600 lines)
+and the test suite of FastR (aprox.\ 1,300 lines)~\parencite{kalibera2014fast}.
+We found that these test suites mainly focus on expected behaviors.
+For instance,
+different numerical vectors will be concatenated,
+summed, divided, etc.
+In each case,
+the special values \mintinline{R}{NaN} and \mintinline{R}{NA}
+are checked to be propagated.
+But we did not find any test checking for instance
+how the \mintinline{R}{"TRUE"} string is converted into a boolean value,
+despite its behavior being non-trivial:
+in the context of an \mintinline{R}{if},
+it converts into the boolean \mintinline{R}{TRUE},
+but in the context of a binary logical operation,
+it yields a typing error.
+During our developpment,
+we developped our own test suite (of approx.\ 1,100 lines),
+looking for such corner cases.
 
-Various kinds of tests (multiline, line-by-line, tests that are expected to fail, etc.).
+% Tests are too various.
+These tests come in various shapes.
+Some files provide a set of expressions,
+all of which supposed to evaluate to \mintinline{R}{TRUE}.
+Some are just supposed not to raise any error.
+Finally, some prints on the standard output
+whether the test passed.
+%
+To uniformly test these test suites,
+we compare the results produced by GNU~R and by \CoqR{},
+at each step of execution.
+%
+Another important difference between tests is that
+whilst some are supposed to be executed as a normal file,
+some tests are supposed to be read line-by-line,
+resetting the environment at each line.
+For instance, a line could redefine an important library function
+and test the consequences,
+but the next line is supposed to execute in the usual unaltered environment.
+We manually marked these special files by a \mintinline{R}{#@line}
+comment, which can be easily detected by our testing framework.
 
-What is considered to be a failure.
+% Differences of pretty-printer.
+The pretty-printer of GNU~R is quite complex.
+We did our best to match GNU~R's output on most cases,
+but we do not consider this as part of our contributions:
+\CoqR{}'s pretty-printer is part of the shim (the non-formalized part)
+and does not follow any line-to-line correspondance with GNU~R's.
+There are thus some differences of behavior.
+Let us consider the expression
+\mintinline{R}{x <- c (1, 100, 2); x}.
+There are two steps of execution:
+first the variant \mintinline{R}{x} is assigned a value,
+then it is shown again.
+In the first step,
+the returned value of the assignment operator
+is the assigned value, but is marked as ``invisible'': % I don't want to say about the parentheses trick: I like this example.
+it tells the interpreter to temporarily disable its printing.
+We did not model invisibility,
+and our interpreter thus prints \mintinline[showspaces]{text}{1   100 2  }: % I am hiding the [1], yes.
+vectors are just shown by printing its elements,
+all cells being of the same size.
+At the second step,
+our interpreter prints the same value again,
+but GNU~R prints \mintinline[showspaces,autogobble=false]{text}{  1 100   2}:
+some vectors are left padded, other are right padded.
+We did not model this and in this case made the wrong decision.
+%
+However, we still consider that our result is correct,
+and we defined our testing framework to accept it as such.
 
-We believe that this scheme can be reused in other projects.
+% Testing principles.
+To correctly compare each result,
+we adopted the general scheme shown in Figure~\ref{fig:methodology}.
+First,
+we identify what type of result each interpreter returned. % I think that this is what Tomás calls ``Processor'', right?
+Examples of types includes
+errors, boolean vectors, numerical vectors, etc.,
+but also ``not implemented'' and ``impossible''
+(corresponding the the Coq constructors
+\mintinline{Coq}{result_not_implemented} and \mintinline{Coq}{result_impossible}
+shown in Figure~\ref{fig:result}).
+These types are then compared.
+For instance, if GNU~R returned an error,
+but \CoqR{} returned a string vector,
+the test is marked as failed.
+The ``not implemented'' and ``impossible'' results
+are special.
+If \CoqR{} returns ``not implemented'',
+we simply mark the test as not implemented
+(this corresponds to an ``abandon'' in JSCert~\parencite{popl14jscert}).
+If it returns ``impossible'',
+it is directly marked as failed:
+this would correspond to a critical bug in GNU~R and should imperatively be reported.
+All of our ``impossible'' results
+were due to a mistake in \CoqR{} and were quickly solved.
+
+In the case where the two result types were identical
+in both GNU~R and \CoqR{},
+we interpret the results using a specialized function,
+depending on the type previously computed.
+For instance, the interpreter for numerical vectors
+would convert both the results above
+by the vector \mintinline{R}{c (1, 100, 2)},
+ignoring the spaces.
+The final result is then compared,
+leading to either a failure or a success.
 
 \begin{figure}
     \begin{tikzpicture}[node distance = 13mm]
@@ -1181,9 +1283,67 @@ We believe that this scheme can be reused in other projects.
     \label{fig:methodology}
 \end{figure}
 
+% Special cases.
+It happens that we can not type a result.
+This happens when R produces a result for which we did not
+provide any interpreter.
+For instance, there exist special attributes changing
+the way vectors are printed,
+and our pretty-printer is not aware of all of these special attributes.
+In such cases, the typing step fails,
+returning ``unknown'' as a type.
+Such tests are marked as ``unknown''.
+% it would not be correct to mark them as success,
+% but it would not be practical to mark them as a failure.
+%
+As a special case, \mb{Do we want to speak about this here?}
+invisible results (that are thus not printed by R)
+are considered successful whenever \CoqR{} did not return an error.
+Indeed, test suites always include a latter step printing down variables:
+if the computed value is not correct, the testing framework
+will catch it when GNU~R will print down the computed value.
 
-\subsection{Driving the Development Process}
-\label{sec:driving:development}
+Once a step in a test file failed or lead to a not-implemented result,
+we can not say anything about what follows:
+if we get the same result in both interpreter,
+it could be out of luck.
+They should not be marked as success:
+otherwise, successful results could suddenly fail
+after correctly implementing a feature.
+%
+Symmetrically,
+if such a test fails,
+it could be failing just because the previous step failed---%
+for instance if the previous step was an assignment
+who failed to execute
+and the current step just displays the value of the assigned variable.
+Marking such tests as failing would be counter-productive:
+this would lead to a large amount of failed tests
+that are not particularly failing,
+but fails because of a previous failing result.
+%
+To categorize these tests,
+we introduced two additional outcomes for tests:
+potential success and potential failures.
+These two categories mean nothing for correctness
+(we can not conclude anything certain from a potential outcome),
+but they really helped the development
+by showing possible testing results that
+implementing a feature could solve.
+
+We believe that the scheme of Figure~\ref{fig:methodology}
+can be reused in other projects
+for testing other kinds of outputs for other languages.
+We found it useful to safely and quickly categorize results.
+Figure~\ref{fig:testing:interface} shows an example of such
+a categorization in action.
+We found that it enables to quickly understand what parts
+of the interpreter are needed to be fix or implemented.
+
+% How the other results (Potential fail, Not implemented) helped the Coq development.
+
+% \subsection{Driving the Development Process}
+% \label{sec:driving:development}
 
 \mb{Maybe we should put a screenshot after executing a large test suite instead of this one.}
 \begin{figure}
@@ -1196,7 +1356,6 @@ We believe that this scheme can be reused in other projects.
 
 Identifying low-hanging fruits.
 
-How the other results (Potential fail, Not implemented) helped the Coq development.
 
 \subsection{Results}
 \label{sec:test:results}
@@ -1209,8 +1368,6 @@ Bugs found (and where).
 
 How much tests are passed and failed.
 What does this mean (one line can trigger more than one pass).
-
-GNU~R test stuites (3,600 lines), FastR (1,300 lines), and ours (900 lines).
 
 We extended the testing framework during development by adding new kinds of recognised
 data structure.
