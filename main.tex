@@ -1339,6 +1339,16 @@ Figure~\ref{fig:testing:interface} shows an example of such
 a categorization in action.
 We found that it enables to quickly understand what parts
 of the interpreter are needed to be fix or implemented.
+%
+As convenient feature of our framework consists
+in counting how many times each not-implemented feature
+was being needed during the execution of the test suites.
+Figure~\ref{fig:interface:not:implemented} shows an example
+of such a graph.
+In practise, there were very often one function triggering
+most of the not-implemented results.
+This lead us to quickly identify low-hanging fruits,
+driving the development process forwards.
 
 % How the other results (Potential fail, Not implemented) helped the Coq development.
 
@@ -1352,9 +1362,11 @@ of the interpreter are needed to be fix or implemented.
     \label{fig:testing:interface}
 \end{figure}
 
-\todo{}
-
-Identifying low-hanging fruits.
+\begin{figure}
+    \includegraphics[width=.5\textwidth]{not-implemented.png}
+    \caption{Identifying needed features}
+    \label{fig:interface:not:implemented}
+\end{figure}
 
 
 \subsection{Results}
