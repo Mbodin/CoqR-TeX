@@ -1,5 +1,5 @@
-%-*- program: xelatex -*-        
-%-*- program: biber -*-        
+%-*- program: xelatex -*-
+%-*- program: biber -*-
 %-*- program: xelatex -*-
 
 \documentclass[
@@ -40,13 +40,20 @@
 \addbibresource{biblio.bib}
 
 \usepackage{minted}
-\setminted{encoding=utf8,fontsize=\small,breaklines}
+\setminted{
+    encoding=utf8,
+    fontsize=\small,
+    breaklines,
+    linenos,
+    numbersep=.6em,
+    autogobble
+  }
 
 \usepackage{tikz}
 \usetikzlibrary{positioning}
 
 \tikzset{
-	box/.style = { 
+	box/.style = {
 		draw = black,
         fill = white,
 		rectangle,
@@ -179,16 +186,16 @@ has gotten a lot of traction in recent years, being used by millions of users in
 % R is complex and we need to certify R softwares.
 The R programming language is meant to be both expressive and powerful,
 able to express complex notions in few keystrokes.
-This sometimes comes at the cost of readability and predictability. Indeed, 
-the semantics of R is subtle and contains numerous corner cases that can result in unexpected behavior. 
+This sometimes comes at the cost of readability and predictability. Indeed,
+the semantics of R is subtle and contains numerous corner cases that can result in unexpected behavior.
 
 The reasons for these corner cases are numerous, ranging from backward compatibility to the desire to accommodate the use of R as both a traditional programming language and an interactive shell.
-Even a feature as basic as function calls can be the source of surprises in R. 
+Even a feature as basic as function calls can be the source of surprises in R.
 Indeed, there are many ways to call a function, and in particular there are two ways to provide an argument: either by position or by name.\footnote{
     To simplify, we ignore the \mintinline{R}{...} construct
-    as well as default arguments, which both have non-trivial interactions with the other constructs.} While this per se is fairly common, the way R supports it is not; in particular it supports matching names {\em by prefix}. 
-% 
-To illustrate some subtleties that follow from this feature, 
+    as well as default arguments, which both have non-trivial interactions with the other constructs.} While this per se is fairly common, the way R supports it is not; in particular it supports matching names {\em by prefix}.
+%
+To illustrate some subtleties that follow from this feature,
 Figure~\ref{fig:calls} defines a function \mintinline{R}{f} that concatenates its three arguments. The first call associates arguments by position, and the second by name. The third call mixes both mechanisms, and exploits the prefix feature: \mintinline{R}{d} is associated to \mintinline{R}{de}
 because it is the only argument whose name starts with \mintinline{R}{d}.
 Now, if more than one argument matches by prefix,
@@ -225,31 +232,31 @@ Formal methods offer a solution to the trust issue:
 proof assistants such as Coq~\parencite{Coq} enable us
 to formally prove program properties with a high amount of trust.
 But to formally prove that an R program meets its specification,
-we first need a formal semantics of R. While there exists a language definition document~\parencite{R}, this document is unfit for serving as the basis of a verification effort; it is both a specification effort and a manual, written in plain English, with ambiguities and incomplete at times. Additionally, we found several mismatches between the text description and the behavior of the reference interpreter, GNU~R~\parencite{Rwebsite}.\footnote{For instance, according to the language definition, \mintinline{R}{if ("TRUE") 42} should raise an error, while the interpreter returns \mintinline{R}{42}.}
+we first need a formal semantics of R. While there exists a language definition document~\parencite{R}, this document is unfit for serving as the basis of a verification effort; it is both a specification effort and a manual, written in plain English, with ambiguities and incomplete at times. Additionally, we found several mismatches between the text description and the behavior of the reference interpreter, GNU~R~\parencite{Rwebsite}.\footnote{For instance, according to the language definition, \mintinline{R}{if ("TRUE") 42} should raise an error, whilst the interpreter returns \mintinline{R}{42}.}
 Crucially, the formal semantics should account for all the subtle cases of the R semantics, such as function call conventions described above, implicit type conversions, and so on.
-This is necessary because these corner cases are indeed a typical place were bugs appear and are hard to track. 
+This is necessary because these corner cases are indeed a typical place were bugs appear and are hard to track.
 A complete semantics for the full R language will inevitably be complex,
 because of the large amount of such corner cases.
 
 % This formalization is quite large, and we need to certify it.
-This complexity in turn raises a meta-trust issue: 
+This complexity in turn raises a meta-trust issue:
 how can a large semantics (and consequently the proofs made from it)
 be trusted? Being able to relate a formalism to {\em trust sources} is a crucial aspect of the formalization process, and often requires a large amount of work to be done properly~\parencite{leroy2014pip}. This challenge has been faced repeatedly in attempts to provide formal foundations to JavaScript.
 %
 Some formalization approaches like $\lambda_{JS}$~\cite{Guha2010} and KJS~\cite{kjs} augment trust through extensive testing and comparison with existing implementations. JSCert~\parencite{popl14jscert} only uses testing, without directly comparing to an existing implementation, but further augments trust through the notion of a so-called {\em eyeball correspondence}, i.e.~a line-to-line syntactic connection, between the formalization (in Coq) and the ECMAScript specification (in English and pseudo-code).
 
-\paragraph{Contributions.} 
+\paragraph{Contributions.}
 We present \CoqR{}, a trustworthy formalization of the R programming language in the Coq proof assistant.
-The formalization is a big-step operational semantics, in the form of an interpreter (Section~\ref{sec:coq:interp}). 
+The formalization is a big-step operational semantics, in the form of an interpreter (Section~\ref{sec:coq:interp}).
 
 We say that this interpreter is {\em trustworthy} because we have followed two complementary techniques to maximize trust.
 First, inspired by JSCert, the Coq interpreter has been written using a monadic encoding that allows for a direct {\em eyeball correspondence} with the C source code of GNU~R~\parencite{Rwebsite}. In the absence of a standardized formal semantics, GNU~R is the reference point that defines what  R really is.
 
-Second, we have extensively {\em tested} the Coq interpreter against the GNU~R reference interpreter, using three test suites: the test suite of GNU~R itself (aprox. 3,600 loc), the test suite of the FastR implementation (aprox. 1,300 loc)~\parencite{kalibera2014fast}, and a custom test suite that we developed ourselves to exercise corner cases (aprox. 900 loc). 
+Second, we have extensively {\em tested} the Coq interpreter against the GNU~R reference interpreter, using three test suites: the test suite of GNU~R itself (aprox. 3,600 loc), the test suite of the FastR implementation (aprox. 1,300 loc)~\parencite{kalibera2014fast}, and a custom test suite that we developed ourselves to exercise corner cases (aprox. 900 loc).
 %We note that these test suites have very little redundancy between themselves.
 To this end, we have developed a testing framework that streamlines the process of running both the Coq interpreter and GNU~R on a set of test cases and report on mismatches and errors (Section~\ref{sec:testing:architecture}).
 
-We also report on a proof effort to establish that memory invariants are preserved during execution, including some specific proof automation (Section~\ref{sec:proofs}). 
+We also report on a proof effort to establish that memory invariants are preserved during execution, including some specific proof automation (Section~\ref{sec:proofs}).
 Finally, we report on the process of scaling up our interpreter in order to be able to import existing R libraries (Section~\ref{sec:library}), in particular the R base library (aprox. 19,000 loc).
 
 Section~\ref{sec:related:work} discusses related work and Section~\ref{sec:conclusion} concludes.
@@ -331,7 +338,7 @@ Inductive result (A : Type) :=
 In order to limit the impact that these differences can have on the eyeball correspondence, we introduce a {\em result monad}, which combines both the state, error, and fuel monads (Figure~\ref{fig:result}), and allows us to program in Coq ``as if it were C''.%
 %
 \footnote{Recall that monads allow purely functional programs to account for effectful computation, by means of implicit threading of information using a {\em binder}~\parencite{wadler:mscs1992}. For instance, the state monad threads a piece of state through a functional computation, accessible via monadic operations like \mintinline{Coq}{put} and \mintinline{Coq}{get}, thereby simulating a mutable store.}
-More precisely, the result monad features the following constructors:\footnote{The result monad is similar to the one used in the JSExplain project~\parencite{JSExplain}, which aims at defining a JavaScript interpreter in Coq, readable by non-specialists. 
+More precisely, the result monad features the following constructors:\footnote{The result monad is similar to the one used in the JSExplain project~\parencite{JSExplain}, which aims at defining a JavaScript interpreter in Coq, readable by non-specialists.
 }
 \begin{itemize}
 \item The main constructor is \mintinline{Coq}{result_success}, used when a computation is successful.
@@ -385,7 +392,7 @@ to end the execution when reaching the maximum number of executed instructions
 \end{itemize}
 
 \begin{figure}
-\begin{minted}[escapeinside=@@,linenos]{C}
+\begin{minted}[escapeinside=@@]{C}
 SEXP do_repeat (EXP* call, EXP* op,
                 EXP* args, EXP* rho){
   EXP* body;
@@ -415,9 +422,6 @@ This obliviousness to global state, errors and non-termination is what enables a
 
 % We believe that this helps to find bugs in \CoqR{}
 % and to convey trust to the overall R semantics.
-
-\subsection{Eyeball Correspondence}
-\label{sec:eyeball:closeness}
 
 \begin{figure*}[t]
     \centering{}
@@ -463,6 +467,9 @@ Definition do_attr globals runs S
     \label{fig:do_attr}
 \end{figure*}
 
+\subsection{Eyeball Correspondence}
+\label{sec:eyeball:closeness}
+
 
 % % Definition of the line-to-line correspondence.
 % One key specificity of this interpreter is that it has been designed
@@ -479,15 +486,15 @@ Such checks are quick and easy to perform, often leading to a quick fix of \CoqR
 %
 
 Figure~\ref{fig:do_attr} shows an example of the eyeball correspondence that can be achieved using the result monad. Figure~\ref{fig:c:do_attr} shows a C function, and Figure~\ref{fig:coq:do_attr} its Coq translation.
-The binder \mintinline{Coq}{let%success} is used when calling a function. 
+The binder \mintinline{Coq}{let%success} is used when calling a function.
 Thanks to the monadic encoding, the calls to \mintinline{Coq}{R_length}
-and \mintinline{Coq}{matchArgs} may return an unsuccessful result, but the code does not need to be explicit about that possibility; the code after a call is only executed if the result denotes success. Similarly, the \mintinline{C}{return} statement from C is translated to \mintinline{Coq}{result_success}, and raising an error is performed using \mintinline{Coq}{result_error}. 
+and \mintinline{Coq}{matchArgs} may return an unsuccessful result, but the code does not need to be explicit about that possibility; the code after a call is only executed if the result denotes success. Similarly, the \mintinline{C}{return} statement from C is translated to \mintinline{Coq}{result_success}, and raising an error is performed using \mintinline{Coq}{result_error}.
 
-The other differences that can be observed are several arguments systematically passed to each function (\mintinline{Coq}{globals}, \mintinline{Coq}{runs}, and \mintinline{Coq}{S}), as well as the use of 
-\mintinline{Coq}{read%list} 
+The other differences that can be observed are several arguments systematically passed to each function (\mintinline{Coq}{globals}, \mintinline{Coq}{runs}, and \mintinline{Coq}{S}), as well as the use of
+\mintinline{Coq}{read%list}
 instead of \mintinline{C}{CAR} in the C version, and the fact that the use of the \mintinline{C}{PROTECT} macro is missing from the Coq version. We clarify each of these points in the following subsections.
 
-% The \mintinline{Coq}{S} argument and the use 
+% The \mintinline{Coq}{S} argument and the use
 % are related to the modeling of the heap, discussed in Section~\ref{sec:coq:structure}.
 
 % The \mintinline{Coq}{globals} argument is discussed in Section~\ref{sec:coq:structure}.
@@ -495,9 +502,6 @@ instead of \mintinline{C}{CAR} in the C version, and the fact that the use of th
 % The \mintinline{Coq}{runs} argument is related to dealing with non-termination, and is discussed in Section~\ref{sec:fuel}.
 
 
-
-\subsection{Modeling the Heap}
-\label{sec:heap}
 
 \begin{figure}
     \centering{}
@@ -527,6 +531,9 @@ instead of \mintinline{C}{CAR} in the C version, and the fact that the use of th
     \caption{Basic language elements in memory}
     \label{fig:basic:language:elements}
 \end{figure}
+
+\subsection{Modeling the Heap}
+\label{sec:heap}
 
 % Basic language elements.
 We now describe how we modeled GNU~R's heap.
@@ -656,7 +663,7 @@ whilst closely mimicking the unguarded accesses of C.
 \label{sec:globals}
 
 % Initialization of R and global variables.
-The GNU~R interpreter features over \(80\) global variables that need initialization, and are subsequently unchanged. 
+The GNU~R interpreter features over \(80\) global variables that need initialization, and are subsequently unchanged.
 The initialization of these internal variables
 actually represents a large portion of the source code.
 Even before importing any libraries, a lot of basic language elements
@@ -666,7 +673,7 @@ For instance, the often-used variable \mintinline{C}{R_NilValue}
 is set to be a list whose \mintinline{C}{car}, \mintinline{C}{cdr},
 and \mintinline{C}{tag} fields point to \mintinline{C}{R_NilValue} itself.
 This element is used instead of the \mintinline{C}{NULL} pointer
-to mark any non-present element. Another important global variable is 
+to mark any non-present element. Another important global variable is
 \mintinline{C}{R_FunTab}, which is the {\em symbol table} that maps operation and function names to C functions implementing them. (We exploit this structuring of the interpreter for building \CoqR{} in an incremental manner---see Section~\ref{sec:coq:structure}.)
 
 %
@@ -734,10 +741,44 @@ instead of a fuel argument, each function takes a record \mintinline{Coq}{runs}.
 This record stores all recursive functions as its projections.
 Each recursive call in C is then translated by calling
 the corresponding projection of the record,
-as in a regular fix-point combinator.\et{can you give an example of such a translation?}
-% \mb{I guess that this paragraph could be improved a lot\ldots}
+as in a regular fix-point combinator.
+
+For instance, Figure~\ref{fig:while_loop} shows the definition
+of while loops in \CoqR{}.
+First the \mintinline{Coq}{Runs} record is defined
+with all the potentially looping functions.
+A \mintinline{C}{while}-loop is obviously part of these functions.
+We then define \mintinline{Coq}{while_loop} with an additional
+argument \mintinline{Coq}{runs} of type \mintinline{Coq}{Runs}.
+Line~\ref{line:runs_while:recursive:call} is the ``recursive'' call,
+but instead of a recusrive call,
+we call the \mintinline{Coq}{while_loop} function stored
+in the \mintinline{Coq}{runs} record.
+
+\begin{figure}
+\begin{minted}[escapeinside=@@]{Coq}
+Record Runs : Type := Runs_intro {
+    runs_while_loop : forall A, state -> A ->
+      (state -> A -> result bool) ->
+      (state -> A -> result A) -> result A ;
+    runs_eval : state -> SEXP -> SEXP -> result SEXP ;
+    (* ... *)
+  }.
+
+Definition while_loop runs A S (a : A) expr stat :=
+  if%success expr S a using S then
+    let%success a := stat S a using S in
+    runs_while_loop runs S a expr stat@\label{line:runs_while:recursive:call}@
+  else result_success S a.
+\end{minted}
+    \caption{Definition of loops as a fix-point combinator}
+    \label{fig:while_loop}
+\end{figure}
+
 Once all functions have been defined,
-one can then define a function \mintinline{Coq}{runs} taking some fuel:
+we can define an inhabitant of \mintinline{Coq}{Runs}
+by linking these functions to themselves.
+In practice, we define \mintinline{Coq}{runs} using some fuel:
 at each step, its projections are functions taking a \mintinline{Coq}{runs}
 with less fuel as argument;
 when reaching \(0\), all its projections systematically return \mintinline{Coq}{result_bottom}.
@@ -750,11 +791,11 @@ Figure~\ref{fig:runs} shows its Coq definition.
 % and executes it, leading to an unwanted loop.
 % }
 % %
-In addition to passing the extra-argument argument, this idiom only requires one pattern-matching on fuel in the whole \CoqR{} interpreter; it is thus a very lightweight way to introduce termination. 
+In addition to passing the extra-argument argument, this idiom only requires one pattern-matching on fuel in the whole \CoqR{} interpreter; it is thus a very lightweight way to introduce termination.
 
 \begin{figure}
 \begin{minted}{Coq}
-Fixpoint runs max_step globals :=
+Fixpoint runs max_step globals : Runs :=
   match max_step with
   | O => {|
       runs_while_loop := fun _ S _ _ _ =>
@@ -784,7 +825,7 @@ At this stage, we chose not to model the garbage collection aspect of GNU~R in \
 % As stated in Section~\ref{sec:eyeball:closeness},
 % we chose to ignore some aspects of the source code of GNU~R.
 % All garbage collection commands have been formalized out.
-Additionally, \CoqR{} only considers ASCII strings, and hence does not support various locales and character encodings supported by R. 
+Additionally, \CoqR{} only considers ASCII strings, and hence does not support various locales and character encodings supported by R.
 More generally, \CoqR{} ignores any possibility to dynamically
 parametrize the behavior of the interpreter using options
 stored the shell environment.
@@ -829,7 +870,7 @@ FUNTAB R_FunTab[] = {
     \label{fig:names}
 \end{figure}
 
-Figure~\ref{fig:names} shows an excerpt of the symbol table. 
+Figure~\ref{fig:names} shows an excerpt of the symbol table.
 This C array associates the name of each function with the corresponding C function implementing it, along with its arity and some additional information.\footnote{Namely, whether the function is to be directly defined in the initial environment or available in the \mintinline{R}{.Internal} construct, and whether it evaluates lazily or eagerly.}
 The symbol table contains more than 700 entries.
 % \et{how much of the 700 entries of the symbol table do we currently support?}
@@ -854,7 +895,7 @@ but some assignment functions are, because they are used when calling functions.
 
 All functions in the symbol table are then considered {\em additional features}. The first version of the interpreter only supported the core of R, allowing us to focus the effort on a very restricted sub-language.
 We were then able to add additional features one at a time, by implementing
-the associated function and adding it to the symbol table. 
+the associated function and adding it to the symbol table.
 In the current \CoqR{} development, out of the 18,000 lines, around 5,000 lines are for the core of R,  and 4,000 lines are for additional features.
 \et{what about the other 9000 lines?}
 At the time of writing, we support 112 entries from the symbol table, which is enough to run the entire base library of R (Section~\ref{sec:library}).
@@ -864,7 +905,7 @@ At the time of writing, we support 112 entries from the symbol table, which is e
 \subsection{Parsing R}
 \label{sec:shim}
 
-Verified software, e.g. written in Coq, needs to interact with less trusted code, for instance for performing input/output. This additional code is called the \emph{shim}, and unfortunately, it usually concentrates most bugs in certified software~\parencite{Yang:2011:FUB:1993498.1993532}. 
+Verified software, e.g. written in Coq, needs to interact with less trusted code, for instance for performing input/output. This additional code is called the \emph{shim}, and unfortunately, it usually concentrates most bugs in certified software~\parencite{Yang:2011:FUB:1993498.1993532}.
 % Why the shim is important.
 % Bugs can still appear in verified softwares.
 % Indeed, such softwares are not entirely formalized in Coq:
@@ -872,7 +913,7 @@ Verified software, e.g. written in Coq, needs to interact with less trusted code
 In the case of \CoqR{}, a particularly important part of the shim is the R parser. Parsing real-world programming languages is known to be challenging, so in order to maximize trust, we first tried to develop the parser in Coq
 using the Menhir tool~\parencite{jourdan2012validating} in order to obtain a formally-verified parser. Unfortunately, the grammar of GNU~R (defined in Bison) does not respect the grammar constraints of Menhir's Coq front-end. We thus had to fall back on Menhir's OCaml front-end, making the parser part of the shim.
 
-In order to achieve high confidence in the parser implementation, we nevertheless can follow the eyeball correspondence methodology. 
+In order to achieve high confidence in the parser implementation, we nevertheless can follow the eyeball correspondence methodology.
 % Parsing in the shim.
 Consequently, we did not optimize or change GNU~R's grammar in any way. While doing so might have enabled us to use the Coq front-end of Menhir, it would have resulted in a very different grammar from GNU~R's, and spotting bugs and inconsistencies between both grammars would have been challenging.
 
@@ -909,7 +950,8 @@ the lexer and the parser thus communicate through side-effects.
 %
 Such effects are usually considered to be bad practice
 as they heavily depend on when the parser calls the lexer
-(and they might become get desynchronized).
+(and they might become desynchronized).\mb{I think that the ``or'' was more correct here:
+    if the parser calls the lexer as Bison does, they can't get desynchronized.}
 %
 To keep the line-to-line correspondence,
 we nevertheless built the same communication channel
@@ -944,7 +986,7 @@ and each of these types are differently stored in memory.
 Figure~\ref{fig:invariants:definition} shows a snippet
 of our invariants defined by the \mintinline{Coq}{safe_SExp} inductive property.
 %
-The constructor \mintinline{Coq}{safe_ListStruct} captures the requirements on well-formed lists. The requirements are expressed using the predicate \mintinline{Coq}{may_have_types S l p}, which 
+The constructor \mintinline{Coq}{safe_ListStruct} captures the requirements on well-formed lists. The requirements are expressed using the predicate \mintinline{Coq}{may_have_types S l p}, which
 states that the pointer \mintinline{Coq}{p}
 is associated in the state \mintinline{Coq}{S} with an object
 whose type is in the list \mintinline{Coq}{l}. Hence, the hypothesis on \mintinline{Coq}{cdr} states that the tail of a list is either a list
@@ -1009,7 +1051,7 @@ defined in Figure~\ref{fig:coq:do_attr} produces a result
 that satisfies the invariants.
 %
 The \mintinline{Coq}{safe_state} predicate specifies
-that the given state only stores objects that satisfy the invariants, and similarly 
+that the given state only stores objects that satisfy the invariants, and similarly
 for the global variables of \mintinline{Coq}{globals} with the predicate \mintinline{Coq}{safe_globals}.
 The arguments \mintinline{Coq}{call}, \mintinline{Coq}{op},
 \mintinline{Coq}{args}, and \mintinline{Coq}{env} of \mintinline{Coq}{do_attr}
@@ -1021,7 +1063,7 @@ to specify what the resulting state of \mintinline{Coq}{do_attr} should satisfy,
 whilst ignoring non-interesting cases
 such as \mintinline{Coq}{result_not_implemented} or \mintinline{Coq}{result_bottom}.
 Indeed, reaching one of these results means that the result is out of scope for the  interpreter.
-\et{will turn into a forward ref if we move proof section earlier} 
+\et{will turn into a forward ref if we move proof section earlier}
 This is the reason why these are not considered harmful
 during the testing process (see Section~\ref{sec:test:methodology}).
 In the normal result, we state that the invariants are still satisfied.
@@ -1036,7 +1078,7 @@ only the success case is left, the other kinds of results being transparently pr
 % As for \mintinline{Coq}{do_attr}, the error case yields \mintinline{Coq}{False}
 % and is discharged by the tactic.
 The call to \mintinline{Coq}{R_length} is thus rewritten
-to a simple expression of the form 
+to a simple expression of the form
 \mintinline{Coq}{result_success S' n},
 where \mintinline{Coq}{n} is the number returned by \mintinline{Coq}{R_length}.
 %
@@ -1105,9 +1147,35 @@ What is considered to be a failure.
 
 We believe that this scheme can be reused in other projects.
 
+\begin{figure}
+    \begin{tikzpicture}[node distance = 13mm]
+        \node [box] (source) {R program} ;
+        \node [box, below left of = source, xshift = -1cm, yshift = -5mm] (R) {GNU~R} ;
+        \node [box, below right of = source, xshift = 1cm, yshift = -5mm] (CoqR) {\CoqR{}} ;
+        \newcommand\identifytype{\parbox{5.5em}{\centering{}Identify type\\of result}}
+        \node [box, below of = R] (Rtype) {\identifytype} ;
+        \node [box, below of = CoqR] (CoqRtype) {\identifytype} ;
+        \newcommand\interpretetresult{\parbox{3.5em}{\centering{}Interpret\\result}}
+        \node [box, below of = Rtype] (Rint) {\interpretetresult} ;
+        \node [box, below of = CoqRtype] (CoqRint) {\interpretetresult} ;
+        \draw [->, thick] (source) to [out = -90, in = 90] (R) ;
+        \draw [->, thick] (source) to [out = -90, in = 90] (CoqR) ;
+        \draw [->, thick] (R) -- (Rtype) ;
+        \draw [->, thick] (CoqR) -- (CoqRtype) ;
+        \draw [<->] (Rtype) -- node [above] {compare} node [below] {types} (CoqRtype) ;
+        \draw [->, thick] (Rtype) -- (Rint) ;
+        \draw [->, thick] (CoqRtype) -- (CoqRint) ;
+        \draw [<->] (Rint) -- node [above] {compare} node [below] {interpretations} (CoqRint) ;
+    \end{tikzpicture}
+    \caption{Comparing the results of GNU~R and \CoqR{}}
+    \label{fig:methodology}
+\end{figure}
+
+
 \subsection{Driving the Development Process}
 \label{sec:driving:development}
 
+\mb{Maybe we should put a screenshot after executing a large test suite instead of this one.}
 \begin{figure}
     \includegraphics[width=.5\textwidth]{framework.png}
     \caption{Graphical interface of the testing framework}
@@ -1362,7 +1430,7 @@ In \CoqR, we solved this issue by defining the big-step operational semantics as
 % CompCert.
 The Coq proof assistant has already been used
 in a variety of mechanized language formalization projects.
-The most well-known is the CompCert project~\cite{Leroy-Compcert-CACM}, 
+The most well-known is the CompCert project~\cite{Leroy-Compcert-CACM},
 a verified optimizing compiler for C.
 This compiler is proven to be free of compilation bugs,
 leading to safer programs in critical software.
@@ -1374,7 +1442,7 @@ it was acceptable to restrict the behaviors of the C programming language
 in their formalization,
 restricting it to the behaviors that will actually be compiled by CompCert.
 The Formalin project~\parencite{formalin} is another formalization
-of the C language, which aims at precisely listing all the possible behaviors of a C program. 
+of the C language, which aims at precisely listing all the possible behaviors of a C program.
 
 \section{Conclusion and Future Work}
 \label{sec:conclusion}
