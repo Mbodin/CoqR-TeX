@@ -896,8 +896,18 @@ but some assignment functions are, because they are used when calling functions.
 All functions in the symbol table are then considered {\em additional features}. The first version of the interpreter only supported the core of R, allowing us to focus the effort on a very restricted sub-language.
 We were then able to add additional features one at a time, by implementing
 the associated function and adding it to the symbol table.
-In the current \CoqR{} development, out of the 18,000 lines, around 5,000 lines are for the core of R,  and 4,000 lines are for additional features.
-\et{what about the other 9000 lines?}
+In the current \CoqR{} development, out of the 18,000 lines,
+around 5,000 lines are for the core of R,
+and 4,000 lines are for additional features.
+\et{what about the other 9,000 lines?}
+\mb{Miscellaneous, really.
+    Here are some details:
+    invariants (definitions, including the tactics) 4,000 lines (+ 1,000 lines of proofs not counted in the 18,000 lines above);
+    monads definitions and Coq notations 2,000 lines
+    type definitions (R types, global variables, etc.) 1,000 lines;
+    Coq administration (extraction, linking all our 50 files, etc.) 1,000 lines;
+    Miscelleanous R definitions (the Coq part of the parsing, initialisation) 500 lines.
+  }
 At the time of writing, we support 112 entries from the symbol table, which is enough to run the entire base library of R (Section~\ref{sec:library}).
 
 % \eti{I'm here (haven't gone through all text of section 2 above yet, but haven't looked at parsing at all)}
