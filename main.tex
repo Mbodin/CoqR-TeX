@@ -1021,7 +1021,7 @@ Inductive safe_SExp S : SExp -> Prop :=
     safe_SExp S (make_StrStruct data)
   (* ... *).
 \end{minted}
-    \caption{Typing invariants for memory during R execution}
+    \caption{Typing invariants for memory} % during R execution
     \label{fig:invariants:definition}
 \end{figure}
 
@@ -1233,7 +1233,7 @@ we identify what type of result each interpreter returned. % I think that this i
 Examples of types includes
 errors, boolean vectors, numerical vectors, etc.,
 but also ``not implemented'' and ``impossible''
-(corresponding the Coq constructors
+(corresponding to the Coq constructors
 \mintinline{Coq}{result_not_implemented} and \mintinline{Coq}{result_impossible}
 shown in Figure~\ref{fig:result}).
 These types are then compared.
@@ -1307,6 +1307,13 @@ Indeed, test suites always include a latter step printing down variables:
 if the computed value is not correct, the testing framework
 will catch it when GNU~R will print down the computed value.
 
+\mb{Maybe we should put a screenshot after executing a large test suite instead of this one.}
+\begin{figure}
+    \includegraphics[width=.5\textwidth]{framework.png}
+    \caption{Graphical interface of the testing framework}
+    \label{fig:testing:interface}
+\end{figure}
+
 Once a step in a test file failed or lead to a not-implemented result,
 we can not say anything about what follows.
 Indeed, if we get the same result in both interpreter,
@@ -1322,9 +1329,9 @@ typically if the previous step was an assignment.
 % who failed to execute
 % and the current step just displays the value of the assigned variable.
 Marking such tests as failing would be counter-productive:
-this would lead to a large amount of failed tests
-that are not particularly failing,
-but fails because of a previous failing result.\mb{too much false positive.}
+this would lead to a large amount of false positives
+in the tests marked as failed.
+% (only marked as failing because of a previous failing result).
 %
 To categorize these tests,
 we introduced two additional outcomes for tests:
@@ -1357,32 +1364,57 @@ also drive the development process forwards.
 % \subsection{Driving the Development Process}
 % \label{sec:driving:development}
 
-\mb{Maybe we should put a screenshot after executing a large test suite instead of this one.}
-\begin{figure}
-    \includegraphics[width=.5\textwidth]{framework.png}
-    \caption{Graphical interface of the testing framework}
-    \label{fig:testing:interface}
-\end{figure}
-
 
 \subsection{Results}
 \label{sec:test:results}
 
-\todo{}
+The results of our tool are available at \url{coqr.dcc.uchile.cl}.\mbi{
+    OK: we should discuss on what should be the state of this page once the paper
+    is published.
+    I guess that we should hide some old tests, for instance.
+    Should we put a link the source code too? I think it would be nice.}
+We used our testing framework on various test suites\mbi{
+    Outch: it would be nice to explain the test suites here,
+    but at the same time, I like the current flow of the beginning of
+    Section~\ref{sec:test:methodology}.
+    Any ideas?},
+but also on the base library of R,
+which already provide a large coverage.
+%
+To evaluate these test suites,
+we use the Bisect~\parencite{bisect} coverage tool for OCaml.
+Out of the 11,000 program points identified by Bisect,
+??\mb{Tomás?} were executed.
+We thus think that new test suites are being needed
+to complete this coverage.
+%
+On total,
+this testing base contains ??\mb{Tomás?} steps.
+We currently get ??\todo{} success, ??\todo{} not-implemented,
+and ??\todo{} unknown.
+But we get\mb{hopefully} no failure or ``impossible'' result.
 
-Bisect results.
+We however did get failure and ``impossible'' results
+during our development.
+The causes of these bugs were varied.\mb{It would be nice to make some statistics here.}
+Once a bug was identified by the testing framework,
+we tried to identify what was causing this bugs---%
+and in particular, which function was buggy---%
+using similar tests.
+Once the buggy function was identified,
+we compared its code line by line with the original function from GNU~R.
+In most cases, this was enough to solve the bug.
 
-Bugs found (and where).
-
-How much tests are passed and failed.
-What does this mean (one line can trigger more than one pass).
-
-We extended the testing framework during development by adding new kinds of recognised
-data structure.
-We consider that the amount of work to extend the framework in another direction
-(thus reducing the number of Unknown) is sufficiently low.
-
-Link to \url{coqr.dcc.uchile.cl}?
+Our testing framework categorized a large number of bugs
+as ``unknown'' (leading to potential passes and failures in the next steps).
+This is due to the various ways GNU~R's pretty-printer works.
+We added several new result interpreters in our framework
+to cover more types.
+We found that extending our framework was easy,
+but that at the same time there were a large number of printing mode in GNU~R.
+We thus left these unknown case,
+knowing that it would be easy to add a particular type of result
+if a user would need it.
 
 
 \section{Base Library}
