@@ -84,13 +84,14 @@
 \orcid{0000-0003-3588-3782}
 \affiliation{
   %\position{}
-  \department{Center for Mathematical Modeling}
+  \department{Center for Mathematical Modeling \& \\
+  Computer Science Department}
   \institution{University of Chile}
-  \streetaddress{Beauchef 851}
-  \city{Santiago}
+  % \streetaddress{Beauchef 851}
+  % \city{Santiago}
   % \state{State1}
   % \postcode{Post-Code1}
-  \country{Chile}
+  % \country{Chile}
 }
 \email{mbodin@dim.uchile.cl}
 
@@ -98,14 +99,14 @@
 % \authornote{with author2 note}
 % \orcid{nnnn-nnnn-nnnn-nnnn}
 \affiliation{
-  % \position{Position2a}
+  \position{Pleiad Lab}
   \department{Computer Science Department}
   \institution{University of Chile}
-  \streetaddress{Beauchef 851}
-  \city{Santiago}
+  % \streetaddress{Beauchef 851}
+  % \city{Santiago}
   % \state{State2a}
   % \postcode{Post-Code2a}
-  \country{Chile}
+  % \country{Chile}
 }
 \email{tdiaz@dcc.uchile.cl}
 
@@ -113,14 +114,15 @@
 % \authornote{with author2 note}
 % \orcid{nnnn-nnnn-nnnn-nnnn}
 \affiliation{
-  % \position{Position2a}
+  \position{Pleiad Lab \& MI-FRD}
   \department{Computer Science Department}
   \institution{University of Chile}
   \streetaddress{Beauchef 851}
-  \city{Santiago}
+  % \city{Santiago}
   % \state{State2a}
   % \postcode{Post-Code2a}
-  \country{Chile}
+  % \country{Chile}
+  \thanks{{\'E.} Tanter is partially funded by the Millenium Institute for Foundational Research on Data (MI-FRD)}
 }
 \email{etanter@dcc.uchile.cl}
 
@@ -355,20 +357,20 @@ corresponds to a call to the \mintinline{C}{longjmp}
 C function in GNU~R source code.
 It only appears in constructs involving non-local jumps,
 such as \mintinline{R}{break} or \mintinline{R}{return}.
-The \mintinline{C}{longjmp} jumps to the corresponding
-\mintinline{C}{setjmp} function,
-which typically appears in loops and function calls.
-For instance, Figure~\ref{fig:do_repeat:c} shows the C code
-of the \mintinline{R}{repeat} feature of R,
-which keeps on executing its argument.
-Once a \mintinline{C}{longjmp} is executed
-(for instance by a \mintinline{R}{break}),
-the current program point is set to be Line~\ref{line:do_repeat:c:setjmp}.
-The \mintinline{C}{setjmp} function then returns
-the argument of the \mintinline{C}{longjmp}.
-% This enables the interpreter to differenciate on the kind of non-local behavior.
-We needed to add a special constructor
-to translate this specific behavior of C.
+% The \mintinline{C}{longjmp} jumps to the corresponding
+% \mintinline{C}{setjmp} function,
+% which typically appears in loops and function calls.
+% For instance, Figure~\ref{fig:do_repeat:c} shows the C code
+% of the \mintinline{R}{repeat} feature of R,
+% which keeps on executing its argument.
+% Once a \mintinline{C}{longjmp} is executed
+% (for instance by a \mintinline{R}{break}),
+% the current program point is set to be Line~\ref{line:do_repeat:c:setjmp}.
+% The \mintinline{C}{setjmp} function then returns
+% the argument of the \mintinline{C}{longjmp}.
+% % This enables the interpreter to differenciate on the kind of non-local behavior.
+% We needed to add a special constructor
+% to translate this specific behavior of C.
 %
 \item Unspecified C behaviors
 (such as dereferencing an invalid pointer)
@@ -391,25 +393,25 @@ to end the execution when reaching the maximum number of executed instructions
 (also called \emph{fuel}). This is meant to artificially make our interpreter terminate, despite the fact that the interpreted R program may not.
 \end{itemize}
 
-\begin{figure}
-\begin{minted}[escapeinside=@@]{C}
-SEXP do_repeat (EXP* call, EXP* op,
-                EXP* args, EXP* rho){
-  EXP* body;
-  RCNTXT cntxt;
-  checkArity (op, args);
-  body = CAR (args);
-  begincontext (&cntxt, CTXT_LOOP, rho, R_BaseEnv);
-  if (setjmp (cntxt.cjmpbuf) != CTXT_BREAK) {@\label{line:do_repeat:c:setjmp}@
-    for (;;) eval (body, rho);
-  }
-  endcontext (&cntxt);
-  return R_NilValue;
-}
-\end{minted}
-    \caption{C code of the \mintinline{C}{do_repeat} function}
-    \label{fig:do_repeat:c}
-\end{figure}
+% \begin{figure}
+% \begin{minted}[escapeinside=@@]{C}
+% SEXP do_repeat (EXP* call, EXP* op,
+%                 EXP* args, EXP* rho){
+%   EXP* body;
+%   RCNTXT cntxt;
+%   checkArity (op, args);
+%   body = CAR (args);
+%   begincontext (&cntxt, CTXT_LOOP, rho, R_BaseEnv);
+%   if (setjmp (cntxt.cjmpbuf) != CTXT_BREAK) {@\label{line:do_repeat:c:setjmp}@
+%     for (;;) eval (body, rho);
+%   }
+%   endcontext (&cntxt);
+%   return R_NilValue;
+% }
+% \end{minted}
+%     \caption{C code of the \mintinline{C}{do_repeat} function}
+%     \label{fig:do_repeat:c}
+% \end{figure}
 
 The result monad is associated with a monadic binder,
 written \mintinline{Coq}{let%success}.
@@ -899,15 +901,15 @@ the associated function and adding it to the symbol table.
 In the current \CoqR{} development, out of the 18,000 lines,
 around 5,000 lines are for the core of R,
 and 4,000 lines are for additional features.
-\et{what about the other 9,000 lines?}
-\mb{Miscellaneous, really.
-    Here are some details:
-    invariants (definitions, including the tactics) 4,000 lines (+ 1,000 lines of proofs not counted in the 18,000 lines above);
-    monads definitions and Coq notations 2,000 lines
-    type definitions (R types, global variables, etc.) 1,000 lines;
-    Coq administration (extraction, linking all our 50 files, etc.) 1,000 lines;
-    Miscelleanous R definitions (the Coq part of the parsing, initialisation) 500 lines.
-  }
+% \et{what about the other 9,000 lines?}
+% \mb{Miscellaneous, really.
+%     Here are some details:
+%     invariants (definitions, including the tactics) 4,000 lines (+ 1,000 lines of proofs not counted in the 18,000 lines above);
+%     monads definitions and Coq notations 2,000 lines
+%     type definitions (R types, global variables, etc.) 1,000 lines;
+%     Coq administration (extraction, linking all our 50 files, etc.) 1,000 lines;
+%     Miscelleanous R definitions (the Coq part of the parsing, initialisation) 500 lines.
+%   }
 At the time of writing, we support 112 entries from the symbol table, which is enough to run the entire base library of R (Section~\ref{sec:library}).
 
 % \eti{I'm here (haven't gone through all text of section 2 above yet, but haven't looked at parsing at all)}
@@ -960,8 +962,9 @@ the lexer and the parser thus communicate through side-effects.
 %
 Such effects are usually considered to be bad practice
 as they heavily depend on when the parser calls the lexer
-(and they might become desynchronized).\mb{I think that the ``or'' was more correct here:
-    if the parser calls the lexer as Bison does, they can't get desynchronized.}
+(otherwise they might become desynchronized).
+% \mb{I think that the ``or'' was more correct here:
+%     if the parser calls the lexer as Bison does, they can't get desynchronized.}
 %
 To keep the line-to-line correspondence,
 we nevertheless built the same communication channel
@@ -1046,7 +1049,7 @@ Proof.
   (* ... *)
 Qed.
 \end{minted}
-    \caption{Example of tactic usage}
+    \caption{Example of specification and tactic usage.}
     \label{fig:do_attr_result}
 \end{figure}
 
@@ -1073,10 +1076,10 @@ to specify what the resulting state of \mintinline{Coq}{do_attr} should satisfy,
 whilst ignoring non-interesting cases
 such as \mintinline{Coq}{result_not_implemented} or \mintinline{Coq}{result_bottom}.
 Indeed, reaching one of these results means that the result is out of scope for the  interpreter.
-\et{will turn into a forward ref if we move proof section earlier}
-This is the reason why these are not considered harmful
-during the testing process (see Section~\ref{sec:test:methodology}).
-In the normal result, we state that the invariants are still satisfied.
+% \et{will turn into a forward ref if we move proof section earlier}
+% This is the reason why these are not considered harmful
+% during the testing process (see Section~\ref{sec:test:methodology}).
+% In the normal result, we state that the invariants are still satisfied.
 
 The proof closely follows the source code of \mintinline{Coq}{do_attr}.
 After introducing the hypotheses, the function \mintinline{Coq}{do_attr} is unfolded,
@@ -1124,7 +1127,6 @@ was relatively straightforward.
 As a consequence, we do not expect major difficulties
 to adapt or build similar tactics for other kinds of proofs.
 
-\et{end with a perspective on program logics}
 
 
 \section{Testing Architecture}
@@ -1726,6 +1728,9 @@ typically another programming language to be tested.
 
 Our R specification is a shallow embedding of the reference interpreter of R.
 Link with Formalin
+
+
+end with a perspective on program logics
 
 \printbibliography{}
 
