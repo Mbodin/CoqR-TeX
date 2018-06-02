@@ -1130,6 +1130,8 @@ to adapt or build similar tactics for other kinds of proofs.
 \section{Testing Architecture}
 \label{sec:testing:architecture}
 
+\mb{Tomás: can you check that what I wrote is indeed right?}
+
 Being able to syntactically relate our interpreter
 with the source code of GNU~R helped us catch numerous bugs---%
 in some sense as a variant of Linus's law.
@@ -1155,11 +1157,11 @@ the test suite of GNU~R itself (aprox.\ 3,600 lines)
 and the test suite of FastR (aprox.\ 1,300 lines)~\parencite{kalibera2014fast}.
 We found that these test suites mainly focus on expected behaviors.
 For instance,
-different numerical vectors will be concatenated,
+different numerical vectors are concatenated,
 summed, divided, etc.
 In each case,
 the special values \mintinline{R}{NaN} and \mintinline{R}{NA}
-are checked to be propagated.
+are checked to propagate.
 But we did not find any test checking for instance
 how the \mintinline{R}{"TRUE"} string is converted into a boolean value,
 despite its behavior being non-trivial:
@@ -1167,14 +1169,12 @@ in the context of an \mintinline{R}{if},
 it converts into the boolean \mintinline{R}{TRUE},
 but in the context of a binary logical operation,
 it yields a typing error.
-During our developpment,
-we developped our own test suite (of approx.\ 1,100 lines),
+We thus developped our own test suite (of approx.\ 1,100 lines),
 looking for such corner cases.
 
 % Tests are too various.
 These tests come in various shapes.
-Some files provide a set of expressions,
-all of which supposed to evaluate to \mintinline{R}{TRUE}.
+Some files provide expressions supposed to evaluate to \mintinline{R}{TRUE}.
 Some are just supposed not to raise any error.
 Finally, some prints on the standard output
 whether the test passed.
@@ -1190,12 +1190,12 @@ resetting the environment at each line.
 For instance, a line could redefine an important library function
 and test the consequences,
 but the next line is supposed to execute in the usual unaltered environment.
-We manually marked these special files by a \mintinline{R}{#@line}
-comment, which can be easily detected by our testing framework.
+We manually marked these special files by a \mintinline{R}{#@line} comment,
+which is recognized by our testing framework.
 
 % Differences of pretty-printer.
 The pretty-printer of GNU~R is quite complex.
-We did our best to match GNU~R's output on most cases,
+We did our best to match GNU~R's output in most cases,
 but we do not consider this as part of our contributions:
 \CoqR{}'s pretty-printer is part of the shim (the non-formalized part)
 and does not follow any line-to-line correspondance with GNU~R's.
@@ -1203,11 +1203,14 @@ There are thus some differences of behavior.
 Let us consider the expression
 \mintinline{R}{x <- c (1, 100, 2); x}.
 There are two steps of execution:
-first the variant \mintinline{R}{x} is assigned a value,
+first the variable \mintinline{R}{x} is assigned a value,
 then it is shown again.
 In the first step,
 the returned value of the assignment operator
-is the assigned value, but is marked as ``invisible'': % I don't want to say about the parentheses trick: I like this example.
+is the assigned value, but is marked as ``invisible'':
+\mb{I chose not to say anything about the parentheses trick:
+    I find invisibility to be a good example of difference in behavior
+    that we had to deal with in the testing framework.}
 it tells the interpreter to temporarily disable its printing.
 We did not model invisibility,
 and our interpreter thus prints \mintinline[showspaces]{text}{1   100 2  }: % I am hiding the [1], yes.
@@ -1220,7 +1223,7 @@ some vectors are left padded, other are right padded.
 We did not model this and in this case made the wrong decision.
 %
 However, we still consider that our result is correct,
-and we defined our testing framework to accept it as such.
+and we designed our testing framework to mark it as such.
 
 % Testing principles.
 To correctly compare each result,
@@ -1230,7 +1233,7 @@ we identify what type of result each interpreter returned. % I think that this i
 Examples of types includes
 errors, boolean vectors, numerical vectors, etc.,
 but also ``not implemented'' and ``impossible''
-(corresponding the the Coq constructors
+(corresponding the Coq constructors
 \mintinline{Coq}{result_not_implemented} and \mintinline{Coq}{result_impossible}
 shown in Figure~\ref{fig:result}).
 These types are then compared.
@@ -1296,7 +1299,7 @@ Such tests are marked as ``unknown''.
 % it would not be correct to mark them as success,
 % but it would not be practical to mark them as a failure.
 %
-As a special case, \mb{Do we want to speak about this here?}
+As a special case, \mb{This sentence should be moved before, I think.}
 invisible results (that are thus not printed by R)
 are considered successful whenever \CoqR{} did not return an error.
 Indeed, test suites always include a latter step printing down variables:
@@ -1304,23 +1307,23 @@ if the computed value is not correct, the testing framework
 will catch it when GNU~R will print down the computed value.
 
 Once a step in a test file failed or lead to a not-implemented result,
-we can not say anything about what follows:
-if we get the same result in both interpreter,
-it could be out of luck.
-They should not be marked as success:
-otherwise, successful results could suddenly fail
-after correctly implementing a feature.
+we can not say anything about what follows.
+Indeed, if we get the same result in both interpreter,
+it could be out of luck:
+they should not be marked as success for correctness.
+% otherwise, successful results could suddenly fail
+% after correctly implementing a feature.
 %
 Symmetrically,
 if such a test fails,
-it could be failing just because the previous step failed---%
-for instance if the previous step was an assignment
-who failed to execute
-and the current step just displays the value of the assigned variable.
+it could be because the previous step failed---%
+typically if the previous step was an assignment.
+% who failed to execute
+% and the current step just displays the value of the assigned variable.
 Marking such tests as failing would be counter-productive:
 this would lead to a large amount of failed tests
 that are not particularly failing,
-but fails because of a previous failing result.
+but fails because of a previous failing result.\mb{too much false positive.}
 %
 To categorize these tests,
 we introduced two additional outcomes for tests:
@@ -1328,8 +1331,7 @@ potential success and potential failures.
 These two categories mean nothing for correctness
 (we can not conclude anything certain from a potential outcome),
 but they really helped the development
-by showing possible testing results that
-implementing a feature could solve.
+by showing possible future results.
 
 We believe that the scheme of Figure~\ref{fig:methodology}
 can be reused in other projects
@@ -1338,15 +1340,18 @@ We found it useful to safely and quickly categorize results.
 Figure~\ref{fig:testing:interface} shows an example of such
 a categorization in action.
 We found that it enables to quickly understand what parts
-of the interpreter are needed to be fix or implemented.
+of the interpreter are needed to be fixed or implemented.
 %
-As convenient feature of our framework consists
-in counting how many times each not-implemented feature
-was being needed during the execution of the test suites.
-Figure~\ref{fig:interface:not:implemented} shows an example
-of such a graph.
-In practise, there were very often one function triggering
-most of the not-implemented results.
+\mb{What follows should probably be moved to Section~\ref{sec:library:development}}
+Our framework also counts how many times each not-implemented feature
+was being needed in our test suites.
+Figure~\ref{fig:interface:not:implemented} shows a typical example
+of such a graph given by our framework.
+One function here triggers
+most of the not-implemented results:
+this often happenned in practise
+and indicates that this function is being used
+in a lot of places in the test suites.
 This lead us to quickly identify low-hanging fruits,
 driving the development process forwards.
 
