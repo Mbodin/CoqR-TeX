@@ -1245,8 +1245,9 @@ are special.
 If \CoqR{} returns ``not implemented'',
 we simply mark the test as not implemented
 (this corresponds to an ``abandon'' in JSCert~\parencite{popl14jscert}).
+%
 If it returns ``impossible'',
-it is directly marked as failed:
+it is directly marked as such:
 this would correspond to a critical bug in GNU~R and should imperatively be reported.
 All of our ``impossible'' results
 were due to a mistake in \CoqR{} and were quickly solved.
@@ -1333,6 +1334,12 @@ These two categories mean nothing for correctness
 but they really helped the development
 by showing possible future results.
 
+In total,
+our testing framework categorizes each step of computation
+in one of 7 classes:
+as either ``pass'', ``fail'', ``not-implemented'',
+``impossible'', ``unknown'', ``potential pass'' and ``potential fail''.
+%
 We believe that the scheme of Figure~\ref{fig:methodology}
 can be reused in other projects
 for testing other kinds of outputs for other languages.
@@ -1342,18 +1349,8 @@ a categorization in action.
 We found that it enables to quickly understand what parts
 of the interpreter are needed to be fixed or implemented.
 %
-\mb{What follows should probably be moved to Section~\ref{sec:library:development}}
-Our framework also counts how many times each not-implemented feature
-was being needed in our test suites.
-Figure~\ref{fig:interface:not:implemented} shows a typical example
-of such a graph given by our framework.
-One function here triggers
-most of the not-implemented results:
-this often happenned in practise
-and indicates that this function is being used
-in a lot of places in the test suites.
-This lead us to quickly identify low-hanging fruits,
-driving the development process forwards.
+Section~\ref{sec:library:development} shows how this framework
+also drive the development process forwards.
 
 % How the other results (Potential fail, Not implemented) helped the Coq development.
 
@@ -1365,12 +1362,6 @@ driving the development process forwards.
     \includegraphics[width=.5\textwidth]{framework.png}
     \caption{Graphical interface of the testing framework}
     \label{fig:testing:interface}
-\end{figure}
-
-\begin{figure}
-    \includegraphics[width=.5\textwidth]{not-implemented.png}
-    \caption{Identifying needed features}
-    \label{fig:interface:not:implemented}
 \end{figure}
 
 
@@ -1390,6 +1381,8 @@ We extended the testing framework during development by adding new kinds of reco
 data structure.
 We consider that the amount of work to extend the framework in another direction
 (thus reducing the number of Unknown) is sufficiently low.
+
+Link to \url{coqr.dcc.uchile.cl}?
 
 
 \section{Base Library}
@@ -1495,15 +1488,71 @@ part of the language features.
 \subsection{Development Process}
 \label{sec:library:development}
 
-\todo{}
+\mb{Tomás: can you check that what I wrote is indeed right?}
 
 The base library was not added in one block.
-Instead, we added which function were necessary
-(the computational content of above).
-The testing framework lead us to know which functions were to be implemented,
-and as such served as a real-world case study for the framework.
+At first,
+almost none of the computational content of the base library passed.
+%
+We found that the design of our testing framework
+could be adapted to help us prioritize the implementation
+of this computational content.
+We found that it was easy to add these features to our framework,
+validating its reusability.
+We believe that this study
+served as a real-world case study for our testing framework.
 
+Indeed,
+it was simple to extract all the steps of the test suites
+that fall into the ``not-implemented'' class,
+then regroup them depending on the not-implemented features.
+We did it through JSON queries and regular expressions
+on the stored Coq outputs.
+%
+Figure~\ref{fig:interface:not:implemented} shows a typical example
+of the graphs produced by our framework.
+Few functions here trigger
+most of the not-implemented results:
+the \mintinline{Coq}{do_for} and \mintinline{Coq}{R_POW}
+functions are being used at lot in our test suites,
+without them being implemented.
+This often happened in practise.
+This lead us to quickly identify low-hanging fruits,
+driving the development process forwards.
+%
+Once these functions were implemented,
+this usually led to a large number of results
+switching classes from not-implemented
+to either pass or fail.
+We could then focus on the failing new results,
+catching bugs early in development.
+We believe that without this tool,
+we would only have caught bugs in a large development,
+where debugging is much harder.
 
+\begin{figure}
+    \includegraphics[width=.5\textwidth]{not-implemented.png}
+    \caption{Identifying needed features}
+    \label{fig:interface:not:implemented}
+\end{figure}
+
+We implemented a similar feature for a different issue:
+before all features of the base library were implemented,
+it was difficult to interpret the results of the test suites.
+Indeed, a failing result could be due to either
+a real bug in the \CoqR{} interpreter,
+or be due to it being run without including the base library.
+%
+For instance, most of the fails in which
+the \CoqR{} interpreter resulted in a look-up error
+were due to the missing base library:
+a function should have been defined by running the library.
+%
+We implemented similar graphs than Figure~\ref{fig:interface:not:implemented}
+showing which functions were missing most of the time.
+This led us to identify which part of the base library
+were used in the test suites,
+enabling us to focus on making these part runnable in \CoqR{}.
 
 
 \section{Related Work}
