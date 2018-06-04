@@ -301,7 +301,7 @@ Section~\ref{sec:related:work} discusses related work and Section~\ref{sec:concl
 % Finally, Section~\ref{sec:proofs} presents some proofs that have been done
 % using our language formalization.
 
-\section{Coq Interpreter}
+\section{\CoqR: An R Interpreter in Coq}
 \label{sec:coq:interp}
 
 We develop the formal semantics of R in the form of an interpreter defined in Coq; therefore, this is a big-step operational semantics.
@@ -1129,7 +1129,7 @@ to adapt or build similar tactics for other kinds of proofs.
 
 
 
-\section{Testing Architecture}
+\section{Testing \CoqR}
 \label{sec:testing:architecture}
 
 % \mb{Tomás: can you check that what I wrote is indeed right?}
@@ -1413,8 +1413,8 @@ if a user would need it.
 
 % The need to execute the base library.
 Prior to execute any expression, GNU~R performs a lot of actions.
-First, the heap is initialised.
-This process involves initialising most global variables.
+First, the heap is initialized.
+This process involves initializing most global variables.
 Then, GNU~R executes the base library.
 It is a group of files written in R,
 totalizing 19,000 lines of code.
