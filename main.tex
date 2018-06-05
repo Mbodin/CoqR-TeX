@@ -69,6 +69,8 @@
 \newcommand\mbi[1]{\todo[color=purple!20,inline]{#1}}
 \newcommand\et[1]{\todo[color=blue!20,size=\scriptsize]{#1}}
 \newcommand\eti[1]{\todo[color=blue!20,inline]{#1}}
+\newcommand\td[1]{\todo[color=green!20,size=\scriptsize]{#1}}
+\newcommand\tdi[1]{\todo[color=green!20,inline]{#1}}
 
 \setlength{\marginparwidth}{15mm} % Note: This is only temporary, to have notes more readable. It should be removed before submitting.
 
@@ -1137,13 +1139,13 @@ to adapt or build similar tactics for other kinds of proofs.
 Being able to syntactically relate our interpreter
 with the source code of GNU~R helped us catch numerous bugs---%
 in some sense as a variant of Linus's law.\footnote{\url{https://en.wikipedia.org/wiki/Linus\%27s\_Law}}
-To further augment the level of trust of \CoqR{}, we have developed 
+To further augment the level of trust of \CoqR{}, we have developed
 a testing framework that supports comparative execution of \CoqR{} and GNU~R. The framework additionally helps the development process by providing useful reports.
 
 % \et{what?}
 % In particular, as few safe results as possible should be marked as bugs.
 
-% with two different goals: first, being able to certify the absence of bugs in our interpreter (no bug should be left unnoticed by the testing framework), 
+% with two different goals: first, being able to certify the absence of bugs in our interpreter (no bug should be left unnoticed by the testing framework),
 % Second, helping our development
 
 % However, given the small number of people
@@ -1158,10 +1160,10 @@ a testing framework that supports comparative execution of \CoqR{} and GNU~R. Th
 \label{sec:test:methodology}
 
 % Test suite sources.
-\noindent\textbf{Test suites.} 
+\noindent\textbf{Test suites.}
 We based ourselves on two existing test suites:
-the test suite of GNU~R itself ($\sim$3,600 lines)
-and the test suite of FastR ($\sim$1,300 lines)~\parencite{kalibera2014fast}.
+the test suite of GNU~R itself ($\sim$3,600 lines)\td{There are 3600 lines but it's really ~1700 expressions. Is that ok?}
+and the test suite of FastR ($\sim$1,300 lines)~\parencite{kalibera2014fast}\td{Same here, 1300 lines but actually ~2600 expressions}.
 We found that these test suites mainly focus on expected behaviors.
 For instance,
 different numerical vectors are concatenated,
@@ -1182,11 +1184,11 @@ looking for such corner cases.
 Note that tests come in various shapes: some files provide expressions supposed to evaluate to \mintinline{R}{TRUE}, some are just supposed not to raise any error, and some tests print on the standard output
 whether they passed. To uniformly process these test suites,
 we compare the results produced by GNU~R and by \CoqR{},
-at each step of execution, as described further below. 
+at each step of execution, as described further below.
 Also, some tests are supposed to be executed as a normal file, while some tests are meant to be read line-by-line, resetting the environment at each line. We manually marked the latter files with a \mintinline{R}{#@line} tag, recognized by our testing framework.\\
 
 % Another important difference between tests is that
-% whilst some 
+% whilst some
 % For instance, a line could redefine an important library function
 % and test the consequences,
 % but the next line is supposed to execute in the usual unaltered environment.
@@ -1201,14 +1203,14 @@ Also, some tests are supposed to be executed as a normal file, while some tests 
     \label{fig:testing:interface}
 \end{figure}
 
-\noindent\textbf{Testing outcomes.} 
+\noindent\textbf{Testing outcomes.}
 The testing framework categorizes each step of computation
 in one of 7 classes (Figure~\ref{fig:testing:interface}):
 \mb{Maybe we should put a screenshot after executing a large test suite instead of this one.}
 ``passed'', ``failed'', ``not implemented'',
 ``impossible'', ``unknown'', ``potential pass'' and ``potential fail''.
 %
-These outcomes denote different possible scenarios in the comparison between GNU~R and \CoqR{}. Beyond the expected ``passed'' and ``failed'', 
+These outcomes denote different possible scenarios in the comparison between GNU~R and \CoqR{}. Beyond the expected ``passed'' and ``failed'',
 the ``not implemented'' and ``impossible'' results
 correspond to the Coq constructors
 \mintinline{Coq}{result_not_implemented} and \mintinline{Coq}{result_impossible}
@@ -1249,25 +1251,38 @@ The last three categories are explained later on.\\
     \caption{Comparing the results of GNU~R and \CoqR{}}
     \label{fig:methodology}
 \end{figure}
-\noindent\textbf{Two-step comparison.} 
-To compare each result, we adopt the general scheme shown in Figure~\ref{fig:methodology}. In particular, the comparison of outcomes proceeds in two steps. First,
-we identify what {\em type} of result each interpreter returns. 
+\noindent\textbf{Two-step comparison.\td{Not quite, there's the "processing"/"normalization" phase then the comparison}}
+To compare each result, we adopt the general scheme shown in Figure~\ref{fig:methodology}.
+In particular, the comparison of outcomes proceeds in two steps. % First,
+%we identify what {\em type} of result each interpreter returns.
 % I think that this is what Tomás calls ``Processor'', right?
-Examples of types includes
-errors, boolean vectors, numerical vectors, etc. as well as the special 
+First, we process the result each interpreter returns and transform\td{maybe normalize is better?}
+ them into a common set of {\em types}.
+Examples of types include errors, boolean vectors, numerical vectors, etc. as well as the special
 ``not implemented'' and ``impossible'' results of \CoqR{}.
-These types are then compared; if they do not match,  e.g. if GNU~R returns an error but \CoqR{} returns a string vector, the test is marked as failed without further processing.
-
-Second, if the two result types are identical
-in both GNU~R and \CoqR{},
-we interpret the results using a type-specific function. Such a function takes care of the necessary normalization in order to obtain meaningful comparison.
+This phase takes care of the necessary normalization in order to obtain meaningful comparison.
 Indeed, \CoqR{}'s pretty-printer is part of the shim (the non-formalized part)
-and does not follow an eyeball correspondence with GNU~R's pretty-printer, which is quite complex. This introduces harmless output mismatches. For instance, when printing vectors with GNU~R, some are left padded, others are right padded. We did not model this logic and therefore sometimes outputs do not match; the normalizer\et{normalizer vs interpreter vs processor} for numerical vectors converts results by ignoring spaces.
-% For instance \mintinline{R}{c (1, 100, 2)} is printed 
-% as \mintinline[showspaces,autogobble=false]{text}{  1 100   2} by GNU~R, while \CoqR{} prints \mintinline[showspaces]{text}{1   100 2  }. 
+and does not follow an eyeball correspondence with GNU~R's pretty-printer, which is quite complex.
+This introduces harmless output mismatches. For instance, when printing vectors
+with GNU~R, some are left padded, others are right padded.
+We did not model this logic and therefore sometimes outputs do not match;
+the processor for numerical vectors then converts results by ignoring these subtleties
+(such as spaces).
+
+% These types are then compared; if they do not match,  e.g. if GNU~R returns an error but \CoqR{} returns a string vector, the test is marked as failed without further processing.
+
+% Second, if the two result types are identical
+% in both GNU~R and \CoqR{},
+% we interpret the results using a type-specific function. Such a function takes care of the necessary normalization in order to obtain meaningful comparison.
+% Indeed, \CoqR{}'s pretty-printer is part of the shim (the non-formalized part)
+% and does not follow an eyeball correspondence with GNU~R's pretty-printer, which is quite complex. This introduces harmless output mismatches. For instance, when printing vectors with GNU~R, some are left padded, others are right padded. We did not model this logic and therefore sometimes outputs do not match; the normalizer\et{normalizer vs interpreter vs processor} for numerical vectors converts results by ignoring spaces.
+% For instance \mintinline{R}{c (1, 100, 2)} is printed
+% as \mintinline[showspaces,autogobble=false]{text}{  1 100   2} by GNU~R, while \CoqR{} prints \mintinline[showspaces]{text}{1   100 2  }.
 % above
-% to the vector \mintinline{R}{c (1, 100, 2)}, ignoring spaces. 
-The final results can be compared for equality after normalization. \\
+% to the vector \mintinline{R}{c (1, 100, 2)}, ignoring spaces.
+Second, these types are compared; if they do not match,  e.g. if GNU~R returns an error but \CoqR{} returns a string vector, the test is marked as failed without further processing.
+If the two result types are identical in both GNU~R and \CoqR{}, they can be compared for equality.
+%The final results can be compared for equality after normalization. \\
 % leading to either a failure or a success.
 
 
@@ -1302,13 +1317,12 @@ The final results can be compared for equality after normalization. \\
 
 % Special cases.
 \noindent{\bf Special categories.}
-Sometimes typing a result fails. 
+Sometimes processing a result fails.
 % It happens that we can not type a result.
 % This happens when R produces a result for which we did not
 % provide any normalizer.
 For instance, there exist special attributes that affect
-the way vectors are printed, and our pretty-printer is not aware of all of these special attributes. In such cases, the typing step fails
-returning ``unknown'' as a type. Such tests are consequently marked as ``unknown''; they could be functionally correct or not, so classifying them apart is practical.
+the way vectors are printed, and our pretty-printer is not aware of all of these special attributes. In such cases, the processing step fails returning ``unknown'' as a type. Such tests are consequently marked as ``unknown''; they could be functionally correct or not, so classifying them apart is practical.
 % it would not be correct to mark them as success,
 % but it would not be practical to mark them as a failure.
 %
@@ -1333,7 +1347,7 @@ we cannot say anything about what the steps that follow in the test file: both e
 % typically if the previous step was an assignment.
 % who failed to execute
 % and the current step just displays the value of the assigned variable.
-Marking such tests as failing would be counter-productive, as 
+Marking such tests as failing would be counter-productive, as
 this would lead to a large amount of false positives
 in the tests marked as failed.
 % (only marked as failing because of a previous failing result).
@@ -1393,11 +1407,11 @@ Once the buggy function was identified,
 we compared its code line by line with the original function from GNU~R.
 In most cases, this was enough to solve the bug.
 
-Our testing framework categorized a large number of bugs
+Our testing framework categorized a large number of cases
 as ``unknown'' (leading to potential passes and failures in the next steps).
 This is due to the various ways GNU~R's pretty-printer works.
-We added several new result interpreters in our framework
-to cover more types.
+We added several new result processors in our framework
+to cover more types.\td{Mmhh... I mean, we added them at the beginning but we haven't modified it much}
 We found that extending our framework was easy,
 but that at the same time there were a large number of printing mode in GNU~R.
 We thus left these unknown case,
@@ -1721,4 +1735,3 @@ end with a perspective on program logics
 \printbibliography{}
 
 \end{document}
-
