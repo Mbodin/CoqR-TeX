@@ -1407,16 +1407,22 @@ Once the buggy function was identified,
 we compared its code line by line with the original function from GNU~R.
 In most cases, this was enough to solve the bug.
 
-Our testing framework categorized a large number of cases
-as ``unknown'' (leading to potential passes and failures in the next steps).
-This is due to the various ways GNU~R's pretty-printer works.
-We added several new result processors in our framework
-to cover more types.\td{Mmhh... I mean, we added them at the beginning but we haven't modified it much}
-We found that extending our framework was easy,
-but that at the same time there were a large number of printing mode in GNU~R.
-We thus left these unknown case,
-knowing that it would be easy to add a particular type of result
+Due to the various ways GNU~R's pretty printer works, there is a large number of
+printing modes and possible results. Our testing framework thus categorizes
+many cases as  ``unknown'' (leading to potential passes and failures in the next steps).
+However, we designed our framework so it would be simple to add a particular type of result
 if a user would need it.
+
+%Our testing framework categorized a large number of cases
+%as ``unknown'' (leading to potential passes and failures in the next steps).
+%This is due to the various ways GNU~R's pretty-printer works.
+%We added several new result processors in our framework
+%to cover more types.
+%We found that extending our framework was easy,
+%but that at the same time there were a large number of printing mode in GNU~R.
+%We thus left these unknown case,
+%knowing that it would be easy to add a particular type of result
+%if a user would need it.
 
 
 \section{Base Library}
@@ -1426,7 +1432,7 @@ if a user would need it.
 \label{sec:library:description}
 
 % The need to execute the base library.
-Prior to execute any expression, GNU~R performs a lot of actions.
+Prior to executing any expression, GNU~R performs a lot of actions.
 First, the heap is initialized.
 This process involves initializing most global variables.
 Then, GNU~R executes the base library.
@@ -1447,32 +1453,32 @@ our interpreter behaves as R on this same program.
 Most of these functions are just links to internal functions
 with some argument checking or default argument.
 Below is an example:
-the defined function \mintinline{R}{which} behaves very similarly
-to the internal \mintinline{R}{which} function.
-The difference is that \mintinline{R}{which} takes two additional
-optional parameters.
-With their default values, the behavior of this function
-is the same as the corresponding internal function:
-this definition extends the original simpler behavior of the function.
+the defined function \mintinline{R}{eval} behaves very similarly
+to the internal \mintinline{R}{eval} function.
+The difference is that \mintinline{R}{eval} checks the value of its parameters
+when determining their default values.
+This definition extends the original simpler behavior of the function.
+\tdi{Don't know how to make it look prettier...}
 \begin{minted}{R}
-which <- function (x, arr = FALSE, names = TRUE) {
-    wh <- .Internal (which (x))
-    if (arr && !is.null (d <- dim (x)))
-        array (wh, d, dimnames (x), names = names)
-    else wh
-}
+eval <- function(expr, envir = parent.frame(),
+          enclos = if(is.list(envir) || is.pairlist(envir))
+                       parent.frame() else baseenv())
+    .Internal(eval(expr, envir, enclos))
 \end{minted}
 
 % About the not-implemented results.
 These definitions are easily run:
 only the \mintinline{R}{function} keyword is necessary
-to define the function \mintinline{R}{which}.
-However, once the base library has been executed,
-a not-implemented exception will be thrown
-if one actually calls the function \mintinline{R}{which}.
-Indeed,
-the internal function \mintinline{R}{.Internal (which (x))}
-has not yet been implemented.
+to define the function \mintinline{R}{eval}. Because the internal \mintinline{R}{eval}
+function is already implemented, it is safe to use the previously defined one.
+In some other cases the internal functions are not implemented, which results in
+a not-implemented result if one actually calls the function defined in the base library.
+%However, once the base library has been executed,
+%a not-implemented exception will be thrown
+%if one actually calls the function \mintinline{R}{which}.
+%Indeed,
+%the internal function \mintinline{R}{.Internal (which (x))}
+%has not yet been implemented.
 %
 % This behavior is expected.
 It may seem pointless to execute a function definition
@@ -1482,9 +1488,9 @@ is harmless:
 we know that this result can be safely ignored,
 and our testing framework reports it as such.
 On the other hand,
-if we would not have executed the base library,
-then the interpreter might fail with an error---%
-stating for instance that the \mintinline{R}{which} function
+if we had not executed the base library,
+then the interpreter might have failed with an error---%
+stating for instance that the \mintinline{R}{eval} function
 does not exist---%
 whilst GNU~R runs successfully.
 Such a difference of behavior would be reported
@@ -1497,7 +1503,7 @@ the results of \CoqR{}.
 % Computational content in the base library.
 The base library also prepares the base environment.
 For instance, the file \texttt{constants.R} of the base library
-contains the definition below.
+contains the \mintinline{R}{pi} definition, shown below.
 Such definitions are more complex as they involve computations:
 to be able to run the base library,
 we need to implement the \mintinline{R}{atan} function---%
@@ -1540,15 +1546,16 @@ Indeed,
 it was simple to extract all the steps of the test suites
 that fall into the ``not-implemented'' class,
 then regroup them depending on the not-implemented features.
-We did it through JSON queries and regular expressions
-on the stored Coq outputs.
+%We did it through JSON queries and regular expressions
+%on the stored Coq outputs.
 %
 Figure~\ref{fig:interface:not:implemented} shows a typical example
 of the graphs produced by our framework.
 Few functions here trigger
 most of the not-implemented results:
 the \mintinline{Coq}{do_for} and \mintinline{Coq}{R_POW}
-functions are being used at lot in our test suites,
+functions\td{This might have to be updated. do for was partly implemented for the zzz file in base lib}
+ are being used at lot in our test suites,
 without them being implemented.
 This often happened in practise.
 This lead us to quickly identify low-hanging fruits,
@@ -1557,7 +1564,8 @@ driving the development process forwards.
 Once these functions were implemented,
 this usually led to a large number of results
 switching classes from not-implemented
-to either pass or fail.
+to either pass, fail or even new not-implemented cases for other functions
+which could not be executed previously (due to execution stopping earlier).
 We could then focus on the failing new results,
 catching bugs early in development.
 We believe that without this tool,
