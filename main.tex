@@ -1281,7 +1281,7 @@ the processor for numerical vectors then converts results by ignoring these subt
 % above
 % to the vector \mintinline{R}{c (1, 100, 2)}, ignoring spaces.
 Second, these types are compared; if they do not match,  e.g. if GNU~R returns an error but \CoqR{} returns a string vector, the test is marked as failed without further processing.
-If the two result types are identical in both GNU~R and \CoqR{}, they can be compared for equality.
+If the two result types are identical in both GNU~R and \CoqR{}, they can be compared for equality.\\
 %The final results can be compared for equality after normalization. \\
 % leading to either a failure or a success.
 
@@ -1333,8 +1333,8 @@ the way vectors are printed, and our pretty-printer is not aware of all of these
 % if the computed value is not correct, the testing framework
 % will catch it when GNU~R will print down the computed value.
 
-Once a single step in a test file fails, or leads to a not-implemented result,
-we cannot say anything about what the steps that follow in the test file: both errors and success could coincidental.
+Once a single step in a line-by-line test file fails, or leads to a not-implemented result,
+we cannot say anything about the steps that follow in the test file: both errors and success could be coincidental.
 % Indeed, if we get the same result in both interpreter,
 % it could be out of luck:
 % they should not be marked as success for correctness.
@@ -1353,7 +1353,7 @@ in the tests marked as failed.
 % (only marked as failing because of a previous failing result).
 %
 To categorize these tests,
-we use the potential pass and fail outcome categories. These two categories mean nothing for correctness (we cannot conclude anything certain from a potential outcome), but they really help in the development process by showing possible future results.
+we use the ``potential pass'' and ``potential fail'' outcome categories. These two categories mean nothing for correctness (we cannot conclude anything certain from a potential outcome), but they really help in the development process by showing possible future results.
 
 
 %
@@ -1451,28 +1451,25 @@ our interpreter behaves as R on this same program.
 
 % Example of typical function definition in the base library.
 Most of these functions are just links to internal functions
-with some argument checking or default argument.
+with some argument checking or default arguments.
 Below is an example:
-the defined function \mintinline{R}{eval} behaves very similarly
+the base library function \mintinline{R}{eval} behaves very similarly
 to the internal \mintinline{R}{eval} function.
-The difference is that \mintinline{R}{eval} checks the value of its parameters
-when determining their default values.
-This definition extends the original simpler behavior of the function.
-\tdi{Don't know how to make it look prettier...}
+The difference is that the base library function checks the value of its parameters when determining their default values, before calling the internal function.
 \begin{minted}{R}
 eval <- function(expr, envir = parent.frame(),
-          enclos = if(is.list(envir) || is.pairlist(envir))
-                       parent.frame() else baseenv())
+    enclos = if(is.list(envir) || is.pairlist(envir))
+             parent.frame() else baseenv())
     .Internal(eval(expr, envir, enclos))
 \end{minted}
 
 % About the not-implemented results.
 These definitions are easily run:
 only the \mintinline{R}{function} keyword is necessary
-to define the function \mintinline{R}{eval}. Because the internal \mintinline{R}{eval}
-function is already implemented, it is safe to use the previously defined one.
-In some other cases the internal functions are not implemented, which results in
-a not-implemented result if one actually calls the function defined in the base library.
+to define the base library function \mintinline{R}{eval}. Because the internal \mintinline{R}{eval}
+function is already implemented, it is safe to call the base library function.
+In some other cases, the internal functions are not yet implemented in \CoqR, hence calling the base library counterpart results in
+a not-implemented result.
 %However, once the base library has been executed,
 %a not-implemented exception will be thrown
 %if one actually calls the function \mintinline{R}{which}.
@@ -1482,20 +1479,15 @@ a not-implemented result if one actually calls the function defined in the base 
 %
 % This behavior is expected.
 It may seem pointless to execute a function definition
-that our interpreter can not execute without failing.
+that our interpreter cannot execute without failing.
 The reason is that failing because of non-implemented features
-is harmless:
-we know that this result can be safely ignored,
-and our testing framework reports it as such.
-On the other hand,
-if we had not executed the base library,
-then the interpreter might have failed with an error---%
-stating for instance that the \mintinline{R}{eval} function
-does not exist---%
-whilst GNU~R runs successfully.
+is harmless: we know that this result can be safely ignored,
+and our testing framework reports it as such (Section~\ref{sec:testing:architecture}).
+On the other hand, if we had not executed the base library,
+then the interpreter would have failed with an error stating that a function is missing, whilst GNU~R runs successfully.
 Such a difference of behavior would be reported
 as a bug by our testing framework,
-whilst a not-implemented exception would not.
+whilst a not-implemented result is not.
 Being able to run the base library thus ensures
 that the testing framework correctly classifies
 the results of \CoqR{}.
