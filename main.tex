@@ -1367,7 +1367,99 @@ we use the ``potential pass'' and ``potential fail'' outcome categories. These t
 
 \clearpage
 
-Go for it!
+\section{Base Library}
+Once we ran our test suites we noticed that barely 2\% of the failed results
+were due to actual value mismatch (numeric precision, string mismatch), while the
+rest were mostly due to missing functions and objects in our interpreter\td{That percentage is not necessary... But somehow I wanted to say that ~800/870 fails are missing functions}.
+ Using one of the features of our framework we identified the most relevant functions
+causing these fails, as can be seen in figure X. We recognized that these belonged
+ to the base library loaded by GNU~R interpreter on initialization.
+
+\subsection{Description}
+\label{sec:library:description}
+
+% The need to execute the base library.
+Prior to executing any expression, GNU~R performs several actions.
+One of these is executing the base library, which corresponds to a group of files written in R,
+totalizing 19,000 lines of code. This base library includes the definition of several
+functions and objects, such as \mintinline{R}{mean}, \mintinline{R}{matrix} or \mintinline{R}{pi}.
+Several of these functions are just links to internal functions with some argument
+checking or default arguments. An example is the \mintinline{R}{eval} function which
+behaves very similarly to the internal \mintinline{R}{eval} function.
+The only difference is that the base library function sets default values for the arguments.
+\begin{minted}{R}
+eval <- function(expr, envir = parent.frame(),
+    enclos = if(is.list(envir) || is.pairlist(envir))
+             parent.frame() else baseenv())
+    .Internal(eval(expr, envir, enclos))
+\end{minted}
+
+
+
+\subsection{Loading the base library}
+\label{sec:library:loading}
+
+The first step in loading the base library was fixing the parsing errors that arose,
+due to the differences mentioned in section \ref{sec:parsing}. One very common error was
+caused by the syntax used for \mintinline{R}{if else} in the R files, considered
+a mistake by GNU~R's own documentation\footnote{By typing \texttt{?Control} in R you get a man page with the warning.}.
+The files were thus rewritten in order to remove these parsing errors.
+
+Once this was ready, the definitions had to be included. Most of these
+are easily run: only the \mintinline{R}{function} keyword is necessary for them
+to be assigned. There are other cases where some computation
+is required prior to defining the functions or objects.
+For instance, the file \texttt{constants.R}
+of the base library contains the \mintinline{R}{pi} definition, shown below\td{Don't really know if this is needed}.
+In order
+to evaluate this expression, the \mintinline{R}{atan} function has to be implemented.
+These cases are more complex because they usually require features that are not
+implemented by our interpreter. In particular, there were three files which
+required many functionalities not yet included to CoqR. Therefore, in order to
+completely load the base library, the next step was to implement these missing
+features.
+
+\begin{minted}{R}
+pi <- 4 * atan (1)
+\end{minted}
+
+Although we did not count with the whole base library, we ran our test suites to verify
+our suspicions. We reduced the failing results from around 800 to 500
+and increased our not-implemented results from 200 up to 700 for the GNU~R test suite.
+The failing results were mainly due to missing objects caused by computations not performed.
+For the fastR test suite we obtained ...
+
+Including the three missing files proved to be a richer experience than expected.
+On one hand, implementing the missing features, several deep-incrusted internal bugs
+arose which may have not with the test suites. These bugs would range from
+erroneous results to our interpreter getting stuck. Some would be small and some
+would be at the core of how functions were executed. The bisect
+tool proved to be indispensable in the fine-grained process of debugging, allowing us
+to track down and identify evaluation paths which resulted in execution errors.
+Our set of custom tests would also let us reproduce particular expressions causing
+these erroneous results. Finally our framework would serve particularly in overviewing
+the whole process.
+
+On the other hand, we noticed a convergence in the functionalities required to load
+the whole base library and the low-hanging fruits detected by our interpreter and
+the test suites.
+We could then cover both aspects at the same time.
+
+It is important to notice that despite being able to perform these assignments and
+include the base library to our interpreter, that does not mean that they are usable.
+Indeed, the internal functions used by them may not be implemented,
+hence calling them would result in a not-implemented result.
+We expected this type of behaviour and hoped to profit from it using our framework.
+The main issue of not having the base library's functions and objects was not being able to detect
+the actual features required by the test suites. By removing the layer of failed
+results due to missing definitions, we could focus our efforts on implementing
+what was really needed. We included tools in our framework that would show the most
+common not-implemented features, allowing us to precisely identify the low-hanging fruits.
+This would then allow us to drive the development process forwards.
+
+\section{Results}
+\label{sec:library:results}
+
 
 \clearpage
 
