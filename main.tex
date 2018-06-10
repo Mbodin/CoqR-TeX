@@ -988,149 +988,6 @@ and easily fixable in the parsed R code.
 %
 
 
-\section{Formal Reasoning about R}
-\label{sec:proofs}
-
-In this section, we answer one of the objective stated in the introduction:
-our operational semantics should be usable to build proofs about the R language. This section describes one use case:
-proving that invariants about the state of the memory are preserved during execution. We also discuss the associated need for proof automation.
-
-As described in Section~\ref{sec:heap},
-each basic language element in R is associated one of 24 types,
-and each of these types are differently stored in memory.
-Figure~\ref{fig:invariants:definition} shows a snippet
-of our invariants defined by the \mintinline{Coq}{safe_SExp} inductive property.
-%
-The constructor \mintinline{Coq}{safe_ListStruct} captures the requirements on well-formed lists. The requirements are expressed using the predicate \mintinline{Coq}{may_have_types S l p}, which
-states that the pointer \mintinline{Coq}{p}
-is associated in the state \mintinline{Coq}{S} with an object
-whose type is in the list \mintinline{Coq}{l}. Hence, the hypothesis on \mintinline{Coq}{cdr} states that the tail of a list is either a list
-(\mintinline{Coq}{ListSxp}) or nil (\mintinline{Coq}{NilSxp}).\footnote{The type \mintinline{Coq}{NilSxp} is the type of the \mintinline{Coq}{R_NilValue} global variable (see Section~\ref{sec:globals}); it is used both to end lists and to indicate a missing information.}
-Similarly, the constructor states that the tag
-of a list is either a character vector or a \mintinline{Coq}{NilSxp} element.
-Note that no constraint is specified for the first element \mintinline{Coq}{car} of the list: lists in R are heterogeneous.
-%
-As another example, the constructor \mintinline{Coq}{safe_StrStruct} states that a string vector contains an array of C pointers,
-all of which should be associated with a character vector in memory.
-
-\begin{figure}
-\begin{minted}{Coq}
-Inductive safe_SExp S : SExp -> Prop :=
-  | safe_ListStruct : forall car cdr tag,
-    may_have_types S [NilSxp ; ListSxp] cdr ->
-    may_have_types S [NilSxp ; CharSxp] tag ->
-    safe_SExp S (make_ListStruct car cdr tag)
-  | safe_StrStruct : forall data,
-    (forall a, Mem a data ->
-      may_have_types S [CharSxp] a) ->
-    safe_SExp S (make_StrStruct data)
-  (* ... *).
-\end{minted}
-    \caption{Typing invariants for memory} % during R execution
-    \label{fig:invariants:definition}
-\end{figure}
-
-
-\begin{figure}
-\begin{minted}{Coq}
-Lemma do_attr_result :
-  forall S globals call op args env,
-  safe_state S ->
-  safe_globals S globals ->
-  safe_pointer S args ->
-  may_have_types S [NilSxp; ListSxp] args ->
-  (* ... *)
-  result_prop (fun S' ans =>
-      safe_state S' /\ safe_globals S' globals
-      /\ safe_pointer S' ans)
-    (do_attr globals runs S call op args env).
-Proof.
-  introv OKS OKglobals OKargs Targs. unfolds do_attr.
-  cutR R_length_result. computeR.
-  cutR matchArgs_result. computeR.
-  (* ... *)
-Qed.
-\end{minted}
-    \caption{Example of specification and tactic usage.}
-    \label{fig:do_attr_result}
-\end{figure}
-
-Such invariants are relatively simple, but given the size of the formalization,
-they are quite long to establish. Proving that some step of the interpreter preserves the invariants quickly becomes very tedious. In order to address this, we developed various Coq tactics to ease the proof process.
-These tactics are mainly useful to propagate known information
-through state changes.
- % such operations would have been long and cumbersome for the user, and it automates relatively easily.
-
-Figure~\ref{fig:do_attr_result} illustrates the use of these tactics, with a lemma that states that the \mintinline{Coq}{do_attr} function
-defined in Figure~\ref{fig:coq:do_attr} produces a result
-that satisfies the invariants.
-%
-The \mintinline{Coq}{safe_state} predicate specifies
-that the given state only stores objects that satisfy the invariants, and similarly
-for the global variables of \mintinline{Coq}{globals} with the predicate \mintinline{Coq}{safe_globals}.
-The arguments \mintinline{Coq}{call}, \mintinline{Coq}{op},
-\mintinline{Coq}{args}, and \mintinline{Coq}{env} of \mintinline{Coq}{do_attr}
-are also assumed to satisfy these invariants,
-in addition to being of the expected type.
-%
-In the conclusion of the lemma, the \mintinline{Coq}{result_prop} predicate enables us
-to specify what the resulting state of \mintinline{Coq}{do_attr} should satisfy,
-whilst ignoring non-interesting cases
-such as \mintinline{Coq}{result_not_implemented} or \mintinline{Coq}{result_bottom}.
-Indeed, reaching one of these results means that the result is out of scope for the  interpreter.
-% \et{will turn into a forward ref if we move proof section earlier}
-% This is the reason why these are not considered harmful
-% during the testing process (see Section~\ref{sec:test:methodology}).
-% In the normal result, we state that the invariants are still satisfied.
-
-The proof closely follows the source code of \mintinline{Coq}{do_attr}.
-After introducing the hypotheses, the function \mintinline{Coq}{do_attr} is unfolded,
-leaving its definition ready to be processed by further tactics.
-In Figure~\ref{fig:coq:do_attr}, we can see that \mintinline{Coq}{do_attr}
-starts by calling \mintinline{Coq}{R_length}.
-In the proof we use the \mintinline{Coq}{cutR} tactic with a lemma about \mintinline{Coq}{R_length}. This novel tactic discharges the premises of the lemma and introduces the resulting state:
-only the success case is left, the other kinds of results being transparently propagated.
-% As for \mintinline{Coq}{do_attr}, the error case yields \mintinline{Coq}{False}
-% and is discharged by the tactic.
-The call to \mintinline{Coq}{R_length} is thus rewritten
-to a simple expression of the form
-\mintinline{Coq}{result_success S' n},
-where \mintinline{Coq}{n} is the number returned by \mintinline{Coq}{R_length}.
-%
-We then apply the \mintinline{Coq}{computeR} tactic.
-This is the most important tactic provided by our framework:
-it moves forwards in the current expression,
-propagating everything that can be propagated.
-In the example, it unfolds the \mintinline{Coq}{let%success} monadic binder,
-as this binder is now associated by a fully-computed result
----thanks to the \mintinline{Coq}{cutR} tactic.
-It also updates all properties known to hold for the previous state \mintinline{Coq}{S}
-to the new state \mintinline{Coq}{S'} using the results
-of the \mintinline{Coq}{R_length_result} lemma.
-For instance, the hypothesis \mintinline{Coq}{safe_pointer S args}
-is replaced by \mintinline{Coq}{safe_pointer S' args}.
-This transition is not particularly difficult to prove
-given the right lemmae, but it can be extremely cumbersome to manually perform this transition for each and every available hypotheses.
-%
-The proof continues by applying the tactic \mintinline{Coq}{cutR} again
-with a lemma about \mintinline{Coq}{matchArgs},
-then \mintinline{Coq}{computeR} to propagate the hypotheses. And so on.
-
-We have proven that the invariants are safely propagated throughout the execution of some chosen functions. The proof for the whole formalization is still work in progress. Given the size of the formalization,
-we consider that proving such simple typing invariants
-was already too big to be entirely manually proven:
-automation was necessary to ease the proving process
-and deal with such sizes.
-%
-We also found that building the \mintinline{Coq}{cutR}
-and \mintinline{Coq}{computeR} in Ltac---%
-the tactic language of Coq---%
-was relatively straightforward.
-As a consequence, we do not expect major difficulties
-to adapt or build similar tactics for other kinds of proofs.
-
-
-
 \section{Testing \CoqR}
 \label{sec:testing:architecture}
 
@@ -1162,9 +1019,11 @@ a testing framework that supports comparative execution of \CoqR{} and GNU~R. Th
 % Test suite sources.
 \noindent\textbf{Test suites.}
 We based ourselves on two existing test suites:
-the test suite of GNU~R itself ($\sim$3,600 lines)\td{There are 3600 lines but it's really ~1700 expressions. Is that ok?}
-and the test suite of FastR ($\sim$1,300 lines)~\parencite{kalibera2014fast}\td{Same here, 1300 lines but actually ~2600 expressions}.
-We found that these test suites mainly focus on expected behaviors.
+the test suite of GNU~R itself ($\sim$3,600 lines)
+% \td{There are 3600 lines but it's really ~1700 expressions. Is that ok?}
+and the test suite of FastR ($\sim$1,300 lines)~\parencite{kalibera2014fast}.
+% \td{Same here, 1300 lines but actually ~2600 expressions}.
+We found that these test suites mainly focus on {\em expected} behaviors.
 For instance,
 different numerical vectors are concatenated,
 summed, divided, etc.
@@ -1197,27 +1056,9 @@ Also, some tests are supposed to be executed as a normal file, while some tests 
 
 
 % Testing principles.
-\begin{figure}
-    \includegraphics[width=.5\textwidth]{framework.png}
-    \caption{Graphical interface of the testing framework}
-    \label{fig:testing:interface}
-\end{figure}
 
-\noindent\textbf{Testing outcomes.}
-The testing framework categorizes each step of computation
-in one of 7 classes (Figure~\ref{fig:testing:interface}):
-\mb{Maybe we should put a screenshot after executing a large test suite instead of this one.}
-``passed'', ``failed'', ``not implemented'',
-``impossible'', ``unknown'', ``potential pass'' and ``potential fail''.
-%
-These outcomes denote different possible scenarios in the comparison between GNU~R and \CoqR{}. Beyond the expected ``passed'' and ``failed'',
-the ``not implemented'' and ``impossible'' results
-correspond to the Coq constructors
-\mintinline{Coq}{result_not_implemented} and \mintinline{Coq}{result_impossible}
-shown in Figure~\ref{fig:result}. Discriminating a failure from a  not-yet-implemented feature is crucial for development, as it helps us choose which feature to focus on next (see Section~\ref{sec:library:development}).
 
-As mentioned before, an impossible result would correspond to a critical bug in GNU~R---in practice, all the ``impossible'' results we observed were due to mistakes in \CoqR{} and were quickly solved.
-The last three categories are explained later on.\\
+
 
 % We believe that the scheme of Figure~\ref{fig:methodology}
 % can be reused in other projects
@@ -1228,46 +1069,75 @@ The last three categories are explained later on.\\
 % We found that it enables to quickly understand what parts
 % of the interpreter are needed to be fixed or implemented.
 
+% \begin{figure}
+%     \begin{tikzpicture}[node distance = 13mm]
+%         \node [box] (source) {R program} ;
+%         \node [box, below left of = source, xshift = -1cm, yshift = -5mm] (R) {GNU~R} ;
+%         \node [box, below right of = source, xshift = 1cm, yshift = -5mm] (CoqR) {\CoqR{}} ;
+%         \newcommand\identifytype{\parbox{5.5em}{\centering{}Identify type\\of result}}
+%         \node [box, below of = R] (Rtype) {\identifytype} ;
+%         \node [box, below of = CoqR] (CoqRtype) {\identifytype} ;
+%         \newcommand\interpretetresult{\parbox{3.5em}{\centering{}Interpret\\result}}
+%         \node [box, below of = Rtype] (Rint) {\interpretetresult} ;
+%         \node [box, below of = CoqRtype] (CoqRint) {\interpretetresult} ;
+%         \draw [->, thick] (source) to [out = -90, in = 90] (R) ;
+%         \draw [->, thick] (source) to [out = -90, in = 90] (CoqR) ;
+%         \draw [->, thick] (R) -- (Rtype) ;
+%         \draw [->, thick] (CoqR) -- (CoqRtype) ;
+%         \draw [<->] (Rtype) -- node [above] {compare} node [below] {types} (CoqRtype) ;
+%         \draw [->, thick] (Rtype) -- (Rint) ;
+%         \draw [->, thick] (CoqRtype) -- (CoqRint) ;
+%         \draw [<->] (Rint) -- node [above] {compare} node [below] {interpretations} (CoqRint) ;
+%     \end{tikzpicture}
+%     \caption{Comparing the results of GNU~R and \CoqR{}}
+%     \label{fig:methodology}
+% \end{figure}
+
+\noindent\textbf{Comparing results.}
+After interpretation of the R code, we obtain the raw outputs for each interpreter, GNU~R and \CoqR, which are just strings. These strings cannot be compared directly for equality as many syntactic details makes them superficially different. Indeed, \CoqR{}'s pretty-printer is part of the shim (the non-formalized part)
+and does not follow an eyeball correspondence with GNU~R's pretty-printer, which is quite complex. This introduces harmless output mismatches. For instance, when printing vectors with GNU~R, some are left padded, others are right padded. Other minor sources of mismatch are spaces and newlines. Therefore, the testing framework first processes the result strings of both interpreters into a common set of values that can meaningfully be compared. 
+
+This step is carried out by {\em result processors} (implemented in Python). There are two classes of processors; one that handles GNU~R outputs, and one that handles CoqR outputs.  Each processor matches the received raw string against a list of regular expressions (regexes). As soon as a regex matches, an object of type \mintinline{Python}{Result} is created and the matching stops. There are eight subclasses of \mintinline{Python}{Result}, 
+namely: \mintinline{Python}{NotImplementedResult}, \mintinline{Python}{ImpossibleResult}, \mintinline{Python}{ErrorResult}, \mintinline{Python}{NullResult}, \mintinline{Python}{FunctionResult}, \mintinline{Python}{UnknownResult}, \mintinline{Python}{InvisibleResult} and \mintinline{Python}{VectorResult}, with further subclasses: \mintinline{Python}{BooleanVectorResult}, \mintinline{Python}{NumericVectorResult} and \mintinline{Python}{StringVectorResult}. 
+The differences between the GNU~R and \CoqR{} processors thus lies in the regexes they use to recognize result strings, and consequently in the particular instances of \mintinline{Python}{Result} they produce.
+%
+When creating result objects, processor include additional information that can be necessary for later comparison. For example, if the regex for numerical vector matches, the processor extracts the actual numerical value contained in the raw string and stores it in the \mintinline{Python}{NumericVectorResult} object. \\
+
+
 \begin{figure}
-    \begin{tikzpicture}[node distance = 13mm]
-        \node [box] (source) {R program} ;
-        \node [box, below left of = source, xshift = -1cm, yshift = -5mm] (R) {GNU~R} ;
-        \node [box, below right of = source, xshift = 1cm, yshift = -5mm] (CoqR) {\CoqR{}} ;
-        \newcommand\identifytype{\parbox{5.5em}{\centering{}Identify type\\of result}}
-        \node [box, below of = R] (Rtype) {\identifytype} ;
-        \node [box, below of = CoqR] (CoqRtype) {\identifytype} ;
-        \newcommand\interpretetresult{\parbox{3.5em}{\centering{}Interpret\\result}}
-        \node [box, below of = Rtype] (Rint) {\interpretetresult} ;
-        \node [box, below of = CoqRtype] (CoqRint) {\interpretetresult} ;
-        \draw [->, thick] (source) to [out = -90, in = 90] (R) ;
-        \draw [->, thick] (source) to [out = -90, in = 90] (CoqR) ;
-        \draw [->, thick] (R) -- (Rtype) ;
-        \draw [->, thick] (CoqR) -- (CoqRtype) ;
-        \draw [<->] (Rtype) -- node [above] {compare} node [below] {types} (CoqRtype) ;
-        \draw [->, thick] (Rtype) -- (Rint) ;
-        \draw [->, thick] (CoqRtype) -- (CoqRint) ;
-        \draw [<->] (Rint) -- node [above] {compare} node [below] {interpretations} (CoqRint) ;
-    \end{tikzpicture}
-    \caption{Comparing the results of GNU~R and \CoqR{}}
-    \label{fig:methodology}
+    \includegraphics[width=.5\textwidth]{framework.png}
+    \caption{Graphical interface of the testing framework}
+    \label{fig:testing:interface}
 \end{figure}
-\noindent\textbf{Two-step comparison.\td{Not quite, there's the "processing"/"normalization" phase then the comparison}}
-To compare each result, we adopt the general scheme shown in Figure~\ref{fig:methodology}.
-In particular, the comparison of outcomes proceeds in two steps. % First,
-%we identify what {\em type} of result each interpreter returns.
-% I think that this is what Tomás calls ``Processor'', right?
-First, we process the result each interpreter returns and transform\td{maybe normalize is better?}
- them into a common set of {\em types}.
-Examples of types include errors, boolean vectors, numerical vectors, etc. as well as the special
-``not implemented'' and ``impossible'' results of \CoqR{}.
-This phase takes care of the necessary normalization in order to obtain meaningful comparison.
-Indeed, \CoqR{}'s pretty-printer is part of the shim (the non-formalized part)
-and does not follow an eyeball correspondence with GNU~R's pretty-printer, which is quite complex.
-This introduces harmless output mismatches. For instance, when printing vectors
-with GNU~R, some are left padded, others are right padded.
-We did not model this logic and therefore sometimes outputs do not match;
-the processor for numerical vectors then converts results by ignoring these subtleties
-(such as spaces).
+\noindent\textbf{Testing outcomes.} 
+After processing, the testing framework obtains the result objects and uses their interface to compare them, returning the corresponding outcome of the comparison. 
+The testing framework categorizes each step of computation
+in one of 7 classes (Figure~\ref{fig:testing:interface}):
+\et{Tomas: please put a screenshot after executing a large test suite}
+``passed'', ``failed'', ``not implemented'',
+``impossible'', ``unknown'', ``potential pass'' and ``potential fail''.
+%
+These outcomes denote different possible scenarios in the comparison between GNU~R and \CoqR{}. Beyond the expected ``passed'' and ``failed'',
+the ``not implemented'' and ``impossible'' results
+correspond to the Coq constructors
+\mintinline{Coq}{result_not_implemented} and \mintinline{Coq}{result_impossible}
+shown in Figure~\ref{fig:result}. Discriminating a failure from a  not-yet-implemented feature is crucial for development, as it helps us choose which feature to focus on next (see Section~\ref{sec:library:development}).
+%
+As mentioned before, if \CoqR{} were bug free, an ``impossible'' result would correspond to a critical bug in GNU~R---in practice, all the ``impossible'' results we observed were due to mistakes in \CoqR{} and were quickly solved.
+% \noindent\textbf{Two-step comparison.\td{Not quite, there's the "processing"/"normalization" phase then the comparison}}
+% To compare each result, we adopt the general scheme shown in Figure~\ref{fig:methodology}.
+% In particular, the comparison of outcomes proceeds in two steps. % First,
+% %we identify what {\em type} of result each interpreter returns.
+% % I think that this is what Tomás calls ``Processor'', right?
+% First, we process the result each interpreter returns and transform\td{maybe normalize is better?}
+%  them into a common set of {\em types}.
+% Examples of types include errors, boolean vectors, numerical vectors, etc. as well as the special
+% ``not implemented'' and ``impossible'' results of \CoqR{}.
+% This phase takes care of the necessary normalization in order to obtain meaningful comparison.
+
+% We did not model this logic and therefore sometimes outputs do not match;
+% the processor for numerical vectors then converts results by ignoring these subtleties
+% (such as spaces).
 
 % These types are then compared; if they do not match,  e.g. if GNU~R returns an error but \CoqR{} returns a string vector, the test is marked as failed without further processing.
 
@@ -1280,8 +1150,8 @@ the processor for numerical vectors then converts results by ignoring these subt
 % as \mintinline[showspaces,autogobble=false]{text}{  1 100   2} by GNU~R, while \CoqR{} prints \mintinline[showspaces]{text}{1   100 2  }.
 % above
 % to the vector \mintinline{R}{c (1, 100, 2)}, ignoring spaces.
-Second, these types are compared; if they do not match,  e.g. if GNU~R returns an error but \CoqR{} returns a string vector, the test is marked as failed without further processing.
-If the two result types are identical in both GNU~R and \CoqR{}, they can be compared for equality.\\
+% Second, these types are compared; if they do not match,  e.g. if GNU~R returns an error but \CoqR{} returns a string vector, the test is marked as failed without further processing.
+% If the two result types are identical in both GNU~R and \CoqR{}, they can be compared for equality.\\
 %The final results can be compared for equality after normalization. \\
 % leading to either a failure or a success.
 
@@ -1311,18 +1181,14 @@ If the two result types are identical in both GNU~R and \CoqR{}, they can be com
 % %
 % However, we still consider that our result is correct,
 % and we designed our testing framework to mark it as such.
-
-
-
-
-% Special cases.
-\noindent{\bf Special categories.}
-Sometimes processing a result fails.
+% % Special cases.
+% \noindent{\bf Special categories.}
+Sometimes processing a result string fails.
 % It happens that we can not type a result.
 % This happens when R produces a result for which we did not
 % provide any normalizer.
 For instance, there exist special attributes that affect
-the way vectors are printed, and our pretty-printer is not aware of all of these special attributes. In such cases, the processing step fails returning ``unknown'' as a type. Such tests are consequently marked as ``unknown''; they could be functionally correct or not, so classifying them apart is practical.
+the way vectors are printed, and our pretty-printer is not aware of all of these special attributes. In such cases, the processor fails, and returns an \mintinline{Python}{UnknownResult} object. Such tests are consequently marked as ``unknown''; they could be functionally correct or not, so classifying them apart is practical.
 % it would not be correct to mark them as success,
 % but it would not be practical to mark them as a failure.
 %
@@ -1333,8 +1199,7 @@ the way vectors are printed, and our pretty-printer is not aware of all of these
 % if the computed value is not correct, the testing framework
 % will catch it when GNU~R will print down the computed value.
 
-Once a single step in a line-by-line test file fails, or leads to a not-implemented result,
-we cannot say anything about the steps that follow in the test file: both errors and success could be coincidental.
+Also, once a single step in a line-by-line test file fails, or leads to a not-implemented result, we cannot say anything about the steps that follow in the test file: subsequent errors and success could both be coincidental.
 % Indeed, if we get the same result in both interpreter,
 % it could be out of luck:
 % they should not be marked as success for correctness.
@@ -1686,6 +1551,155 @@ showing which functions were missing most of the time.
 This led us to identify which part of the base library
 were used in the test suites,
 enabling us to focus on making these part runnable in \CoqR{}.
+
+\clearpage
+
+
+
+\section{Formal Reasoning about R}
+\label{sec:proofs}
+
+We now address one of the objective stated in the introduction:
+our operational semantics should be usable to build proofs about the R language. This section describes one use case:
+proving that invariants about the state of the memory are preserved during execution. We also discuss the associated need for proof automation.
+
+As described in Section~\ref{sec:heap},
+each basic language element in R is associated one of 24 types,
+and each of these types are differently stored in memory.
+Figure~\ref{fig:invariants:definition} shows a snippet
+of our invariants defined by the \mintinline{Coq}{safe_SExp} inductive property.
+%
+The constructor \mintinline{Coq}{safe_ListStruct} captures the requirements on well-formed lists. The requirements are expressed using the predicate \mintinline{Coq}{may_have_types S l p}, which
+states that the pointer \mintinline{Coq}{p}
+is associated in the state \mintinline{Coq}{S} with an object
+whose type is in the list \mintinline{Coq}{l}. Hence, the hypothesis on \mintinline{Coq}{cdr} states that the tail of a list is either a list
+(\mintinline{Coq}{ListSxp}) or nil (\mintinline{Coq}{NilSxp}).\footnote{The type \mintinline{Coq}{NilSxp} is the type of the \mintinline{Coq}{R_NilValue} global variable (see Section~\ref{sec:globals}); it is used both to end lists and to indicate a missing information.}
+Similarly, the constructor states that the tag
+of a list is either a character vector or a \mintinline{Coq}{NilSxp} element.
+Note that no constraint is specified for the first element \mintinline{Coq}{car} of the list: lists in R are heterogeneous.
+%
+As another example, the constructor \mintinline{Coq}{safe_StrStruct} states that a string vector contains an array of C pointers,
+all of which should be associated with a character vector in memory.
+
+\begin{figure}
+\begin{minted}{Coq}
+Inductive safe_SExp S : SExp -> Prop :=
+  | safe_ListStruct : forall car cdr tag,
+    may_have_types S [NilSxp ; ListSxp] cdr ->
+    may_have_types S [NilSxp ; CharSxp] tag ->
+    safe_SExp S (make_ListStruct car cdr tag)
+  | safe_StrStruct : forall data,
+    (forall a, Mem a data ->
+      may_have_types S [CharSxp] a) ->
+    safe_SExp S (make_StrStruct data)
+  (* ... *).
+\end{minted}
+    \caption{Typing invariants for memory} % during R execution
+    \label{fig:invariants:definition}
+\end{figure}
+
+
+\begin{figure}
+\begin{minted}{Coq}
+Lemma do_attr_result :
+  forall S globals call op args env,
+  safe_state S ->
+  safe_globals S globals ->
+  safe_pointer S args ->
+  may_have_types S [NilSxp; ListSxp] args ->
+  (* ... *)
+  result_prop (fun S' ans =>
+      safe_state S' /\ safe_globals S' globals
+      /\ safe_pointer S' ans)
+    (do_attr globals runs S call op args env).
+Proof.
+  introv OKS OKglobals OKargs Targs. unfolds do_attr.
+  cutR R_length_result. computeR.
+  cutR matchArgs_result. computeR.
+  (* ... *)
+Qed.
+\end{minted}
+    \caption{Example of specification and tactic usage.}
+    \label{fig:do_attr_result}
+\end{figure}
+
+Such invariants are relatively simple, but given the size of the formalization,
+they are quite long to establish. Proving that some step of the interpreter preserves the invariants quickly becomes very tedious. In order to address this, we developed various Coq tactics to ease the proof process.
+These tactics are mainly useful to propagate known information
+through state changes.
+ % such operations would have been long and cumbersome for the user, and it automates relatively easily.
+
+Figure~\ref{fig:do_attr_result} illustrates the use of these tactics, with a lemma that states that the \mintinline{Coq}{do_attr} function
+defined in Figure~\ref{fig:coq:do_attr} produces a result
+that satisfies the invariants.
+%
+The \mintinline{Coq}{safe_state} predicate specifies
+that the given state only stores objects that satisfy the invariants, and similarly
+for the global variables of \mintinline{Coq}{globals} with the predicate \mintinline{Coq}{safe_globals}.
+The arguments \mintinline{Coq}{call}, \mintinline{Coq}{op},
+\mintinline{Coq}{args}, and \mintinline{Coq}{env} of \mintinline{Coq}{do_attr}
+are also assumed to satisfy these invariants,
+in addition to being of the expected type.
+%
+In the conclusion of the lemma, the \mintinline{Coq}{result_prop} predicate enables us
+to specify what the resulting state of \mintinline{Coq}{do_attr} should satisfy,
+whilst ignoring non-interesting cases
+such as \mintinline{Coq}{result_not_implemented} or \mintinline{Coq}{result_bottom}.
+% Indeed, reaching one of these results means that the result is out of scope for the  interpreter.
+% \et{will turn into a forward ref if we move proof section earlier}
+% This is the reason why these are not considered harmful
+% during the testing process (see Section~\ref{sec:test:methodology}).
+% In the normal result, we state that the invariants are still satisfied.
+
+The proof closely follows the source code of \mintinline{Coq}{do_attr}.
+After introducing the hypotheses, the function \mintinline{Coq}{do_attr} is unfolded,
+leaving its definition ready to be processed by further tactics.
+In Figure~\ref{fig:coq:do_attr}, we can see that \mintinline{Coq}{do_attr}
+starts by calling \mintinline{Coq}{R_length}.
+In the proof we use the \mintinline{Coq}{cutR} tactic with a lemma about \mintinline{Coq}{R_length}. This novel tactic discharges the premises of the lemma and introduces the resulting state:
+only the success case is left, the other kinds of results being transparently propagated.
+% As for \mintinline{Coq}{do_attr}, the error case yields \mintinline{Coq}{False}
+% and is discharged by the tactic.
+The call to \mintinline{Coq}{R_length} is thus rewritten
+to a simple expression of the form
+\mintinline{Coq}{result_success S' n},
+where \mintinline{Coq}{n} is the number returned by \mintinline{Coq}{R_length}.
+%
+We then apply the \mintinline{Coq}{computeR} tactic.
+This is the most important tactic provided by our framework:
+it moves forwards in the current expression,
+propagating everything that can be propagated.
+In the example, it unfolds the \mintinline{Coq}{let%success} monadic binder,
+as this binder is now associated by a fully-computed result
+---thanks to the \mintinline{Coq}{cutR} tactic.
+It also updates all properties known to hold for the previous state \mintinline{Coq}{S}
+to the new state \mintinline{Coq}{S'} using the results
+of the \mintinline{Coq}{R_length_result} lemma.
+For instance, the hypothesis \mintinline{Coq}{safe_pointer S args}
+is replaced by \mintinline{Coq}{safe_pointer S' args}.
+This transition is not particularly difficult to prove
+given the right lemmae, but it can be extremely cumbersome to manually perform this transition for each and every available hypotheses.
+%
+The proof continues by applying the tactic \mintinline{Coq}{cutR} again
+with a lemma about \mintinline{Coq}{matchArgs},
+then \mintinline{Coq}{computeR} to propagate the hypotheses. And so on.
+
+We have proven that the invariants are safely propagated throughout the execution of several functions\et{which ones?}. The proof for the whole formalization is still work in progress. Given the size of the formalization,
+we consider that proving such simple typing invariants
+is already too much work to be entirely manually proven:
+automation is necessary to ease the proving process
+and deal with such sizes.
+%
+Building tactics like \mintinline{Coq}{cutR}
+and \mintinline{Coq}{computeR} is not complex and helps a lot.
+However, in the long run, in order for formal reasoning about R to scale, it will be necessary to develop a program logic on top of \CoqR; this is a major undertaking, towards which \CoqR{} is an essential first step. 
+
+% We also found that building the \mintinline{Coq}{cutR}
+% and \mintinline{Coq}{computeR} in Ltac---%
+% the tactic language of Coq---%
+% was relatively straightforward.
+% As a consequence, we do not expect major difficulties
+% to adapt or build similar tactics for other kinds of proofs.
 
 
 \section{Related Work}
