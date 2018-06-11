@@ -1322,53 +1322,84 @@ This additional computation requires features to be implemented in CoqR. These
 %completely load the base library, the next step was to implement these missing
 %features.
 
-In particular, three files contain 
+In particular, three files contain most of this additional computation. The definitions
+contained in these files are not of common use in the test suites. Nevertheless,
+to fully load the base library, it is mandatory to implement these required
+features.
 
-Although we did not count with the whole base library, we ran our test suites to verify
-our suspicions. We reduced the failing results from around 800 to 500
-and increased our not-implemented results from 200 up to 700 for the GNU~R test suite.
-The failing results were mainly due to missing objects caused by computations not performed.
-For the fastR test suite we obtained ...
+% Although we did not count with the whole base library, we ran our test suites to verify
+% our suspicions. We reduced the failing results from around 800 to 500
+% and increased our not-implemented results from 200 up to 700 for the GNU~R test suite.
+% The failing results were mainly due to missing objects caused by computations not performed.
+% For the fastR test suite we obtained ...
 
-Including the three missing files proved to be a richer experience than expected.
-On one hand, implementing the missing features, several deep-incrusted internal bugs
-arose which may have not with the test suites. These bugs would range from
-erroneous results to our interpreter getting stuck. Some would be small and some
-would be at the core of how functions were executed. The bisect
-tool proved to be indispensable in the fine-grained process of debugging, allowing us
-to track down and identify evaluation paths which resulted in execution errors.
-Our set of custom tests would also let us reproduce particular expressions causing
-these erroneous results. Finally our framework would serve particularly in overviewing
-the whole process.
+\noindent\textbf{Debugging process.}
 
-On the other hand, we noticed a convergence in the functionalities required to load
-the whole base library and the low-hanging fruits detected by our interpreter and
-the test suites.
-We could then cover both aspects at the same time.
+Several bugs arise from the process of implementing the missing features. Some of
+these may be easy to fix while others are deeply incrusted in the internal mechanism
+of CoqR. Amongst these last, there are some that produce erroneous results and others
+that could cause CoqR to get stuck.
 
-It is important to notice that despite being able to perform these assignments and
-include the base library to our interpreter, that does not mean that they are usable.
-Indeed, the internal functions used by them may not be implemented,
-hence calling them would result in a not-implemented result.
-We expected this type of behaviour and hoped to profit from it using our framework.
-The main issue of not having the base library's functions and objects was not being able to detect
+The Bisect~\parencite{bisect} coverage tool for OCaml proves to be indispensable
+in the fine-grained process of debugging.
+It allows tracking down and identifying evaluation paths which result in execution errors.
+Using custom tests it is possible to reproduce particular expressions not covered by
+the test suites. Finally, using the testing framework allows for a general overview
+of the whole process.
+
+\td{Didn't know how to write it in present tense...}
+One particular case was the implementation of the \mintinline{R}{do_substitute} feature.
+Direct usage of this function would return a valid result. However, using it inside
+of another function would always result in an erroneous value. This is problematic as
+\mintinline{R}{do_substitute} is required by other functions in the base library.
+It was through the combined usage of the aforementioned tools that it
+was possible to identify the main source of error.
+The bug was located at the core of how function calls are made. In particular, it
+was contained in the function responsible for argument matching. As it was finally
+figured, the bug was due to setting some general purpose bits incorrectly at certain
+points in an array.
+
+
+
+\td{Don't know where to put this but I think it is important to make the distinction}
+It is important to make the distinction at this point between being able to run the definitions
+and being able to use them. The previous sections describe the process of including
+the base library to CoqR. This means, being able to execute the definitions and include
+them in its environment. However, this does not mean that they are usable.
+Indeed, the internal functions used by many of them may not yet be implemented.
+Hence, calling them would result in a not-implemented result.
+This type of behaviour should be expected and profit from it.
+
+The main issue of not having the base library's functions and objects is not being able to detect
 the actual features required by the test suites. By removing the layer of failed
-results due to missing definitions, we could focus our efforts on implementing
-what was really needed. We included tools in our framework that would show the most
+results due to missing definitions, it is possible to focus the efforts on implementing
+what is really needed. We include tools in our framework that show the most
 common not-implemented features, allowing us to precisely identify the low-hanging fruits.
-This would then allow us to drive the development process forwards.
-
-\section{Results}
-\label{sec:library:results}
 
 
-\clearpage
 
-\section{Old}
+%
+%
+% Including the three missing files proved to be a richer experience than expected.
+% On one hand, implementing the missing features, several deep-incrusted internal bugs
+% arose which may have not with the test suites. These bugs would range from
+% erroneous results to our interpreter getting stuck. Some would be small and some
+% would be at the core of how functions were executed. The bisect
+% tool proved to be indispensable in the fine-grained process of debugging, allowing us
+% to track down and identify evaluation paths which resulted in execution errors.
+% Our set of custom tests would also let us reproduce particular expressions causing
+% these erroneous results. Finally our framework would serve particularly in overviewing
+% the whole process.
+
+% On the other hand, we noticed a convergence in the functionalities required to load
+% the whole base library and the low-hanging fruits detected by our interpreter and
+% the test suites.
+% We could then cover both aspects at the same time.
+
+
+
 \subsection{Results}
-\label{sec:test:results}
-
-\eti{haven't touched this section: waiting for Tomas, and final results}
+\label{sec:library:results}
 
 The results of our tool are available at \url{https://coqr.dcc.uchile.cl}.\mbi{
     OK: we should discuss on what should be the state of this page once the paper
@@ -1381,31 +1412,31 @@ We used our testing framework on various test suites\mbi{
     Section~\ref{sec:test:methodology}.
     Any ideas?},
 but also on the base library of R,
-which already provide a large coverage.
+which already provides a large coverage.
 %
 To evaluate these test suites,
-we use the Bisect~\parencite{bisect} coverage tool for OCaml.
+we use the Bisect coverage tool for OCaml.
 Out of the 11,000 program points identified by Bisect,
 ??\mb{Tomás?} were executed.
 We thus think that new test suites are being needed
 to complete this coverage.
 %
 On total,
-this testing base contains ??\mb{Tomás?} steps.
+this testing base contains 4540 steps.
 We currently get ??\todo{} success, ??\todo{} not-implemented,
 and ??\todo{} unknown.
 But we get\mb{hopefully} no failure or ``impossible'' result.
 
-We however did get failure and ``impossible'' results
-during our development.
-The causes of these bugs were varied.\mb{It would be nice to make some statistics here.}
-Once a bug was identified by the testing framework,
-we tried to identify what was causing this bugs---%
-and in particular, which function was buggy---%
-using similar tests.
-Once the buggy function was identified,
-we compared its code line by line with the original function from GNU~R.
-In most cases, this was enough to solve the bug.
+% We however did get failure and ``impossible'' results
+% during our development.
+% The causes of these bugs were varied.\mb{It would be nice to make some statistics here.}
+% Once a bug was identified by the testing framework,
+% we tried to identify what was causing this bugs---%
+% and in particular, which function was buggy---%
+% using similar tests.
+% Once the buggy function was identified,
+% we compared its code line by line with the original function from GNU~R.
+% In most cases, this was enough to solve the bug.
 
 Due to the various ways GNU~R's pretty printer works, there is a large number of
 printing modes and possible results. Our testing framework thus categorizes
@@ -1413,180 +1444,231 @@ many cases as  ``unknown'' (leading to potential passes and failures in the next
 However, we designed our framework so it would be simple to add a particular type of result
 if a user would need it.
 
-%Our testing framework categorized a large number of cases
-%as ``unknown'' (leading to potential passes and failures in the next steps).
-%This is due to the various ways GNU~R's pretty-printer works.
-%We added several new result processors in our framework
-%to cover more types.
-%We found that extending our framework was easy,
-%but that at the same time there were a large number of printing mode in GNU~R.
-%We thus left these unknown case,
-%knowing that it would be easy to add a particular type of result
-%if a user would need it.
-
-
-\section{Base Library}
-\label{sec:library}
-
-\subsection{Description}
-\label{sec:library:description}
-
-% The need to execute the base library.
-Prior to executing any expression, GNU~R performs a lot of actions.
-First, the heap is initialized.
-This process involves initializing most global variables.
-Then, GNU~R executes the base library.
-It is a group of files written in R,
-totalizing 19,000 lines of code.
+\clearpage
 %
-This means that we have to be able to run the base library
-to correctly test our interpreter.
-For instance, without the base library,
-no variable named \mintinline{R}{T} is defined:
-running the program \mintinline{R}{T} results in a lookup error
-in our interpreter whilst resulting in \mintinline{R}{TRUE} in R.
-After running the base library,
-which includes a line of the form \mintinline{R}{T <- TRUE},
-our interpreter behaves as R on this same program.
-
-% Example of typical function definition in the base library.
-Most of these functions are just links to internal functions
-with some argument checking or default arguments.
-Below is an example:
-the base library function \mintinline{R}{eval} behaves very similarly
-to the internal \mintinline{R}{eval} function.
-The difference is that the base library function checks the value of its parameters when determining their default values, before calling the internal function.
-\begin{minted}{R}
-eval <- function(expr, envir = parent.frame(),
-    enclos = if(is.list(envir) || is.pairlist(envir))
-             parent.frame() else baseenv())
-    .Internal(eval(expr, envir, enclos))
-\end{minted}
-
-% About the not-implemented results.
-These definitions are easily run:
-only the \mintinline{R}{function} keyword is necessary
-to define the base library function \mintinline{R}{eval}. Because the internal \mintinline{R}{eval}
-function is already implemented, it is safe to call the base library function.
-In some other cases, the internal functions are not yet implemented in \CoqR, hence calling the base library counterpart results in
-a not-implemented result.
-%However, once the base library has been executed,
-%a not-implemented exception will be thrown
-%if one actually calls the function \mintinline{R}{which}.
-%Indeed,
-%the internal function \mintinline{R}{.Internal (which (x))}
-%has not yet been implemented.
+% \section{Old}
+% \subsection{Results}
+% \label{sec:test:results}
 %
-% This behavior is expected.
-It may seem pointless to execute a function definition
-that our interpreter cannot execute without failing.
-The reason is that failing because of non-implemented features
-is harmless: we know that this result can be safely ignored,
-and our testing framework reports it as such (Section~\ref{sec:testing:architecture}).
-On the other hand, if we had not executed the base library,
-then the interpreter would have failed with an error stating that a function is missing, whilst GNU~R runs successfully.
-Such a difference of behavior would be reported
-as a bug by our testing framework,
-whilst a not-implemented result is not.
-Being able to run the base library thus ensures
-that the testing framework correctly classifies
-the results of \CoqR{}.
-
-% Computational content in the base library.
-The base library also prepares the base environment.
-For instance, the file \texttt{constants.R} of the base library
-contains the \mintinline{R}{pi} definition, shown below.
-Such definitions are more complex as they involve computations:
-to be able to run the base library,
-we need to implement the \mintinline{R}{atan} function---%
-in this case, using an OCaml hook.
-Other features that had to be implemented
-to run the base library
-include functions to create new environments,
-logical operators,
-the \mintinline{R}{substitute} function,
-the \mintinline{R}{$} operator \ignore$% Added to help my TeX syntax highlighting…
-(which fetches an identifier in a named list or an environments),
-as well as various internal functions.
-\begin{minted}{R}
-pi <- 4 * atan (1)
-\end{minted}
-
-% Result.
-We have been able to run the entire base library.
-We believe that this is an evidence that we caught a sizeable
-part of the language features.
-
-\subsection{Development Process}
-\label{sec:library:development}
-
-\mb{Tomás: can you check that what I wrote is indeed right?}
-
-The base library was not added in one block.
-At first,
-almost none of the computational content of the base library passed.
+% \eti{haven't touched this section: waiting for Tomas, and final results}
 %
-We found that the design of our testing framework
-could be adapted to help us prioritize the implementation
-of this computational content.
-We found that it was easy to add these features to our framework,
-validating its reusability.
-We believe that this study
-served as a real-world case study for our testing framework.
-
-Indeed,
-it was simple to extract all the steps of the test suites
-that fall into the ``not-implemented'' class,
-then regroup them depending on the not-implemented features.
-%We did it through JSON queries and regular expressions
-%on the stored Coq outputs.
+% The results of our tool are available at \url{https://coqr.dcc.uchile.cl}.\mbi{
+%     OK: we should discuss on what should be the state of this page once the paper
+%     is published.
+%     I guess that we should hide some old tests, for instance.
+%     Should we put a link the source code too? I think it would be nice.}
+% We used our testing framework on various test suites\mbi{
+%     Outch: it would be nice to explain the test suites here,
+%     but at the same time, I like the current flow of the beginning of
+%     Section~\ref{sec:test:methodology}.
+%     Any ideas?},
+% but also on the base library of R,
+% which already provide a large coverage.
+% %
+% To evaluate these test suites,
+% we use the Bisect~\parencite{bisect} coverage tool for OCaml.
+% Out of the 11,000 program points identified by Bisect,
+% ??\mb{Tomás?} were executed.
+% We thus think that new test suites are being needed
+% to complete this coverage.
+% %
+% On total,
+% this testing base contains ??\mb{Tomás?} steps.
+% We currently get ??\todo{} success, ??\todo{} not-implemented,
+% and ??\todo{} unknown.
+% But we get\mb{hopefully} no failure or ``impossible'' result.
 %
-Figure~\ref{fig:interface:not:implemented} shows a typical example
-of the graphs produced by our framework.
-Few functions here trigger
-most of the not-implemented results:
-the \mintinline{Coq}{do_for} and \mintinline{Coq}{R_POW}
-functions\td{This might have to be updated. do for was partly implemented for the zzz file in base lib}
- are being used at lot in our test suites,
-without them being implemented.
-This often happened in practise.
-This lead us to quickly identify low-hanging fruits,
-driving the development process forwards.
+% We however did get failure and ``impossible'' results
+% during our development.
+% The causes of these bugs were varied.\mb{It would be nice to make some statistics here.}
+% Once a bug was identified by the testing framework,
+% we tried to identify what was causing this bugs---%
+% and in particular, which function was buggy---%
+% using similar tests.
+% Once the buggy function was identified,
+% we compared its code line by line with the original function from GNU~R.
+% In most cases, this was enough to solve the bug.
 %
-Once these functions were implemented,
-this usually led to a large number of results
-switching classes from not-implemented
-to either pass, fail or even new not-implemented cases for other functions
-which could not be executed previously (due to execution stopping earlier).
-We could then focus on the failing new results,
-catching bugs early in development.
-We believe that without this tool,
-we would only have caught bugs in a large development,
-where debugging is much harder.
-
-\begin{figure}
-    \includegraphics[width=.5\textwidth]{not-implemented.png}
-    \caption{Identifying needed features}
-    \label{fig:interface:not:implemented}
-\end{figure}
-
-We implemented a similar feature for a different issue:
-before all features of the base library were implemented,
-it was difficult to interpret the results of the test suites.
-Indeed, a failing result could be due to either
-a real bug in the \CoqR{} interpreter,
-or be due to it being run without including the base library.
+% Due to the various ways GNU~R's pretty printer works, there is a large number of
+% printing modes and possible results. Our testing framework thus categorizes
+% many cases as  ``unknown'' (leading to potential passes and failures in the next steps).
+% However, we designed our framework so it would be simple to add a particular type of result
+% if a user would need it.
 %
-For instance, most of the fails in which
-the \CoqR{} interpreter resulted in a look-up error
-were due to the missing base library:
-a function should have been defined by running the library.
+% %Our testing framework categorized a large number of cases
+% %as ``unknown'' (leading to potential passes and failures in the next steps).
+% %This is due to the various ways GNU~R's pretty-printer works.
+% %We added several new result processors in our framework
+% %to cover more types.
+% %We found that extending our framework was easy,
+% %but that at the same time there were a large number of printing mode in GNU~R.
+% %We thus left these unknown case,
+% %knowing that it would be easy to add a particular type of result
+% %if a user would need it.
 %
-We implemented similar graphs than Figure~\ref{fig:interface:not:implemented}
-showing which functions were missing most of the time.
-This led us to identify which part of the base library
-were used in the test suites,
-enabling us to focus on making these part runnable in \CoqR{}.
+%
+% \section{Base Library}
+% \label{sec:library}
+%
+% \subsection{Description}
+% \label{sec:library:description}
+%
+% % The need to execute the base library.
+% Prior to executing any expression, GNU~R performs a lot of actions.
+% First, the heap is initialized.
+% This process involves initializing most global variables.
+% Then, GNU~R executes the base library.
+% It is a group of files written in R,
+% totalizing 19,000 lines of code.
+% %
+% This means that we have to be able to run the base library
+% to correctly test our interpreter.
+% For instance, without the base library,
+% no variable named \mintinline{R}{T} is defined:
+% running the program \mintinline{R}{T} results in a lookup error
+% in our interpreter whilst resulting in \mintinline{R}{TRUE} in R.
+% After running the base library,
+% which includes a line of the form \mintinline{R}{T <- TRUE},
+% our interpreter behaves as R on this same program.
+%
+% % Example of typical function definition in the base library.
+% Most of these functions are just links to internal functions
+% with some argument checking or default arguments.
+% Below is an example:
+% the base library function \mintinline{R}{eval} behaves very similarly
+% to the internal \mintinline{R}{eval} function.
+% The difference is that the base library function checks the value of its parameters when determining their default values, before calling the internal function.
+% \begin{minted}{R}
+% eval <- function(expr, envir = parent.frame(),
+%     enclos = if(is.list(envir) || is.pairlist(envir))
+%              parent.frame() else baseenv())
+%     .Internal(eval(expr, envir, enclos))
+% \end{minted}
+%
+% % About the not-implemented results.
+% These definitions are easily run:
+% only the \mintinline{R}{function} keyword is necessary
+% to define the base library function \mintinline{R}{eval}. Because the internal \mintinline{R}{eval}
+% function is already implemented, it is safe to call the base library function.
+% In some other cases, the internal functions are not yet implemented in \CoqR, hence calling the base library counterpart results in
+% a not-implemented result.
+% %However, once the base library has been executed,
+% %a not-implemented exception will be thrown
+% %if one actually calls the function \mintinline{R}{which}.
+% %Indeed,
+% %the internal function \mintinline{R}{.Internal (which (x))}
+% %has not yet been implemented.
+% %
+% % This behavior is expected.
+% It may seem pointless to execute a function definition
+% that our interpreter cannot execute without failing.
+% The reason is that failing because of non-implemented features
+% is harmless: we know that this result can be safely ignored,
+% and our testing framework reports it as such (Section~\ref{sec:testing:architecture}).
+% On the other hand, if we had not executed the base library,
+% then the interpreter would have failed with an error stating that a function is missing, whilst GNU~R runs successfully.
+% Such a difference of behavior would be reported
+% as a bug by our testing framework,
+% whilst a not-implemented result is not.
+% Being able to run the base library thus ensures
+% that the testing framework correctly classifies
+% the results of \CoqR{}.
+%
+% % Computational content in the base library.
+% The base library also prepares the base environment.
+% For instance, the file \texttt{constants.R} of the base library
+% contains the \mintinline{R}{pi} definition, shown below.
+% Such definitions are more complex as they involve computations:
+% to be able to run the base library,
+% we need to implement the \mintinline{R}{atan} function---%
+% in this case, using an OCaml hook.
+% Other features that had to be implemented
+% to run the base library
+% include functions to create new environments,
+% logical operators,
+% the \mintinline{R}{substitute} function,
+% the \mintinline{R}{$} operator \ignore$% Added to help my TeX syntax highlighting…
+% (which fetches an identifier in a named list or an environments),
+% as well as various internal functions.
+% \begin{minted}{R}
+% pi <- 4 * atan (1)
+% \end{minted}
+%
+% % Result.
+% We have been able to run the entire base library.
+% We believe that this is an evidence that we caught a sizeable
+% part of the language features.
+%
+% \subsection{Development Process}
+% \label{sec:library:development}
+%
+% \mb{Tomás: can you check that what I wrote is indeed right?}
+%
+% The base library was not added in one block.
+% At first,
+% almost none of the computational content of the base library passed.
+% %
+% We found that the design of our testing framework
+% could be adapted to help us prioritize the implementation
+% of this computational content.
+% We found that it was easy to add these features to our framework,
+% validating its reusability.
+% We believe that this study
+% served as a real-world case study for our testing framework.
+%
+% Indeed,
+% it was simple to extract all the steps of the test suites
+% that fall into the ``not-implemented'' class,
+% then regroup them depending on the not-implemented features.
+% %We did it through JSON queries and regular expressions
+% %on the stored Coq outputs.
+% %
+% Figure~\ref{fig:interface:not:implemented} shows a typical example
+% of the graphs produced by our framework.
+% Few functions here trigger
+% most of the not-implemented results:
+% the \mintinline{Coq}{do_for} and \mintinline{Coq}{R_POW}
+% functions\td{This might have to be updated. do for was partly implemented for the zzz file in base lib}
+%  are being used at lot in our test suites,
+% without them being implemented.
+% This often happened in practise.
+% This lead us to quickly identify low-hanging fruits,
+% driving the development process forwards.
+% %
+% Once these functions were implemented,
+% this usually led to a large number of results
+% switching classes from not-implemented
+% to either pass, fail or even new not-implemented cases for other functions
+% which could not be executed previously (due to execution stopping earlier).
+% We could then focus on the failing new results,
+% catching bugs early in development.
+% We believe that without this tool,
+% we would only have caught bugs in a large development,
+% where debugging is much harder.
+%
+% \begin{figure}
+%     \includegraphics[width=.5\textwidth]{not-implemented.png}
+%     \caption{Identifying needed features}
+%     \label{fig:interface:not:implemented}
+% \end{figure}
+%
+% We implemented a similar feature for a different issue:
+% before all features of the base library were implemented,
+% it was difficult to interpret the results of the test suites.
+% Indeed, a failing result could be due to either
+% a real bug in the \CoqR{} interpreter,
+% or be due to it being run without including the base library.
+% %
+% For instance, most of the fails in which
+% the \CoqR{} interpreter resulted in a look-up error
+% were due to the missing base library:
+% a function should have been defined by running the library.
+% %
+% We implemented similar graphs than Figure~\ref{fig:interface:not:implemented}
+% showing which functions were missing most of the time.
+% This led us to identify which part of the base library
+% were used in the test suites,
+% enabling us to focus on making these part runnable in \CoqR{}.
 
 \clearpage
 
