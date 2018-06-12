@@ -1297,7 +1297,7 @@ The following sections describe the process required to include the base library
 into CoqR's environment.\td{Meh... Didn't really know how to start this section}
 
 \noindent\textbf{Fix parsing errors.}
-
+\et{sounds more like an anecdote to me}
 The first step in loading the base library is fixing the parsing errors that arise.
 These errors appear as a consequence of the differences mentioned in section \ref{sec:parsing}.
 One very common error is caused by the syntax used for \mintinline{R}{if else} in the R files,
@@ -1305,7 +1305,7 @@ considered to be a mistake by GNU~R's own documentation\footnote{By typing \text
 Thus, the files have to be rewritten in order to remove these errors.
 
 \noindent\textbf{Implementing missing features.}
-
+\et{redundant with 4.2 -- integrate what is interesting (features/functions, etc.)}
 As was previously mentioned at the beginning of \ref{sec:library:}, most of the definitions
 can be directly included in CoqR's environment. However, there are some
 functions and objects that need additional computation in order to be defined.
@@ -1329,6 +1329,7 @@ features.
 % For the fastR test suite we obtained ...
 
 \noindent\textbf{Debugging process.}
+\et{is there anything more than anecdotes here?}
 
 Several bugs arise from the process of implementing the missing features. Some of
 these may be easy to fix while others are deeply incrusted in the internal mechanism
