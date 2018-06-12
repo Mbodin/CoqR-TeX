@@ -260,8 +260,8 @@ Second, we have extensively {\em tested} the Coq interpreter against the GNU~R r
 %We note that these test suites have very little redundancy between themselves.
 To this end, we have developed a testing framework that streamlines the process of running both the Coq interpreter and GNU~R on a set of test cases and report on mismatches and errors (Section~\ref{sec:testing:architecture}).
 
-We also report on a proof effort to establish that memory invariants are preserved during execution, including some specific proof automation (Section~\ref{sec:proofs}).
-Finally, we report on the process of scaling up our interpreter in order to be able to import existing R libraries (Section~\ref{sec:library}), in particular the R base library ($\sim$19,000 loc).
+We also report on the process of scaling up our interpreter in order to be able to import existing R libraries (Section~\ref{sec:library}), in particular the R base library ($\sim$19,000 loc). Finally, we report on a proof effort to establish that memory invariants are preserved during execution, including some specific proof automation (Section~\ref{sec:proofs}).
+
 
 Section~\ref{sec:related:work} discusses related work and Section~\ref{sec:conclusion} concludes.
 
@@ -1232,13 +1232,14 @@ we use the ``potential pass'' and ``potential fail'' outcome categories. These t
 
 
 \section{Base Library}
+\label{sec:library}
 
 We now report on the effort to allow \CoqR{} to import the base library of R in order to run the test suites of GNU~R and FastR, highlighting how our testing framework helps in this process.
 
 \subsection{Description of the Base Library}
 
 % The need to execute the base library.
-The base library corresponds to a group of files written in R,
+The base library consists of about 160 R source files,
 totalizing 19,000 lines of code, which are executed by GNU~R prior to any other
 expression. This base library includes the definition of several
 functions and objects, such as \mintinline{R}{mean}, \mintinline{R}{matrix} or \mintinline{R}{pi}.
@@ -1273,15 +1274,14 @@ Of course, being able to execute the definitions and include
 them in the \CoqR{} environment does not mean that these definitions are usable: the internal function called by a library function may not yet be implemented in \CoqR, so if a test executes that function, it will yield a not-implemented result. This is why it is crucial to be able to differentiate real failures from not-implemented results. Our testing framework can report the most common not-implemented features, allowing us to identify the most pressing functions to implement, as can be seen in Figure~\ref{fig:library:not_implemented_fastr}. By tackling these first, we can make progress in debugging \CoqR{} by running the test suites of GNU~R and FastR.
 
 %\et{refine/extend/etc.}
-Indeed, the base library is crucial in order to execute the test suites of both GNU~R and FastR. For instance, having implemented 105 features from the symbol table, for the GNU~R (resp. FastR) test suite, more than 80\% (resp. 60\%) of the failed results are due to missing definitions
-contained in this library. Barely 3\% are caused by actual value mismatch, which is often caused by double precision or string encoding. The remaining percentage corresponds to missing definitions due to previous errors in computation.
+Indeed, the base library is crucial in order to execute the test suites of both GNU~R and FastR. For instance, having implemented 105 features\et{what happened before these 105 were implemented?} from the symbol table, for the GNU~R test suite, more than 80\% of the failed results\et{put absolute number: 880?} are in fact due to missing definitions \et{this is without importing anything from the library?} contained in this library. For the FastR test suite, the percentage is around 60\%. In both cases, only 3\% of failures are caused by actual value mismatches (often caused by double precision or string encoding). The remaining percentages correspond to missing definitions due to previous errors in computation.
 
-It is possible to see an immediate change after partially including the base library\footnote{Only 3 out of 159 files left out.}.
-With the same 105 implemented features from the symbol table, for the GNU~R (resp. FastR),
-there are no longer failed results due to missing definitions.\td{From 880 failed results it ends up with 500. There are still missing functions from other basic libraries (stats)} Instead, the amount
-of not-implemented results increases from 200 up to 800 (resp. 780 to X).
+In contrast, after importing most of the base library,\footnote{Only 3 out of 159 files are left out.} there are no longer failed results due to missing definitions\et{from the base lib, I guess}. The total number of failed results for the GNU~R tests drops from 880 to 500, corresponding to missing functions from other basic libraries, such as the statistics library. In exchange, the amount of not-implemented results increases from 200 up to 800.
+\et{add the FastR stats (780 what?)}
 
+\et{relation between missing definitions and not-implemented features?}
 
+\et{now discuss how things improve -- by implementing more from the symbol table?}
 
 
 %Once we ran our test suites we noticed that barely 2\% of the failed results
@@ -1442,10 +1442,10 @@ many cases as  ``unknown'' (leading to potential passes and failures in the next
 However, we designed our framework so it would be simple to add a particular type of result
 if a user would need it.
 
-Loading the base library into \CoqR{}'s environment requires around 15 hours.
+Loading the base library into \CoqR{}'s environment requires around 15 hours.\et{talking about hours is meaningless if you don't give technical description of the execution environment}
 Executing the GNU~R and FastR test suites take around 8h each.
 On the other hand, when including the Bisect tool the amount of time required to load
-the base library increases up to 60h. The test suites increase to X and Y, respectively.\td{have to check times... Apparently I forgot to write them down...}
+the base library increases up to 60h. The test suites increase to X and Y, respectively.\td{have to check times... Apparently I forgot to write them down...}\et{the fact that running bisect takes much longer can be mentioned, briefly, but don't focus on that; that's not our job}
 %
 % \section{Old}
 % \subsection{Results}
