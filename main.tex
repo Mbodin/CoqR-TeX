@@ -1413,7 +1413,10 @@ On total,
 this testing base contains 4540 steps.
 We currently get ??\todo{} success, ??\todo{} not-implemented,
 and ??\todo{} unknown.
-But we get\mb{hopefully} no failure or ``impossible'' result.
+The failed results in the GNU~R test suite are due to missing functions from other
+basic libraries. In particular, most of the functionalities come from the stats
+library. For the FastR test suite the failed results are due to double precision.
+We get no impossible results in either case.
 
 % We however did get failure and ``impossible'' results
 % during our development.
