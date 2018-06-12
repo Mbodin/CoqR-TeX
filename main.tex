@@ -998,7 +998,7 @@ Being able to syntactically relate our interpreter
 with the source code of GNU~R helped us catch numerous bugs---%
 in some sense as a variant of Linus's law.\footnote{\url{https://en.wikipedia.org/wiki/Linus\%27s\_Law}}
 To further augment the level of trust of \CoqR{}, we have developed
-a testing framework that supports comparative execution of \CoqR{} and GNU~R. The framework additionally helps the development process by providing useful reports.
+a testing framework that supports comparative execution of \CoqR{} and GNU~R. The framework additionally helps the development process by providing useful reports.\\
 
 % \et{what?}
 % In particular, as few safe results as possible should be marked as bugs.
@@ -1014,8 +1014,9 @@ a testing framework that supports comparative execution of \CoqR{} and GNU~R. Th
 % we need to test it.
 % %
 
-\subsection{Methodology}
-\label{sec:test:methodology}
+
+% \subsection{Methodology}
+% \label{sec:test:methodology}
 
 % Test suite sources.
 \noindent\textbf{Test suites.}
@@ -1023,6 +1024,7 @@ We based ourselves on two existing test suites:
 the test suite of GNU~R itself ($\sim$3,600 lines)
 % \td{There are 3600 lines but it's really ~1700 expressions. Is that ok?}
 and the test suite of FastR ($\sim$1,300 lines)~\parencite{kalibera2014fast}.
+\et{not the full thing: what was excluded, why, and how many lines/tests are left?}
 % \td{Same here, 1300 lines but actually ~2600 expressions}.
 We found that these test suites mainly focus on {\em expected} behaviors.
 For instance,
