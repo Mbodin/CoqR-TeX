@@ -1259,6 +1259,9 @@ is required on the right-hand side of the assignment.
 For instance, the file \texttt{constants.R}
 of the base library contains the definition \mintinline{R}{pi <- 4 * atan (1)}.
 In order to evaluate this expression, the \mintinline{R}{atan} function has to be implemented.
+We implemented these functions in OCaml.
+% (in the case of \mintinline{R}{atan}, by directly using \mintinline{OCaml}{atan}'s functions)
+% This is what we call “hooks”.
 %These cases are more complex because they usually require features that are not
 %implemented by CoqR.
 The base library along with a few others (such as the stats library) prepare the environment needed for GNU~R to run properly.
@@ -1305,6 +1308,10 @@ of not-implemented results increases from 200 up to 800 (resp. 780 to X).
 % One very common error is caused by the syntax used for \mintinline{R}{if else} in the R files,
 % considered to be a mistake by GNU~R's own documentation\footnote{By typing \texttt{?Control} in R you get a man page with the warning.}.
 % Thus, the files have to be rewritten in order to remove these errors.
+% \mbi{We have to be very cautious, here.  Most of the message of this paper is that the R specification is currently not enough
+%   because it is not respected in practise by R interpreters.  We thus can't suddenly say that these interpreters are wrong and
+%   should be fixed.
+%   We can rephrase this by saying that we chose this particular way to keep the parser line-to-line correspondance.}
 %
 % \noindent\textbf{Implementing missing features.}
 % \et{redundant with 4.2 -- integrate what is interesting (features/functions, etc.)}
