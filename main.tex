@@ -1122,7 +1122,7 @@ These outcomes denote different possible scenarios in the comparison between GNU
 the ``not implemented'' and ``impossible'' results
 correspond to the Coq constructors
 \mintinline{Coq}{result_not_implemented} and \mintinline{Coq}{result_impossible}
-shown in Figure~\ref{fig:result}. Discriminating a failure from a  not-yet-implemented feature is crucial for development, as it helps us choose which feature to focus on next (see Section~\ref{sec:library:development}).
+shown in Figure~\ref{fig:result}. Discriminating a failure from a  not-yet-implemented feature is crucial for development, as it helps us choose which feature to focus on next (see Section~\ref{sec:missing}).
 %
 As mentioned before, if \CoqR{} were bug free, an ``impossible'' result would correspond to a critical bug in GNU~R---in practice, all the ``impossible'' results we observed were due to mistakes in \CoqR{} and were quickly solved.
 % \noindent\textbf{Two-step comparison.\td{Not quite, there's the "processing"/"normalization" phase then the comparison}}
@@ -1231,8 +1231,6 @@ we use the ``potential pass'' and ``potential fail'' outcome categories. These t
 % \label{sec:driving:development}
 
 
-\clearpage
-
 \section{Base Library}
 
 We now report on the effort to allow \CoqR{} to import the base library of R in order to run the test suites of GNU~R and FastR, highlighting how our testing framework helps in this process.
@@ -1266,6 +1264,7 @@ In order to evaluate this expression, the \mintinline{R}{atan} function has to b
 The base library along with a few others (such as the stats library) prepare the environment needed for GNU~R to run properly.
 
 \subsection{Identifying Critical Missing Functions}
+\label{sec:missing}
 
 Of course, being able to execute the definitions and include
 them in the \CoqR{} environment does not mean that these definitions are usable: the internal function called by a library function may not yet be implemented in \CoqR, so if a test executes that function, it will yield a not-implemented result. This is why it is crucial to be able to differentiate real failures from not-implemented results. Our testing framework can report the most common not-implemented features, allowing us to identify the most pressing functions to implement, as can be seen in Figure~\ref{fig:library:missing_functions}. By tackling these first, we can make progress in debugging \CoqR{} by running the test suites of GNU~R and FastR.
@@ -1426,7 +1425,7 @@ many cases as  ``unknown'' (leading to potential passes and failures in the next
 However, we designed our framework so it would be simple to add a particular type of result
 if a user would need it.
 
-\clearpage
+
 %
 % \section{Old}
 % \subsection{Results}
@@ -1651,8 +1650,6 @@ if a user would need it.
 % This led us to identify which part of the base library
 % were used in the test suites,
 % enabling us to focus on making these part runnable in \CoqR{}.
-
-\clearpage
 
 
 
