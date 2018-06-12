@@ -913,6 +913,7 @@ and 4,000 lines are for additional features.
 %     Miscelleanous R definitions (the Coq part of the parsing, initialisation) 500 lines.
 %   }
 At the time of writing, we support 112 entries from the symbol table, which is enough to run the entire base library of R (Section~\ref{sec:library}).
+\et{not true!}
 
 % \eti{I'm here (haven't gone through all text of section 2 above yet, but haven't looked at parsing at all)}
 
@@ -1097,8 +1098,8 @@ Also, some tests are supposed to be executed as a normal file, while some tests 
 After interpretation of the R code, we obtain the raw outputs for each interpreter, GNU~R and \CoqR, which are just strings. These strings cannot be compared directly for equality as many syntactic details makes them superficially different. Indeed, \CoqR{}'s pretty-printer is part of the shim (the non-formalized part)
 and does not follow an eyeball correspondence with GNU~R's pretty-printer, which is quite complex. This introduces harmless output mismatches. For instance, when printing vectors with GNU~R, some are left padded, others are right padded. Other minor sources of mismatch are spaces and newlines. Therefore, the testing framework first processes the result strings of both interpreters into a common set of values that can meaningfully be compared.
 
-This step is carried out by {\em result processors} (implemented in Python). There are two classes of processors; one that handles GNU~R outputs, and one that handles CoqR outputs.  Each processor matches the received raw string against a list of regular expressions (regexes). As soon as a regex matches, an object of type \mintinline{Python}{Result} is created and the matching stops. There are eight subclasses of \mintinline{Python}{Result},
-namely: \mintinline{Python}{NotImplementedResult}, \mintinline{Python}{ImpossibleResult}, \mintinline{Python}{ErrorResult}, \mintinline{Python}{NullResult}, \mintinline{Python}{FunctionResult}, \mintinline{Python}{UnknownResult}, \mintinline{Python}{InvisibleResult} and \mintinline{Python}{VectorResult}, with further subclasses: \mintinline{Python}{BooleanVectorResult}, \mintinline{Python}{NumericVectorResult} and \mintinline{Python}{StringVectorResult}.
+This step is carried out by {\em result processors} (implemented in Python). There are two classes of processors; one that handles GNU~R outputs, and one that handles CoqR outputs.  Each processor matches the received raw string against a list of regular expressions (regexes). As soon as a regex matches, an object of type \mintinline{Python}{Result} is created and the matching stops. There are eight subclasses of \mintinline{Python}{Result}:
+ \mintinline{Python}{NotImplementedResult}, \mintinline{Python}{ImpossibleResult}, \mintinline{Python}{ErrorResult}, \mintinline{Python}{NullResult}, \mintinline{Python}{FunctionResult}, \mintinline{Python}{UnknownResult}, \mintinline{Python}{InvisibleResult} and \mintinline{Python}{VectorResult}, with further subclasses: \mintinline{Python}{BooleanVectorResult}, \mintinline{Python}{NumericVectorResult} and \mintinline{Python}{StringVectorResult}.
 The differences between the GNU~R and \CoqR{} processors thus lies in the regexes they use to recognize result strings, and consequently in the particular instances of \mintinline{Python}{Result} they produce.
 %
 When creating result objects, processor include additional information that can be necessary for later comparison. For example, if the regex for numerical vector matches, the processor extracts the actual numerical value contained in the raw string and stores it in the \mintinline{Python}{NumericVectorResult} object. \\
@@ -1234,15 +1235,17 @@ we use the ``potential pass'' and ``potential fail'' outcome categories. These t
 
 \section{Base Library}
 
+We now report on the effort to allow \CoqR{} to import the base library of R in order to run the test suites of GNU~R and FastR, highlighting how our testing framework helps in this process.
+
+\subsection{Description of the Base Library}
+
 % The need to execute the base library.
 The base library corresponds to a group of files written in R,
 totalizing 19,000 lines of code, which are executed by GNU~R prior to any other
 expression. This base library includes the definition of several
 functions and objects, such as \mintinline{R}{mean}, \mintinline{R}{matrix} or \mintinline{R}{pi}.
-Several of these functions are just links to internal functions with some argument
-checking or default arguments. An example is the \mintinline{R}{eval} function which
-behaves very similarly to the internal \mintinline{R}{eval} function.
-The only difference is that the base library function sets default values for the arguments.
+Several of these functions are just wrappers over internal functions, adding  argument
+checking or default arguments. An example is the \mintinline{R}{eval} function which sets default values for the arguments of the internal \mintinline{R}{eval} function:
 \begin{minted}{R}
 eval <- function(expr, envir = parent.frame(),
     enclos = if(is.list(envir) || is.pairlist(envir))
@@ -1250,39 +1253,31 @@ eval <- function(expr, envir = parent.frame(),
     .Internal(eval(expr, envir, enclos))
 \end{minted}
 
-Most of these definitions do not require many features in order to be run: only
+Most of these definitions do not require many features to be implemented in the interpreter in order to be executed: only
 the \mintinline{R}{function} keyword and the assignment \mintinline{R}{<-} have
-to be implemented.
+to be implemented. 
 However, there are other cases where some additional computation
-is required on the right hand side of the assignment.
+is required on the right-hand side of the assignment.
 For instance, the file \texttt{constants.R}
-of the base library contains the \mintinline{R}{pi} definition, shown below.
+of the base library contains the definition \mintinline{R}{pi <- 4 * atan (1)}.
 In order to evaluate this expression, the \mintinline{R}{atan} function has to be implemented.
 %These cases are more complex because they usually require features that are not
 %implemented by CoqR.
+The base library along with a few others (such as the stats library) prepare the environment needed for GNU~R to run properly.
 
-\begin{minted}{R}
-pi <- 4 * atan (1)
-\end{minted}
+\subsection{Identifying Critical Missing Functions}
 
-This library along with a few others (such as the stats library) prepare the base
-environment needed for GNU~R to run properly.
+Of course, being able to execute the definitions and include
+them in the \CoqR{} environment does not mean that these definitions are usable: the internal function called by a library function may not yet be implemented in \CoqR, so if a test executes that function, it will yield a not-implemented result. This is why it is crucial to be able to differentiate real failures from not-implemented results. Our testing framework can report the most common not-implemented features, allowing us to identify the most pressing functions to implement, as can be seen in Figure~\ref{fig:library:missing_functions}. By tackling these first, we can make progress in debugging \CoqR{} by running the test suites of GNU~R and FastR.
 
-\subsection{Importance of including the base library}\td{Meh... }
+\et{refine/extend/etc.}
+Indeed, the base library is crucial in order to execute the test suites of both GNU~R and FastR. For the GNU~R (resp. Faster) test suite, more than 80\% (resp. 60\%) of the failed results are due to missing definitions
+contained in this library. Barely 3\% are caused by actual value mismatch, which is often caused by double precision or string encoding. The remaining percentage corresponds to missing definitions due to previous errors in computation. 
 
-The need to include this library into CoqR becomes clear when executing the test suites.
-For the GNU~R test suite, more than 80\% of the failed results are due to missing definitions
-contained in this library.  Barely 3\% are caused by actual value mismatch, which
-is often caused by double precision or string encoding. The remaining percentage
-corresponds to missing definitions due to previous errors in computation.
-This distribution of failed results is similar for the fastR test suite. Around 60\%
-are a consequence of missing the base library, 3\% is value mismatch and the rest
-is as in the case for GNU~R.
 
-Recognizing the need for the base library is made possible by the use of one of
-our frameworks' tools.
-This tool allows for an easy visualization of the most common cases where evaluation
-fails due to missing functions, as can be seen in figure \ref{fig:library:missing_functions}.
+
+
+
 
 %Once we ran our test suites we noticed that barely 2\% of the failed results
 %were due to actual value mismatch (numeric precision, string mismatch), while the
@@ -1361,20 +1356,6 @@ points in an array.
 
 
 
-\td{Don't know where to put this but I think it is important to make the distinction}
-It is important to make the distinction at this point between being able to run the definitions
-and being able to use them. The previous sections describe the process of including
-the base library to CoqR. This means, being able to execute the definitions and include
-them in its environment. However, this does not mean that they are usable.
-Indeed, the internal functions used by many of them may not yet be implemented.
-Hence, calling them would result in a not-implemented result.
-This type of behaviour should be expected and profit from it.
-
-The main issue of not having the base library's functions and objects is not being able to detect
-the actual features required by the test suites. By removing the layer of failed
-results due to missing definitions, it is possible to focus the efforts on implementing
-what is really needed. We include tools in our framework that show the most
-common not-implemented features, allowing us to precisely identify the low-hanging fruits.
 
 
 
