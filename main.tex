@@ -1253,7 +1253,7 @@ eval <- function(expr, envir = parent.frame(),
 
 Most of these definitions do not require many features to be implemented in the interpreter in order to be executed: only
 the \mintinline{R}{function} keyword and the assignment \mintinline{R}{<-} have
-to be implemented. 
+to be implemented.
 However, there are other cases where some additional computation
 is required on the right-hand side of the assignment.
 For instance, the file \texttt{constants.R}
@@ -1267,13 +1267,16 @@ The base library along with a few others (such as the stats library) prepare the
 \label{sec:missing}
 
 Of course, being able to execute the definitions and include
-them in the \CoqR{} environment does not mean that these definitions are usable: the internal function called by a library function may not yet be implemented in \CoqR, so if a test executes that function, it will yield a not-implemented result. This is why it is crucial to be able to differentiate real failures from not-implemented results. Our testing framework can report the most common not-implemented features, allowing us to identify the most pressing functions to implement, as can be seen in Figure~\ref{fig:library:missing_functions}. By tackling these first, we can make progress in debugging \CoqR{} by running the test suites of GNU~R and FastR.
+them in the \CoqR{} environment does not mean that these definitions are usable: the internal function called by a library function may not yet be implemented in \CoqR, so if a test executes that function, it will yield a not-implemented result. This is why it is crucial to be able to differentiate real failures from not-implemented results. Our testing framework can report the most common not-implemented features, allowing us to identify the most pressing functions to implement, as can be seen in Figure~\ref{fig:library:not_implemented_fastr}. By tackling these first, we can make progress in debugging \CoqR{} by running the test suites of GNU~R and FastR.
 
-\et{refine/extend/etc.}
-Indeed, the base library is crucial in order to execute the test suites of both GNU~R and FastR. For the GNU~R (resp. Faster) test suite, more than 80\% (resp. 60\%) of the failed results are due to missing definitions
-contained in this library. Barely 3\% are caused by actual value mismatch, which is often caused by double precision or string encoding. The remaining percentage corresponds to missing definitions due to previous errors in computation. 
+%\et{refine/extend/etc.}
+Indeed, the base library is crucial in order to execute the test suites of both GNU~R and FastR. For instance, having implemented 105 features from the symbol table, for the GNU~R (resp. FastR) test suite, more than 80\% (resp. 60\%) of the failed results are due to missing definitions
+contained in this library. Barely 3\% are caused by actual value mismatch, which is often caused by double precision or string encoding. The remaining percentage corresponds to missing definitions due to previous errors in computation.
 
-
+It is possible to see an immediate change after partially including the base library\footnote{Only 3 out of 159 files left out.}.
+With the same 105 implemented features from the symbol table, for the GNU~R (resp. FastR),
+there are no longer failed results due to missing definitions.\td{From 880 failed results it ends up with 500. There are still missing functions from other basic libraries (stats)} Instead, the amount
+of not-implemented results increases from 200 up to 800 (resp. 780 to X).
 
 
 
@@ -1285,75 +1288,75 @@ contained in this library. Barely 3\% are caused by actual value mismatch, which
 %causing these fails, as can be seen in figure X. We recognized that these belonged
 % to the base library loaded by GNU~R interpreter on initialization.
 \begin{figure}
-    \includegraphics[width=.5\textwidth]{missing_functions_base_r.png}
-    \caption{Chart displaying the most needed function definitions.}
-    \label{fig:library:missing_functions}
+    \includegraphics[width=.5\textwidth]{not_implemented_fastr.png}
+    \caption{Chart displaying the most needed features to be implemented.}
+    \label{fig:library:not_implemented_fastr}
 \end{figure}
 
-\subsection{Including the base library to CoqR}
-\label{sec:library:loading}
-The following sections describe the process required to include the base library
-into CoqR's environment.\td{Meh... Didn't really know how to start this section}
-
-\noindent\textbf{Fix parsing errors.}
-\et{sounds more like an anecdote to me}
-The first step in loading the base library is fixing the parsing errors that arise.
-These errors appear as a consequence of the differences mentioned in section \ref{sec:parsing}.
-One very common error is caused by the syntax used for \mintinline{R}{if else} in the R files,
-considered to be a mistake by GNU~R's own documentation\footnote{By typing \texttt{?Control} in R you get a man page with the warning.}.
-Thus, the files have to be rewritten in order to remove these errors.
-
-\noindent\textbf{Implementing missing features.}
-\et{redundant with 4.2 -- integrate what is interesting (features/functions, etc.)}
-As was previously mentioned at the beginning of \ref{sec:library:}, most of the definitions
-can be directly included in CoqR's environment. However, there are some
-functions and objects that need additional computation in order to be defined.
-This additional computation requires features to be implemented in CoqR. These
- usually correspond to functions found in the symbol table mentioned in
-\ref{sec:coq:structure}.
-%Once this was ready, the definitions had to be included. In particular, there were three files which
-%required many functionalities not yet included to CoqR. Therefore, in order to
-%completely load the base library, the next step was to implement these missing
-%features.
-
-In particular, three files contain most of this additional computation. The definitions
-contained in these files are not of common use in the test suites. Nevertheless,
-to fully load the base library, it is mandatory to implement these required
-features.
-
-% Although we did not count with the whole base library, we ran our test suites to verify
-% our suspicions. We reduced the failing results from around 800 to 500
-% and increased our not-implemented results from 200 up to 700 for the GNU~R test suite.
-% The failing results were mainly due to missing objects caused by computations not performed.
-% For the fastR test suite we obtained ...
-
-\noindent\textbf{Debugging process.}
-\et{is there anything more than anecdotes here?}
-
-Several bugs arise from the process of implementing the missing features. Some of
-these may be easy to fix while others are deeply incrusted in the internal mechanism
-of CoqR. Amongst these last, there are some that produce erroneous results and others
-that could cause CoqR to get stuck.
-
-The Bisect~\parencite{bisect} coverage tool for OCaml proves to be indispensable
-in the fine-grained process of debugging.
-It allows tracking down and identifying evaluation paths which result in execution errors.
-Using custom tests it is possible to reproduce particular expressions not covered by
-the test suites. Finally, using the testing framework allows for a general overview
-of the whole process.
-
-\td{Didn't know how to write it in present tense...}
-One particular case was the implementation of the \mintinline{R}{do_substitute} feature.
-Direct usage of this function would return a valid result. However, using it inside
-of another function would always result in an erroneous value. This is problematic as
-\mintinline{R}{do_substitute} is required by other functions in the base library.
-It was through the combined usage of the aforementioned tools that it
-was possible to identify the main source of error.
-The bug was located at the core of how function calls are made. In particular, it
-was contained in the function responsible for argument matching. As it was finally
-figured, the bug was due to setting some general purpose bits incorrectly at certain
-points in an array.
-
+% \subsection{Including the base library to CoqR}
+% \label{sec:library:loading}
+% The following sections describe the process required to include the base library
+% into CoqR's environment.%\td{Meh... Didn't really know how to start this section}
+%
+% \noindent\textbf{Fix parsing errors.}
+% \et{sounds more like an anecdote to me}
+% The first step in loading the base library is fixing the parsing errors that arise.
+% These errors appear as a consequence of the differences mentioned in section \ref{sec:parsing}.
+% One very common error is caused by the syntax used for \mintinline{R}{if else} in the R files,
+% considered to be a mistake by GNU~R's own documentation\footnote{By typing \texttt{?Control} in R you get a man page with the warning.}.
+% Thus, the files have to be rewritten in order to remove these errors.
+%
+% \noindent\textbf{Implementing missing features.}
+% \et{redundant with 4.2 -- integrate what is interesting (features/functions, etc.)}
+% As was previously mentioned at the beginning of \ref{sec:library:}, most of the definitions
+% can be directly included in CoqR's environment. However, there are some
+% functions and objects that need additional computation in order to be defined.
+% This additional computation requires features to be implemented in CoqR. These
+%  usually correspond to functions found in the symbol table mentioned in
+% \ref{sec:coq:structure}.
+% %Once this was ready, the definitions had to be included. In particular, there were three files which
+% %required many functionalities not yet included to CoqR. Therefore, in order to
+% %completely load the base library, the next step was to implement these missing
+% %features.
+%
+% In particular, three files contain most of this additional computation. The definitions
+% contained in these files are not of common use in the test suites. Nevertheless,
+% to fully load the base library, it is mandatory to implement these required
+% features.
+%
+% % Although we did not count with the whole base library, we ran our test suites to verify
+% % our suspicions. We reduced the failing results from around 800 to 500
+% % and increased our not-implemented results from 200 up to 700 for the GNU~R test suite.
+% % The failing results were mainly due to missing objects caused by computations not performed.
+% % For the fastR test suite we obtained ...
+%
+% \noindent\textbf{Debugging process.}
+% \et{is there anything more than anecdotes here?}
+%
+% Several bugs arise from the process of implementing the missing features. Some of
+% these may be easy to fix while others are deeply incrusted in the internal mechanism
+% of CoqR. Amongst these last, there are some that produce erroneous results and others
+% that could cause CoqR to get stuck.
+%
+% The Bisect~\parencite{bisect} coverage tool for OCaml proves to be indispensable
+% in the fine-grained process of debugging.
+% It allows tracking down and identifying evaluation paths which result in execution errors.
+% Using custom tests it is possible to reproduce particular expressions not covered by
+% the test suites. Finally, using the testing framework allows for a general overview
+% of the whole process.
+%
+%
+% One particular case was the implementation of the \mintinline{R}{do_substitute} feature.
+% Direct usage of this function would return a valid result. However, using it inside
+% of another function would always result in an erroneous value. This is problematic as
+% \mintinline{R}{do_substitute} is required by other functions in the base library.
+% It was through the combined usage of the aforementioned tools that it
+% was possible to identify the main source of error.
+% The bug was located at the core of how function calls are made. In particular, it
+% was contained in the function responsible for argument matching. As it was finally
+% figured, the bug was due to setting some general purpose bits incorrectly at certain
+% points in an array.
+%
 
 
 
@@ -1379,24 +1382,28 @@ points in an array.
 
 
 
-\subsection{Results}
+\subsection{Results after including the Base Library}
 \label{sec:library:results}
+
+In order to fully include the base library, 9 features from the symbol table had to
+be implemented, extending it from 105 to 114 entries.
 
 The results of our tool are available at \url{https://coqr.dcc.uchile.cl}.\mbi{
     OK: we should discuss on what should be the state of this page once the paper
     is published.
     I guess that we should hide some old tests, for instance.
     Should we put a link the source code too? I think it would be nice.}
-We used our testing framework on various test suites\mbi{
-    Outch: it would be nice to explain the test suites here,
-    but at the same time, I like the current flow of the beginning of
-    Section~\ref{sec:test:methodology}.
-    Any ideas?},
-but also on the base library of R,
-which already provides a large coverage.
+% We used our testing framework on various test suites\mbi{
+%     Outch: it would be nice to explain the test suites here,
+%     but at the same time, I like the current flow of the beginning of
+%     Section~\ref{sec:test:methodology}.
+%     Any ideas?},
+We used our testing framework on both the GNU~R test suite and the FastR test suite.
+% but also on the base library of R,
+% which already provides a large coverage.
 %
 To evaluate these test suites,
-we use the Bisect coverage tool for OCaml.
+we use the Bisect~\parencite{bisect} coverage tool for OCaml.
 Out of the 11,000 program points identified by Bisect,
 ??\mb{Tomás?} were executed.
 We thus think that new test suites are being needed
@@ -1425,7 +1432,10 @@ many cases as  ``unknown'' (leading to potential passes and failures in the next
 However, we designed our framework so it would be simple to add a particular type of result
 if a user would need it.
 
-
+Loading the base library into \CoqR{}'s environment requires around 15 hours.
+Executing the GNU~R and FastR test suites take around 8h each.
+On the other hand, when including the Bisect tool the amount of time required to load
+the base library increases up to 60h. The test suites increase to X and Y, respectively.\td{have to check times... Apparently I forgot to write them down...}
 %
 % \section{Old}
 % \subsection{Results}
