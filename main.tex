@@ -259,11 +259,13 @@ First, the Coq interpreter has been written using a monadic encoding that allows
 
 Second, we have developed a testing framework that streamlines the process of running both the Coq interpreter and GNU~R on a set of test cases and report on mismatches and errors, among others (Section~\ref{sec:testing:architecture}). We use three test suites to measure the advancement of the \CoqR{} implementation: the test suite of GNU~R itself ($\sim$3,600 loc), a test suite of the FastR implementation ($\sim$1,300 loc)~\parencite{kalibera2014fast}, and a test suite that we developed to exercise corner cases ($\sim$1,100 loc).
 
-The current implementation of \CoqR{} is not feature complete; R is a very large programming language and achieving 100\% coverage of the language and its main libraries is a huge implementation effort, which would need involvement from the R community at large. The contribution of this work is to provide realistic foundations of a trustworthy R formalization in Coq. First, the interpreter covers the core of the language and over 100 additional features. It is implemented in an extensible manner, following the architecture of GNU~R itself. Second, while at present the \CoqR{} implementation passes approximately half \et{update - and what about our own test suite? 100\%?} of the GNU~R and FastR test suites, the testing infrastructure we provide is designed to help drive the development effort towards the most pressing missing features.
-
 Additionally, we report on the process of scaling up our interpreter in order to be able to load existing R libraries (Section~\ref{sec:library}), in particular the R base library ($\sim$19,000 loc). Finally, we report on a proof effort to establish that memory invariants are preserved during execution, including some specific proof automation (Section~\ref{sec:proofs}).
 %
 Section~\ref{sec:related:work} discusses related work and Section~\ref{sec:conclusion} concludes.
+
+The current implementation of \CoqR{} is not feature complete; R is a very large programming language and achieving 100\% coverage of the language and its main libraries is a huge implementation effort, which would need involvement from the R community at large. The contribution of this work is to provide realistic foundations of a trustworthy R formalization in Coq. First, the interpreter covers the core of the language and over 100 additional features. It is implemented in an extensible manner, following the architecture of GNU~R itself. Second, the testing infrastructure we provide is designed to help drive the development effort towards the most pressing missing features. At present, the \CoqR{} implementation passes approximately half \et{update - and what about our own test suite? 100\%?} of the GNU~R and FastR test suites, which is realistic enough to support the claim that, given more engineering power, our approach can scale up to the full language and its main libraries.
+
+
 
 % Given the size of our formalization,
 % we consider this part to be the most important of our contributions.
