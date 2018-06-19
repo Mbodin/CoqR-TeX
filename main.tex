@@ -80,7 +80,7 @@
 
 \begin{document}
 
-\title{A Trustworthy Formalization of R} % I didn't thought much about this. Any suggestion?
+\title{A Trustworthy Formalization of R}
 
 \author{Martin Bodin}
 \orcid{0000-0003-3588-3782}
@@ -245,24 +245,24 @@ because of the large amount of such corner cases.
 % This formalization is quite large, and we need to certify it.
 This complexity in turn raises a meta-trust issue:
 how can a large semantics (and consequently the proofs made from it)
-be trusted? Being able to relate a formalism to {\em trust sources} is a crucial aspect of the formalization process, and often requires a large amount of work to be done properly~\parencite{leroy2014pip}. This challenge has been faced repeatedly in attempts to provide formal foundations to JavaScript.
+be trusted? Being able to relate a formalism to {\em trust sources} is a crucial aspect of the formalization process, and often requires a large amount of work to be done properly~\parencite{leroy2014pip}. This challenge has been faced repeatedly in attempts to provide formal foundations to JavaScript, for instance.
 %
 Some formalization approaches like $\lambda_{JS}$~\cite{Guha2010} and KJS~\cite{kjs} augment trust through extensive testing and comparison with existing implementations. JSCert~\parencite{popl14jscert} only uses testing, without directly comparing to an existing implementation, but further augments trust through the notion of a so-called {\em eyeball correspondence}, i.e.~a line-to-line syntactic connection, between the formalization (in Coq) and the ECMAScript specification (in English and pseudo-code).
 
 \paragraph{Contributions.}
 We present \CoqR{}, a trustworthy formalization of the R programming language in the Coq proof assistant.
 The formalization is a big-step operational semantics, in the form of an interpreter (Section~\ref{sec:coq:interp}).
+%
+We say that this interpreter is {\em trustworthy} because we have followed two complementary techniques to maximize trust: eyeball correspondence, and testing.
 
-We say that this interpreter is {\em trustworthy} because we have followed two complementary techniques to maximize trust.
-First, inspired by JSCert, the Coq interpreter has been written using a monadic encoding that allows for a direct {\em eyeball correspondence} with the C source code of GNU~R~\parencite{Rwebsite}. In the absence of a standardized formal semantics, GNU~R is the reference point that defines what  R really is.
+First, the Coq interpreter has been written using a monadic encoding that allows for a direct eyeball correspondence with the C source code of GNU~R~\parencite{Rwebsite}. In the absence of a standardized formal semantics, GNU~R is the reference point that defines what  R really is.
 
-Second, we have extensively {\em tested} the Coq interpreter against the GNU~R reference interpreter, using three test suites: the test suite of GNU~R itself ($\sim$3,600 loc), the test suite of the FastR implementation ($\sim$1,300 loc)~\parencite{kalibera2014fast}, and a custom test suite that we developed ourselves to exercise corner cases ($\sim$1,100 loc).
-%We note that these test suites have very little redundancy between themselves.
-To this end, we have developed a testing framework that streamlines the process of running both the Coq interpreter and GNU~R on a set of test cases and report on mismatches and errors (Section~\ref{sec:testing:architecture}).
+Second, we have developed a testing framework that streamlines the process of running both the Coq interpreter and GNU~R on a set of test cases and report on mismatches and errors, among others (Section~\ref{sec:testing:architecture}). We use three test suites to measure the advancement of the \CoqR{} implementation: the test suite of GNU~R itself ($\sim$3,600 loc), a test suite of the FastR implementation ($\sim$1,300 loc)~\parencite{kalibera2014fast}, and a test suite that we developed to exercise corner cases ($\sim$1,100 loc).
 
-We also report on the process of scaling up our interpreter in order to be able to import existing R libraries (Section~\ref{sec:library}), in particular the R base library ($\sim$19,000 loc). Finally, we report on a proof effort to establish that memory invariants are preserved during execution, including some specific proof automation (Section~\ref{sec:proofs}).
+The current implementation of \CoqR{} is not feature complete; R is a very large programming language and achieving 100\% coverage of the language and its main libraries is a huge implementation effort, which would need involvement from the R community at large. The contribution of this work is to provide realistic foundations of a trustworthy R formalization in Coq. First, the interpreter covers the core of the language and over 100 additional features. It is implemented in an extensible manner, following the architecture of GNU~R itself. Second, while at present the \CoqR{} implementation passes approximately half \et{update - and what about our own test suite? 100\%?} of the GNU~R and FastR test suites, the testing infrastructure we provide is designed to help drive the development effort towards the most pressing missing features.
 
-
+Additionally, we report on the process of scaling up our interpreter in order to be able to load existing R libraries (Section~\ref{sec:library}), in particular the R base library ($\sim$19,000 loc). Finally, we report on a proof effort to establish that memory invariants are preserved during execution, including some specific proof automation (Section~\ref{sec:proofs}).
+%
 Section~\ref{sec:related:work} discusses related work and Section~\ref{sec:conclusion} concludes.
 
 % Given the size of our formalization,
