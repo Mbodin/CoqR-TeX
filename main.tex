@@ -846,8 +846,8 @@ Note that the eyeball correspondence between GNU~R and \CoqR{} would pay off in 
 \label{sec:coq:structure}
 
 R is by no means a small language.
-As a result, the \CoqR{} project spans over 18,000 lines of Coq definitions.
-This is larger than in the JSCert project~\parencite{popl14jscert}, which consists of 12,500 lines of Coq definitions.
+Currently, \CoqR{} spans over 18,000 lines of Coq definitions.
+This is larger than JSCert~\parencite{popl14jscert}, which consists of 12,500 lines of Coq definitions.
 % \et{ref + how large is JSCert?}\mb{We already quote it several times in the paper: isn't it too much?}
 % \mbi{For the statistics: \CoqR{} is 18,000 lines of Coq definitions + 1500 lines of Coq proofs.
 %     JSCert is 12,500 lines of Coq definitions + 5,000 lines of Coq proofs. Both according to \texttt{coqwc}.
@@ -914,8 +914,7 @@ and 4,000 lines are for additional features.
 %     Coq administration (extraction, linking all our 50 files, etc.) 1,000 lines;
 %     Miscelleanous R definitions (the Coq part of the parsing, initialisation) 500 lines.
 %   }
-At the time of writing, we support 112 entries from the symbol table, which is enough to run the entire base library of R (Section~\ref{sec:library}).
-\et{not true!}
+At the time of writing, we support 112 entries from the symbol table, which is enough to load the base library of R (Section~\ref{sec:library}).
 
 % \eti{I'm here (haven't gone through all text of section 2 above yet, but haven't looked at parsing at all)}
 
@@ -1022,19 +1021,19 @@ a testing framework that supports comparative execution of \CoqR{} and GNU~R. Th
 
 % Test suite sources.
 \noindent\textbf{Test suites.}
-We based ourselves on two existing test suites:
+To exercise \CoqR, we exploit two existing test suites: 
 the test suite of GNU~R itself ($\sim$3,600 lines)
 % \td{There are 3600 lines but it's really ~1700 expressions. Is that ok?}
 and the test suite of FastR ($\sim$1,300 lines)~\parencite{kalibera2014fast}.
 \et{not the full thing: what was excluded, why, and how many lines/tests are left?}
 % \td{Same here, 1300 lines but actually ~2600 expressions}.
-We found that these test suites mainly focus on {\em expected} behaviors.
+These test suites mainly focus on {\em expected} behaviors.
 For instance,
 different numerical vectors are concatenated,
 summed, divided, etc.
 In each case,
 the special values \mintinline{R}{NaN} and \mintinline{R}{NA}
-are checked to propagate.
+are checked to propagate as expected.
 But we did not find any test checking for instance
 how the \mintinline{R}{"TRUE"} string is converted into a boolean value,
 despite its behavior being non-trivial:
@@ -1844,9 +1843,9 @@ in comparison to the size of its community.
 % Genthat.
 In particular,
 there exist few testing frameworks in R.
-The testR~\parencite{maj2013testr, 2014testr} project,
-which later evolved into the Genthat~\parencite{genthat} library,
-is however based on an interesting way of generating unit tests for R functions.
+The testR project~\parencite{maj2013testr, 2014testr},
+which later evolved into the Genthat library~\parencite{genthat},
+is based on an interesting way of generating unit tests for R functions.
 It starts from a program using the functions to be tested.
 It then annotates and executes this program,
 storing the trace of the calls to the functions to be tested.
@@ -1857,20 +1856,16 @@ which can then be used to ensure that further versions of the library
 do not break existing code.
 
 % FastR
-GNU~R is not the only R interpreter that exist.
+GNU~R is not the only R interpreter that exists.
 Many existing interpreters are based on the same C core code,
 but use different libraries for linear algebra,
-usually optimized for a given usage.
+usually optimized for a specific usage.
 %
-The FastR~\parencite{kalibera2014fast} project takes a different approach
-as it also reimplemented the core of the R interpreter.
-It is based on the Truffle self-optimizing framework~\parencite{wuerthingertruffle}.
+The FastR project~\parencite{kalibera2014fast}  takes a different approach
+as it also reimplements the core of the R interpreter, using the Truffle self-optimizing framework~\parencite{wuerthingertruffle}.
 FastR is faster than the reference interpreter not only in the linear-algebraic part, but also in the language interpretation layer.
 %
-In both cases, a difference of behavior between GNU~R
-and the specialized interpreter is considered as a bug.
-We believe that this supports our choice of basing
-our work on the GNU~R interpreter.
+FastR agrees with us that the GNU~R interpreter is the reference semantics: any behavioral difference between FastR and GNU~R is considered a FastR bug.
 
 % JavaScript semantics and their trust sources.
 To the best of our knowledge, we are the first to provide a mechanized specification of R. But the general goal of formalizing full real-world languages---%
@@ -1879,7 +1874,7 @@ as opposed to small subsets---is not new.
 JavaScript is a particularly relevant example.
 Indeed, empirical analyses
 have confirmed that the language features
-that are usually ignored in the formalised subsets of JavaScript
+that are usually ignored in the formalized subsets of JavaScript
 are actually important for actual web developers~\parencite{RichardsHBV11}.
 %
 In the case of JavaScript, there are several trust sources.
@@ -1887,23 +1882,23 @@ First, the language is precisely specified by the ECMAScript specification~\pare
 Second, there exist various test suites~\parencite{test262, mozillatests}
 as well as several widely used interpreters.
 As a consequence, various formal specifications of JavaScript exist,
-each related with different of its trust sources.
+each related with some of its trust sources.
 
 % Maffeis et al.
 The first full formal semantics of JavaScript~\parencite{aplas08}
 is a semantics related to the third version of the ECMAScript specification.
 It had a major influence on the definitions of further JavaScript formal
-specifications~\parencite{ses, popl14jscert, popl12-Towards, usenix}.
-It also served as the formal basis to prove the soundness of security-related
-JavaScript subsets~\parencite{MMT-CSF-TR09, mmt-esorics09, mmt-oakland10}.
-This work was however not mechanized, making it difficult to be used as a basis for other formalization work.
+specifications~\parencite{usenix, popl14jscert, popl12-Towards, ses} andalso served as the formal basis to prove the soundness of security-related
+JavaScript subsets~\parencite{mmt-esorics09, mmt-oakland10,MMT-CSF-TR09}.
+This work was however not mechanized. 
+%making it difficult to be used as a basis for other formalization work.
 
 % The Essence of JavaScript.
 In parallel, several formal semantics
-for JavaScript were based on a JavaScript interpreter~\parencite{js-ml, Guha2010, Politz:S5, kjs}.
+for JavaScript are based on a JavaScript interpreter~\parencite{Guha2010, js-ml,  kjs, Politz:S5}.
 These semantics are related to JavaScript test suites,
 either by comparing the results with the expected result,
-or by comparing results with widely used JavaScript interpreters.
+or by comparing results with widely-used JavaScript interpreters.
 These formalizations tend to be easier to build
 as testing frameworks already exist.
 Furthermore, they are usually easier to understand by non-specialists.
@@ -1921,12 +1916,12 @@ This double-relation provides a large amount of trust to JSCert.
 In practice, both relations served to find issues in the JSCert specification,
 but also some implementation bugs in other interpreters,
 as well as mistakes in the ECMAScript specification.
-Furthermore, JSCert is mechanized:
-this facilitates its reuse for other projects.
-However, this project involved 8 people for a year:
-building both a specification and an interpreter,
-as well as a correctness proof between them, involves a lot of resources.
-In \CoqR, we solved this issue by defining the big-step operational semantics as an interpreter: the same definition is both executable and syntactically close to its specification (the GNU~R interpreter).
+% Furthermore, JSCert is mechanized:
+% this facilitates its reuse for other projects.
+% However, this project involved 8 people for a year:
+% building both a specification and an interpreter,
+% as well as a correctness proof between them, involves a lot of resources.
+In \CoqR, we take a different approach by defining the big-step operational semantics as an interpreter: the same definition is both executable and syntactically close to its specification (the GNU~R interpreter).
 
 % CompCert.
 The Coq proof assistant has already been used
