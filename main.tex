@@ -129,7 +129,7 @@
 \email{etanter@dcc.uchile.cl}
 
 \begin{abstract}
-The R programming language is very popular for developing statistical software and data analysis, thanks to rich libraries, concise and expressive syntax, and support for interactive programming. Yet, the semantics of R is fairly complex, contains many subtle corner cases, and is not formally specified. This makes it difficult to fully trust R programs. In this work, we develop a big-step operational semantics for R in the form of an interpreter written in the Coq proof assistant. We ensure the trustworthiness of the formalization by introducing a monadic encoding that allows the Coq interpreter, \CoqR, to be in direct visual correspondence with the reference R interpreter, GNU~R. Additionally, we provide a testing framework that supports systematic comparison of \CoqR{} and GNU~R. In its current state, \CoqR{} covers the core of the R language as well as numerous additional features, making it pass a significant proportion of realistic test cases from the GNU~R and FastR projects. To exercise the formal specification, we prove in Coq the preservation of memory invariants in the interpreter. This work is an important first step towards a robust environment for 
+The R programming language is very popular for developing statistical software and data analysis, thanks to rich libraries, concise and expressive syntax, and support for interactive programming. Yet, the semantics of R is fairly complex, contains many subtle corner cases, and is not formally specified. This makes it difficult to fully trust R programs. In this work, we develop a big-step operational semantics for R in the form of an interpreter written in the Coq proof assistant. We ensure the trustworthiness of the formalization by introducing a monadic encoding that allows the Coq interpreter, \CoqR, to be in direct visual correspondence with the reference R interpreter, GNU~R. Additionally, we provide a testing framework that supports systematic comparison of \CoqR{} and GNU~R. In its current state, \CoqR{} covers the core of the R language as well as numerous additional features, making it pass a significant proportion of realistic test cases from the GNU~R and FastR projects. To exercise the formal specification, we prove in Coq the preservation of memory invariants in selected parts of the interpreter. This work is an important first step towards a robust environment for 
 formal verification of R programs.
 \end{abstract}
 
@@ -238,7 +238,7 @@ The formalization is a big-step operational semantics, in the form of an interpr
 %
 We say that this interpreter is {\em trustworthy} because we have followed two complementary techniques to maximize trust: eyeball correspondence, and testing.
 
-First, the Coq interpreter has been written using a monadic encoding that allows for a direct eyeball correspondence with the C source code of GNU~R~\parencite{Rwebsite}. In the absence of a standardized formal semantics, GNU~R is the reference point that defines what  R really is.
+First, the Coq interpreter has been written using a monadic encoding that allows for a direct eyeball correspondence with the C source code of GNU~R~\parencite{Rwebsite}. In the absence of a standardized formal semantics, GNU~R is the reference point that defines what R really is. Note that other alternative implementations of R, such as FastR~\parencite{kalibera2014fast}, also treat GNU~R as the ground truth.
 
 Second, we have developed a testing framework that streamlines the process of running both the Coq interpreter and GNU~R on a set of test cases and report on mismatches and errors, among others (Section~\ref{sec:testing:architecture}). We use three test suites to measure the advancement of the \CoqR{} implementation: the test suite of GNU~R itself ($\sim$3,600 loc), a test suite of the FastR implementation ($\sim$1,300 loc)~\parencite{kalibera2014fast}, and a test suite that we developed to exercise corner cases ($\sim$1,100 loc).
 
@@ -470,8 +470,7 @@ Definition do_attr globals runs S
 % %
 
 By developing \CoqR{} as a monadic interpreter using the result monad introduced above, we are able to achieve an eyeball correspondence between the C and Coq interpreters. This correspondence is extremely helpful during development:
-whenever a bug is encountered while testing, we localize the function responsible for the bug and then check the line-to-line correspondence.
-Such checks are quick and easy to perform, often leading to a quick fix of \CoqR{}.
+whenever a bug is encountered while testing, we localize the function responsible for the bug and then can directly and visually compare both interpreters. Such checks are quick and easy to perform, often leading to a quick fix of \CoqR{}.
 %
 
 Figure~\ref{fig:do_attr} shows an example of the eyeball correspondence that can be achieved using the result monad. Figure~\ref{fig:c:do_attr} shows a C function, and Figure~\ref{fig:coq:do_attr} its Coq translation.
@@ -613,7 +612,7 @@ then the constructor \mintinline{Coq}{listExp} will be implicitly called
 thanks to the corresponding line in Figure~\ref{fig:EXP}.
 In the context of \CoqR{},
 this is more than a simple syntactic notation
-as it helps the line-to-line correspondence
+as it helps the eyeball correspondence
 by hiding what is not present in C:
 if one points to either a list or an environment,
 the C notation to access its list or its environment is the same.
@@ -723,7 +722,7 @@ This argument aims at factorizing the fuel given to Coq functions
 to make them artificially terminate.
 The usual way to do this is to make each function check whether its fuel
 reached \(0\), and if so return \mintinline{Coq}{result_bottom}.
-It is however cumbersome to do that manually, and affects the line-to-line correspondence, since such a check does not exist in C.
+It is however cumbersome to do that manually, and affects the eyeball correspondence, since such a check does not exist in C.
 %
 We solve this issue by following the same method as in JSCert:
 instead of a fuel argument, each function takes a record \mintinline{Coq}{runs}.
@@ -953,7 +952,7 @@ as they heavily depend on when the parser calls the lexer
 % \mb{I think that the ``or'' was more correct here:
 %     if the parser calls the lexer as Bison does, they can't get desynchronized.}
 %
-To keep the line-to-line correspondence,
+To keep the eyeball correspondence,
 we nevertheless built the same communication channel
 between the lexer and the parser in OCaml.
 Unfortunately, Bison and Menhir do not always call the lexer
@@ -1926,7 +1925,7 @@ of the C language, which aims at precisely listing all the possible behaviors of
 \section{Conclusions}
 \label{sec:conclusion}
 
-We present the first formal specification of R, written as an interpreter in Coq. We present the monadic encoding that allows \CoqR{} to be in eyeball correspondence with the GNU~R reference interpreter, provide a testing infrastructure useful to incrementally enrich \CoqR, and show that \CoqR{} can be used to formally reason about R. We believe that this is a necessary first step towards a robust environment for formal verification of R programs. More development work is necessary to grow \CoqR{} to fully cover R and its main libraries. On the formal reasoning side, \CoqR{} should be the basis on top of which to develop an appropriate program logic, in order to more conveniently reason about R programs.
+We present the first formal specification of R, written as an interpreter in Coq. We present the monadic encoding that allows \CoqR{} to be in eyeball correspondence with the GNU~R reference interpreter, provide a testing infrastructure useful to incrementally enrich \CoqR, and show that \CoqR{} can be used to formally reason about R. Considering the number of realistic test cases that \CoqR{} currently passes, and its extensible architecture, we believe that \CoqR{} can be grown \CoqR{} to fully cover R and its main libraries. On the formal reasoning side, \CoqR{} should be the basis on top of which to develop an appropriate program logic, in order to more conveniently reason about R programs. As such, it is a necessary first step towards a robust environment for formal verification of R programs. 
 
 \printbibliography{}
 
