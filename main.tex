@@ -129,7 +129,8 @@
 \email{etanter@dcc.uchile.cl}
 
 \begin{abstract}
-The R programming language is very popular for developing statistical software and data analysis, thanks to rich libraries, concise and expressive syntax, and support for interactive programming. Yet, the semantics of R is fairly complex, contains many subtle corner cases, and is not formally specified. This makes it difficult to fully trust R programs. In this work, we develop a big-step operational semantics for R in the form of an interpreter written in the Coq proof assistant. We ensure the trustworthiness of the formalization by introducing a monadic encoding that allows the Coq interpreter, \CoqR, to be in direct visual correspondence with the reference R interpreter, GNU~R. Additionally, we provide a testing framework that supports systematic comparison of \CoqR{} and GNU~R. In its current state, \CoqR{} covers the core of the R language as well as numerous additional features, making it pass a significant proportion of realistic test cases from the GNU~R and FastR projects. To exercise the formal specification, we prove in Coq the preservation of memory invariants in the interpreter.
+The R programming language is very popular for developing statistical software and data analysis, thanks to rich libraries, concise and expressive syntax, and support for interactive programming. Yet, the semantics of R is fairly complex, contains many subtle corner cases, and is not formally specified. This makes it difficult to fully trust R programs. In this work, we develop a big-step operational semantics for R in the form of an interpreter written in the Coq proof assistant. We ensure the trustworthiness of the formalization by introducing a monadic encoding that allows the Coq interpreter, \CoqR, to be in direct visual correspondence with the reference R interpreter, GNU~R. Additionally, we provide a testing framework that supports systematic comparison of \CoqR{} and GNU~R. In its current state, \CoqR{} covers the core of the R language as well as numerous additional features, making it pass a significant proportion of realistic test cases from the GNU~R and FastR projects. To exercise the formal specification, we prove in Coq the preservation of memory invariants in the interpreter. This work is an important first step towards a robust environment for 
+formal verification of R programs.
 \end{abstract}
 
 % % %% 2012 ACM Computing Classification System (CSS) concepts
@@ -1922,26 +1923,10 @@ restricting it to the behaviors that will actually be compiled by CompCert.
 The Formalin project~\parencite{formalin} is another formalization
 of the C language, which aims at precisely listing all the possible behaviors of a C program.
 
-\section{Conclusion and Future Work}
+\section{Conclusions}
 \label{sec:conclusion}
 
-\todo{}
-
-We have a fully trustable formalization of R.
-
-This formalization can be used to prove program logic in R,
-the amount of work for a direct approach being quite large.
-
-We have a testing architecture that can be extended.
-
-We believe our testing framework to be adaptable to other situations,
-typically another programming language to be tested.
-
-Our R specification is a shallow embedding of the reference interpreter of R.
-Link with Formalin
-
-
-end with a perspective on program logics
+We present the first formal specification of R, written as an interpreter in Coq. We present the monadic encoding that allows \CoqR{} to be in eyeball correspondence with the GNU~R reference interpreter, provide a testing infrastructure useful to incrementally enrich \CoqR, and show that \CoqR{} can be used to formally reason about R. We believe that this is a necessary first step towards a robust environment for formal verification of R programs. More development work is necessary to grow \CoqR{} to fully cover R and its main libraries. On the formal reasoning side, \CoqR{} should be the basis on top of which to develop an appropriate program logic, in order to more conveniently reason about R programs.
 
 \printbibliography{}
 
