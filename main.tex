@@ -739,7 +739,7 @@ A \mintinline{C}{while}-loop is obviously part of these functions.
 We then define \mintinline{Coq}{while_loop} with an additional
 argument \mintinline{Coq}{runs} of type \mintinline{Coq}{Runs}.
 Line~\ref{line:runs_while:recursive:call} is the ``recursive'' call,
-but instead of a recusrive call,
+but instead of a recursive call,
 we call the \mintinline{Coq}{while_loop} function stored
 in the \mintinline{Coq}{runs} record.
 
@@ -777,6 +777,7 @@ Figure~\ref{fig:runs} shows its Coq definition.
 % Note that the symbol table has to be one of the projections of \mintinline{Coq}{runs},
 % otherwise a strangely-written function could in theory fetches itself from the symbol table
 % and executes it, leading to an unwanted loop.
+% Addition: this is called the “Landin’s knot”, but we probably still don’t want to speak about it ☺
 % }
 % %
 In addition to passing the extra-argument argument, this idiom only requires one pattern-matching on fuel in the whole \CoqR{} interpreter; it is thus a very lightweight way to introduce termination.
