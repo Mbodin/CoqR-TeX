@@ -240,9 +240,10 @@ We say that this interpreter is {\em trustworthy} because we have followed two c
 
 First, the Coq interpreter has been written using a monadic encoding that allows for a direct eyeball correspondence with the C source code of GNU~R~\parencite{Rwebsite}. In the absence of a standardized formal semantics, GNU~R is the reference point that defines what R really is. Note that other alternative implementations of R, such as FastR~\parencite{kalibera2014fast}, also treat GNU~R as the ground truth.
 
-Second, we have developed a testing framework that streamlines the process of running both the Coq interpreter and GNU~R on a set of test cases and report on mismatches and errors, among others (Section~\ref{sec:testing:architecture}). We use three test suites to measure the advancement of the \CoqR{} implementation: the test suite of GNU~R itself ($\sim$3,600 loc), a test suite of the FastR implementation ($\sim$1,300 loc)~\parencite{kalibera2014fast}, and a test suite that we developed to exercise corner cases ($\sim$1,100 loc).
+Second, we have developed a testing framework that streamlines the process of running both the Coq interpreter and GNU~R on a set of test cases and report on mismatches and errors, among others (Section~\ref{sec:testing:architecture}). We use several test suites to measure the advancement of the \CoqR{} implementation. 
+% the test suite of GNU~R itself ($\sim$3,600 loc), a test suite of the FastR implementation ($\sim$1,300 loc)~\parencite{kalibera2014fast}, and a test suite that we developed to exercise corner cases ($\sim$1,100 loc).
 
-Additionally, we report on the process of scaling up our interpreter in order to be able to load existing R libraries (Section~\ref{sec:library}), in particular the R base library ($\sim$19,000 loc). Finally, we report on a proof effort to establish that memory invariants are preserved during execution, including some specific proof automation (Section~\ref{sec:proofs}).
+Additionally, we report on the process of scaling up our interpreter in order to be able to load existing R libraries (Section~\ref{sec:library}), in particular the R base library. Finally, we report on a proof effort to establish that memory invariants are preserved during execution, including some specific proof automation (Section~\ref{sec:proofs}).
 %
 Section~\ref{sec:related:work} discusses related work and Section~\ref{sec:conclusion} concludes.
 
@@ -984,6 +985,10 @@ in some sense as a variant of Linus's law.\footnote{\url{https://en.wikipedia.or
 To further augment the level of trust of \CoqR{}, we have developed
 a testing framework that supports comparative execution of \CoqR{} and GNU~R. The framework additionally helps the development process by providing useful reports.\\
 
+\eti{in this section blah blah blah}
+
+
+
 % \et{what?}
 % In particular, as few safe results as possible should be marked as bugs.
 
@@ -999,16 +1004,17 @@ a testing framework that supports comparative execution of \CoqR{} and GNU~R. Th
 % %
 
 
-% \subsection{Methodology}
-% \label{sec:test:methodology}
+\subsection{Testing Methodology and Framework}
+\label{sec:test:methodology}
 
 % Test suite sources.
 \noindent\textbf{Test suites.}
+\et{update description of test suites (including ours), link to originals: GNU~R, FastR-1, FastR-2, Custom}
 To exercise \CoqR, we exploit two existing test suites: 
 the test suite of GNU~R itself ($\sim$3,600 lines)
 % \td{There are 3600 lines but it's really ~1700 expressions. Is that ok?}
 and the test suite of FastR ($\sim$1,300 lines)~\parencite{kalibera2014fast}.
-\et{not the full thing: what was excluded, why, and how many lines/tests are left?}
+\et{not the full thing: what was excluded, why, and how many lines/tests are left? talk in terms of tested expressions (instead of loc)}
 % \td{Same here, 1300 lines but actually ~2600 expressions}.
 These test suites mainly focus on {\em expected} behaviors.
 For instance,
@@ -1108,9 +1114,12 @@ These outcomes denote different possible scenarios in the comparison between GNU
 the ``not implemented'' and ``impossible'' results
 correspond to the Coq constructors
 \mintinline{Coq}{result_not_implemented} and \mintinline{Coq}{result_impossible}
-shown in Figure~\ref{fig:result}. Discriminating a failure from a  not-yet-implemented feature is crucial for development, as it helps us choose which feature to focus on next (see Section~\ref{sec:missing}).
-%
+shown in Figure~\ref{fig:result}. 
 As mentioned before, if \CoqR{} were bug free, an ``impossible'' result would correspond to a critical bug in GNU~R---in practice, all the ``impossible'' results we observed were due to mistakes in \CoqR{} and were quickly solved.
+
+Discriminating a failure \et{actual error, could be because of an unfound function} from a  not-yet-implemented feature is crucial for development, as it helps us choose which feature to focus on next (see Section~\ref{sec:missing}). \et{corresponds to C code, eg. features from symbol table}
+%
+
 % \noindent\textbf{Two-step comparison.\td{Not quite, there's the "processing"/"normalization" phase then the comparison}}
 % To compare each result, we adopt the general scheme shown in Figure~\ref{fig:methodology}.
 % In particular, the comparison of outcomes proceeds in two steps. % First,
@@ -1170,10 +1179,10 @@ As mentioned before, if \CoqR{} were bug free, an ``impossible'' result would co
 % and we designed our testing framework to mark it as such.
 % % Special cases.
 % \noindent{\bf Special categories.}
-Sometimes processing a result string fails.
 % It happens that we can not type a result.
 % This happens when R produces a result for which we did not
 % provide any normalizer.
+Sometimes processing a result string fails.
 For instance, there exist special attributes that affect
 the way vectors are printed, and our pretty-printer is not aware of all of these special attributes. In such cases, the processor fails, and returns an \mintinline{Python}{UnknownResult} object. Such tests are consequently marked as ``unknown''; they could be functionally correct or not, so classifying them apart is practical.
 % it would not be correct to mark them as success,
@@ -1205,7 +1214,31 @@ in the tests marked as failed.
 % (only marked as failing because of a previous failing result).
 %
 To categorize these tests,
-we use the ``potential pass'' and ``potential fail'' outcome categories. These two categories mean nothing for correctness (we cannot conclude anything certain from a potential outcome), but they really help in the development process by showing possible future results.
+we use the ``potential pass'' and ``potential fail'' outcome categories. These two categories mean nothing for correctness (we cannot conclude anything certain from a potential outcome), but they really help in the development process by showing possible future results.\\
+
+
+\begin{figure}
+    \includegraphics[width=.5\textwidth]{not_implemented_fastr.png}
+    \caption{Chart displaying the most needed features to be implemented.}
+    \label{fig:library:not_implemented_fastr}
+\end{figure}
+
+\noindent\textbf{Guiding the development process.}
+
+Our testing framework can report the most common not-implemented features, allowing us to identify the most pressing functions to implement, as can be seen in Figure~\ref{fig:library:not_implemented_fastr}. By tackling these first, we can make progress in debugging \CoqR{} by running the test suites of GNU~R and FastR.
+
+
+\et{expand, explain both kinds of charts, why they are useful, etc.}
+
+not implemented = missing features from symbol table (mostly) but also some C code from the C interpreter that has not been (yet) included in \CoqR (typically example include skipping a branch from a large switch)
+
+missing function definitions = use of an undefined R function in the test
+(could be because not imported). This brought us to focus on the (some parts of the) base library first. 
+
+Also useful for scalability: only import needed functions from base library
+(Coq is slow!)
+
+
 
 
 %
@@ -1217,12 +1250,12 @@ we use the ``potential pass'' and ``potential fail'' outcome categories. These t
 % \label{sec:driving:development}
 
 
-\section{Base Library}
+\subsection{Base Library}
 \label{sec:library}
 
 We now report on the effort to allow \CoqR{} to import the base library of R in order to run the test suites of GNU~R and FastR, highlighting how our testing framework helps in this process.
 
-\subsection{Description of the Base Library}
+\noindent\textbf{Description of the base library.}
 
 % The need to execute the base library.
 The base library consists of about 160 R source files,
@@ -1253,11 +1286,11 @@ We implemented these functions in OCaml.
 %implemented by CoqR.
 The base library along with a few others (such as the stats library) prepare the environment needed for GNU~R to run properly.
 
-\subsection{Identifying Critical Missing Functions}
+\noindent\textbf{Identifying Critical Missing Functions}\et{rename?}
 \label{sec:missing}
 
 Of course, being able to execute the definitions and include
-them in the \CoqR{} environment does not mean that these definitions are usable: the internal function called by a library function may not yet be implemented in \CoqR, so if a test executes that function, it will yield a not-implemented result. This is why it is crucial to be able to differentiate real failures from not-implemented results. Our testing framework can report the most common not-implemented features, allowing us to identify the most pressing functions to implement, as can be seen in Figure~\ref{fig:library:not_implemented_fastr}. By tackling these first, we can make progress in debugging \CoqR{} by running the test suites of GNU~R and FastR.
+them in the \CoqR{} environment does not mean that these definitions are usable: the internal function called by a library function may not yet be implemented in \CoqR, so if a test executes that function, it will yield a not-implemented result. This is why it is crucial to be able to differentiate real failures from not-implemented results.
 
 %\et{refine/extend/etc.}
 Indeed, the base library is crucial in order to execute the test suites of both GNU~R and FastR. For instance, having implemented 105 features\et{what happened before these 105 were implemented?} from the symbol table, for the GNU~R test suite, more than 80\% of the failed results\et{put absolute number: 880?} are in fact due to missing definitions \et{this is without importing anything from the library?} contained in this library. For the FastR test suite, the percentage is around 60\%. In both cases, only 3\% of failures are caused by actual value mismatches (often caused by double precision or string encoding). The remaining percentages correspond to missing definitions due to previous errors in computation.
@@ -1276,11 +1309,7 @@ In contrast, after importing most of the base library,\footnote{Only 3 out of 15
 % Using one of the features of our framework we identified the most relevant functions
 %causing these fails, as can be seen in figure X. We recognized that these belonged
 % to the base library loaded by GNU~R interpreter on initialization.
-\begin{figure}
-    \includegraphics[width=.5\textwidth]{not_implemented_fastr.png}
-    \caption{Chart displaying the most needed features to be implemented.}
-    \label{fig:library:not_implemented_fastr}
-\end{figure}
+
 
 % \subsection{Including the base library to CoqR}
 % \label{sec:library:loading}
@@ -1375,8 +1404,12 @@ In contrast, after importing most of the base library,\footnote{Only 3 out of 15
 
 
 
-\subsection{Results after including the Base Library}
-\label{sec:library:results}
+\subsection{Testing Results}
+\label{sec:testing-results}
+
+\et{update, put table with all test suites, and categories of results. Discuss.}
+
+
 
 In order to fully include the base library, 9 features from the symbol table had to
 be implemented, extending it from 105 to 114 entries.
