@@ -983,11 +983,7 @@ Being able to syntactically relate our interpreter
 with the source code of GNU~R helped us catch numerous bugs---%
 in some sense as a variant of Linus's law.\footnote{\url{https://en.wikipedia.org/wiki/Linus\%27s\_Law}}
 To further augment the level of trust of \CoqR{}, we have developed
-a testing framework that supports comparative execution of \CoqR{} and GNU~R. The framework additionally helps the development process by providing useful reports.\\
-
-\eti{in this section blah blah blah}
-
-
+a testing framework that supports comparative execution of \CoqR{} and GNU~R. The framework additionally helps the development process by providing useful reports. This section presents the general testing methodology and the framework we developed to support it, discusses the support for the base library of R, and then presents the results of the current status of \CoqR{} with respect to the chosen test suites.
 
 % \et{what?}
 % In particular, as few safe results as possible should be marked as bugs.
@@ -1009,29 +1005,33 @@ a testing framework that supports comparative execution of \CoqR{} and GNU~R. Th
 
 % Test suite sources.
 \noindent\textbf{Test suites.}
-\et{update description of test suites (including ours), link to originals: GNU~R, FastR-1, FastR-2, Custom}
-To exercise \CoqR, we exploit two existing test suites: 
-the test suite of GNU~R itself ($\sim$3,600 lines)
+To exercise \CoqR, we exploit different existing test suites: 
+the test suite of GNU~R itself\footnote{URL}, and two test suites from the FastR project~\parencite{kalibera2014fast}, which we refer to as FastR-1\footnote{URL} and FastR-2\footnote{URL}. These external test suites are first curated to eliminate XXX\et{explain what is left out}. In total, these curated test suites include XX \et{number} tested expressions. 
+
+
 % \td{There are 3600 lines but it's really ~1700 expressions. Is that ok?}
-and the test suite of FastR ($\sim$1,300 lines)~\parencite{kalibera2014fast}.
-\et{not the full thing: what was excluded, why, and how many lines/tests are left? talk in terms of tested expressions (instead of loc)}
+% and the test suite of FastR ($\sim$1,300 lines).
+% \et{not the full thing: what was excluded, why, and how many lines/tests are left? talk in terms of tested expressions (instead of loc)}
 % \td{Same here, 1300 lines but actually ~2600 expressions}.
-These test suites mainly focus on {\em expected} behaviors.
-For instance,
-different numerical vectors are concatenated,
-summed, divided, etc.
-In each case,
-the special values \mintinline{R}{NaN} and \mintinline{R}{NA}
-are checked to propagate as expected.
-But we did not find any test checking for instance
+
+In addition to these test suites, we have developed our own test suite, specifically tailored for testing corner cases of the language. 
+For instance, we did not find any test checking 
 how the \mintinline{R}{"TRUE"} string is converted into a boolean value,
-despite its behavior being non-trivial:
+despite its behavior being non-trivial:\et{is it still true that this is not tested, considering the new test suite of FastR?}
 in the context of an \mintinline{R}{if},
 it converts into the boolean \mintinline{R}{TRUE},
 but in the context of a binary logical operation,
-it yields a typing error.
-We thus developed our own test suite ($\sim$1,100 lines),
-looking for such corner cases.
+it yields a typing error. Our own test suite, referred to as CornerCases, features XX \et{number} tested expressions.
+% We thus developed our own test suite ($\sim$1,100 lines),
+% looking for such corner cases.
+
+% These test suites mainly focus on {\em expected} behaviors.
+% For instance,
+% different numerical vectors are concatenated,
+% summed, divided, etc.
+% In each case,
+% the special values \mintinline{R}{NaN} and \mintinline{R}{NA}
+% are checked to propagate as expected.
 
 Note that tests come in various shapes: some files provide expressions supposed to evaluate to \mintinline{R}{TRUE}, some are just supposed not to raise any error, and some tests print on the standard output
 whether they passed. To uniformly process these test suites,
@@ -1115,10 +1115,8 @@ the ``not implemented'' and ``impossible'' results
 correspond to the Coq constructors
 \mintinline{Coq}{result_not_implemented} and \mintinline{Coq}{result_impossible}
 shown in Figure~\ref{fig:result}. 
-As mentioned before, if \CoqR{} were bug free, an ``impossible'' result would correspond to a critical bug in GNU~R---in practice, all the ``impossible'' results we observed were due to mistakes in \CoqR{} and were quickly solved.
+As mentioned before, if \CoqR{} were bug free, an ``impossible'' result would correspond to a critical bug in GNU~R---in practice, all the ``impossible'' results we observed were due to mistakes in \CoqR{}.
 
-Discriminating a failure \et{actual error, could be because of an unfound function} from a  not-yet-implemented feature is crucial for development, as it helps us choose which feature to focus on next (see Section~\ref{sec:missing}). \et{corresponds to C code, eg. features from symbol table}
-%
 
 % \noindent\textbf{Two-step comparison.\td{Not quite, there's the "processing"/"normalization" phase then the comparison}}
 % To compare each result, we adopt the general scheme shown in Figure~\ref{fig:methodology}.
@@ -1223,23 +1221,13 @@ we use the ``potential pass'' and ``potential fail'' outcome categories. These t
     \label{fig:library:not_implemented_fastr}
 \end{figure}
 
-\noindent\textbf{Guiding the development process.}
+\noindent\textbf{Guiding the development process.} 
+Having different categories of testing outcomes is crucial when facing a huge development, in order to apprehend the task at hand. In particular, we found extremely helpful to separate actual failures from internal uses of \mintinline{Coq}{result_not_implemented}, and from missing function definitions.
 
-Our testing framework can report the most common not-implemented features, allowing us to identify the most pressing functions to implement, as can be seen in Figure~\ref{fig:library:not_implemented_fastr}. By tackling these first, we can make progress in debugging \CoqR{} by running the test suites of GNU~R and FastR.
+Recall that a not-implemented feature generally corresponds to an entry of the symbol table that has not been translated into \CoqR{}. It can also correspond to some branch in a large switch statement that we decided to postpone for some reason. On the other hand, a missing function definition corresponds to the use of an undefined R function in the test; this is typically because the function was not imported in the \CoqR{} test code base. 
 
-
-\et{expand, explain both kinds of charts, why they are useful, etc.}
-
-not implemented = missing features from symbol table (mostly) but also some C code from the C interpreter that has not been (yet) included in \CoqR (typically example include skipping a branch from a large switch)
-
-missing function definitions = use of an undefined R function in the test
-(could be because not imported). This brought us to focus on the (some parts of the) base library first. 
-
-Also useful for scalability: only import needed functions from base library
-(Coq is slow!)
-
-
-
+Therefore, in addition to counting the classified testing outcomes for the run of a test suite, our testing framework reports two charts reporting respectively the 10 most common not-implemented features (see for instance Figure~\ref{fig:library:not_implemented_fastr}), and, in a similar fashion, the 10 most common missing function definitions. Both reports are useful to identify ``low-hanging fruits'' to make progress in running the selected test suite. For instance, at the initial stages of the project, the base library of R showed up prominently in the list of undefined functions---especially some parts of it, as discussed below.\et{Also useful for scalability: only import needed functions from base library (Coq is slow!)}
+Also, we used the report of most used not-implemented features iteratively in order to decide which features from the symbol table to implement first, leading us to the 112 features currently implemented.
 
 %
 
@@ -1253,17 +1241,19 @@ Also useful for scalability: only import needed functions from base library
 \subsection{Base Library}
 \label{sec:library}
 
-We now report on the effort to allow \CoqR{} to import the base library of R in order to run the test suites of GNU~R and FastR, highlighting how our testing framework helps in this process.
 
-\noindent\textbf{Description of the base library.}
+% We now report on the effort to allow \CoqR{} to import the base library of R in order to run the test suites of GNU~R and FastR, highlighting how our testing framework helps in this process.
+
+% \noindent\textbf{Description of the base library.}
 
 % The need to execute the base library.
-The base library consists of about 160 R source files,
-totalizing 19,000 lines of code, which are executed by GNU~R prior to any other
+
+Unsurprisingly, our initial experiments running the test suites of GNU~R and FastR raised a huge number of undefined function errors, whose consolidated report allowed us to locate in the base library of R. As anecdote, having implemented 105 features from the symbol table, more than 80\% of the failures for the GNU~R test suite were still due to missing definitions. After extending \CoqR{} to be able to load the base library, that percentage fell down to about 10\% \et{number}, corresponding to other basic libraries, most importantly the statistics library.
+
+The base library consists of about 160 R source files, totalizing 19,000 lines of code, which are executed by GNU~R prior to any other
 expression. This base library includes the definition of several
 functions and objects, such as \mintinline{R}{mean}, \mintinline{R}{matrix} or \mintinline{R}{pi}.
-Several of these functions are just wrappers over internal functions, adding  argument
-checking or default arguments. An example is the \mintinline{R}{eval} function which sets default values for the arguments of the internal \mintinline{R}{eval} function:
+Several of these functions are just wrappers over internal functions, adding  argument checking or default arguments. An example is the \mintinline{R}{eval} function which sets default values for the arguments of the internal \mintinline{R}{eval} function:
 \begin{minted}{R}
 eval <- function(expr, envir = parent.frame(),
     enclos = if(is.list(envir) || is.pairlist(envir))
@@ -1279,28 +1269,37 @@ is required on the right-hand side of the assignment.
 For instance, the file \texttt{constants.R}
 of the base library contains the definition \mintinline{R}{pi <- 4 * atan (1)}.
 In order to evaluate this expression, the \mintinline{R}{atan} function has to be implemented.
-We implemented these functions in OCaml.
+% We implemented these functions in OCaml.
 % (in the case of \mintinline{R}{atan}, by directly using \mintinline{OCaml}{atan}'s functions)
 % This is what we call “hooks”.
 %These cases are more complex because they usually require features that are not
 %implemented by CoqR.
-The base library along with a few others (such as the stats library) prepare the environment needed for GNU~R to run properly.
+% The base library along with a few others (such as the stats library) prepare the environment needed for GNU~R to run properly.
 
-\noindent\textbf{Identifying Critical Missing Functions}\et{rename?}
-\label{sec:missing}
+% \noindent\textbf{Identifying Critical Missing Functions}\et{rename?}
+% \label{sec:missing}
 
 Of course, being able to execute the definitions and include
-them in the \CoqR{} environment does not mean that these definitions are usable: the internal function called by a library function may not yet be implemented in \CoqR, so if a test executes that function, it will yield a not-implemented result. This is why it is crucial to be able to differentiate real failures from not-implemented results.
+them in the \CoqR{} environment does not mean that these definitions are usable: the internal function called by a library function may not yet be implemented in \CoqR, so if a test executes that function, it will yield a not-implemented result. This is why it is crucial to be able to differentiate real failures from not-implemented results and undefined functions. Note that several functions may end up relying on the same internal (not implemented) feature, giving more meaning to the report of the most common not implemented features.
 
-%\et{refine/extend/etc.}
-Indeed, the base library is crucial in order to execute the test suites of both GNU~R and FastR. For instance, having implemented 105 features\et{what happened before these 105 were implemented?} from the symbol table, for the GNU~R test suite, more than 80\% of the failed results\et{put absolute number: 880?} are in fact due to missing definitions \et{this is without importing anything from the library?} contained in this library. For the FastR test suite, the percentage is around 60\%. In both cases, only 3\% of failures are caused by actual value mismatches (often caused by double precision or string encoding). The remaining percentages correspond to missing definitions due to previous errors in computation.
+% %\et{refine/extend/etc.}
+% Indeed, the base library is crucial in order to execute the test suites of both GNU~R and FastR. 
 
-In contrast, after importing most of the base library,\footnote{Only 3 out of 159 files are left out.} there are no longer failed results due to missing definitions\et{from the base lib, I guess}. The total number of failed results for the GNU~R tests drops from 880 to 500, corresponding to missing functions from other basic libraries, such as the statistics library. In exchange, the amount of not-implemented results increases from 200 up to 800.
-\et{add the FastR stats (780 what?)}
+% Having implemented 105 features 
+% from the symbol table, more than 80\% of the failures for the GNU~R test suite were in fact due to missing definitions. After being able to import the base library,\footnote{Only 3 out of 159 files are currently left out.}, there are no longer failed results due to missing definitions. 
 
-\et{relation between missing definitions and not-implemented features?}
+% missing functions from other basic libraries, such as the statistics library.
 
-\et{now discuss how things improve -- by implementing more from the symbol table?}
+% the failed results\et{put absolute number: 880?} are  \et{this is without importing anything from the library?} contained in this library. For the FastR test suite, the percentage is around 60\%. In both cases, only 3\% of failures are caused by actual value mismatches (often caused by double precision or string encoding). The remaining percentages correspond to missing definitions due to previous errors in computation.
+
+% In contrast, 
+% \et{from the base lib, I guess}. The total number of failed results for the GNU~R tests drops from 880 to 500, corresponding to 
+
+% \et{add the FastR stats (780 what?)}
+
+% \et{relation between missing definitions and not-implemented features?}
+
+% \et{now discuss how things improve -- by implementing more from the symbol table?}
 
 
 %Once we ran our test suites we noticed that barely 2\% of the failed results
@@ -1404,7 +1403,7 @@ In contrast, after importing most of the base library,\footnote{Only 3 out of 15
 
 
 
-\subsection{Testing Results}
+\subsection{Current Status}
 \label{sec:testing-results}
 
 \et{update, put table with all test suites, and categories of results. Discuss.}
