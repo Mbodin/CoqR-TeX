@@ -1109,7 +1109,7 @@ When creating result objects, processor include additional information that can 
 % \eti{update with ``not found'' -- update screenshot as well}
 After processing, the testing framework obtains the result objects and uses their interface to compare them, returning the corresponding outcome of the comparison.
 The testing framework categorizes each step of computation
-in one of 7 classes\td{Should we leave this as it is? It is still true, but seeing the figure, it seems like it's not} (Figure~\ref{fig:testing:interface}):
+in one of 7 classes\td{Should we leave this as it is? It is still true, but seeing the figure, it seems like it's not}\et{to be updated once we've have definitely converged on the "good way" to present} (Figure~\ref{fig:testing:interface}):
 %\et{Tomas: please put a screenshot after executing a large test suite}
 ``passed'', ``failed'', ``not implemented'',
 ``impossible'', ``unknown'', ``potential pass'' and ``potential fail''.
@@ -1118,7 +1118,7 @@ These outcomes denote different possible scenarios in the comparison between GNU
 the ``not implemented'' and ``impossible'' results
 correspond to the Coq constructors
 \mintinline{Coq}{result_not_implemented} and \mintinline{Coq}{result_impossible}
-shown in Figure~\ref{fig:result}\td{I actually had it separate from this because it looks too cluttered. Should I just leave it like this (for the purpose of the picture)?}.
+shown in Figure~\ref{fig:result}\td{I actually had it separate from this because it looks too cluttered. Should I just leave it like this (for the purpose of the picture)?}\et{I don't understand what you mean}.
 As mentioned before, if \CoqR{} were bug free, an ``impossible'' result would correspond to a critical bug in GNU~R---in practice, all the ``impossible'' results we observed were due to mistakes in \CoqR{}.
 
 
@@ -1440,7 +1440,7 @@ Figure~\ref{fig:results} presents the current status of executing the four test 
 
 Without considering the Corners test suite, most of the results are of the type Not Implemented. This is an expected result, considering the incremental development being carried out and that there are currently only 112\td{Update} out of 700 features implemented from the symbol table, described earlier.
 
-Most of the failed results are due to double precision or string encoding. There are however real discrepancies in certain cases, which are already reported to be fixed.
+Most of the failed results are due to double precision or string encoding. There are however real discrepancies in certain cases, which are already reported to be fixed.\et{can you get a number here? how many are in fact precision/strings issues?}
 
 The Not Found results are also along the lines of what was expected. The basic libraries are being partially loaded as required by the test suites, in order to reduce execution times. This means that new functions may be needed after implementing new features due to allowing new code to be executed. Following an iterative process, these definitions can be incorporated as per case.
 
@@ -1448,9 +1448,9 @@ The Impossible results are bugs from \CoqR{} which are reported and being worked
 
 Due to the various ways GNU~R's pretty printer works, there is a large number of
 printing modes and possible results. Our testing framework thus categorizes
-many cases as  ``unknown'' (leading to potential passes and failures in the next steps). Reducing this number could be a little tricky, given the different printing modes.
+many cases as  ``unknown'' (leading to potential passes and failures in the next steps). Reducing this number could be a little tricky\et{what does this mean?}, given the different printing modes.
 However, we designed our framework so it would be simple to add a particular type of result
-if a user would need it.
+if a user would need it.\et{which ones are needed? be precise here, this paragraph is too "cooool"}
 
 With the current results and with the tools provided by our testing framework, we believe that given more engineering power, it is possible to scale up to the full language and its main libraries.
 
