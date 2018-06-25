@@ -129,7 +129,7 @@
 \email{etanter@dcc.uchile.cl}
 
 \begin{abstract}
-The R programming language is very popular for developing statistical software and data analysis, thanks to rich libraries, concise and expressive syntax, and support for interactive programming. Yet, the semantics of R is fairly complex, contains many subtle corner cases, and is not formally specified. This makes it difficult to fully trust R programs. In this work, we develop a big-step operational semantics for R in the form of an interpreter written in the Coq proof assistant. We ensure the trustworthiness of the formalization by introducing a monadic encoding that allows the Coq interpreter, \CoqR, to be in direct visual correspondence with the reference R interpreter, GNU~R. Additionally, we provide a testing framework that supports systematic comparison of \CoqR{} and GNU~R. In its current state, \CoqR{} covers the core of the R language as well as numerous additional features, making it pass a significant number of realistic test cases from the GNU~R and FastR projects. To exercise the formal specification, we prove in Coq the preservation of memory invariants in selected parts of the interpreter. This work is an important first step towards a robust environment for 
+The R programming language is very popular for developing statistical software and data analysis, thanks to rich libraries, concise and expressive syntax, and support for interactive programming. Yet, the semantics of R is fairly complex, contains many subtle corner cases, and is not formally specified. This makes it difficult to fully trust R programs. In this work, we develop a big-step operational semantics for R in the form of an interpreter written in the Coq proof assistant. We ensure the trustworthiness of the formalization by introducing a monadic encoding that allows the Coq interpreter, \CoqR, to be in direct visual correspondence with the reference R interpreter, GNU~R. Additionally, we provide a testing framework that supports systematic comparison of \CoqR{} and GNU~R. In its current state, \CoqR{} covers the core of the R language as well as numerous additional features, making it pass a significant number of realistic test cases from the GNU~R and FastR projects. To exercise the formal specification, we prove in Coq the preservation of memory invariants in selected parts of the interpreter. This work is an important first step towards a robust environment for
 formal verification of R programs.
 \end{abstract}
 
@@ -240,7 +240,7 @@ We say that this interpreter is {\em trustworthy} because we have followed two c
 
 First, the Coq interpreter has been written using a monadic encoding that allows for a direct eyeball correspondence with the C source code of GNU~R~\parencite{Rwebsite}. In the absence of a standardized formal semantics, GNU~R is the reference point that defines what R really is. Note that other alternative implementations of R, such as FastR~\parencite{kalibera2014fast}, also treat GNU~R as the ground truth.
 
-Second, we have developed a testing framework that streamlines the process of running both the Coq interpreter and GNU~R on a set of test cases and report on mismatches and errors, among others (Section~\ref{sec:testing:architecture}). We use several test suites to measure the advancement of the \CoqR{} implementation. 
+Second, we have developed a testing framework that streamlines the process of running both the Coq interpreter and GNU~R on a set of test cases and report on mismatches and errors, among others (Section~\ref{sec:testing:architecture}). We use several test suites to measure the advancement of the \CoqR{} implementation.
 % the test suite of GNU~R itself ($\sim$3,600 loc), a test suite of the FastR implementation ($\sim$1,300 loc)~\parencite{kalibera2014fast}, and a test suite that we developed to exercise corner cases ($\sim$1,100 loc).
 
 Additionally,\et{update once finished} we report on the process of scaling up our interpreter in order to be able to load existing R libraries (Section~\ref{sec:library}), in particular the R base library. Finally, we report on a proof effort to establish that memory invariants are preserved during execution, including some specific proof automation (Section~\ref{sec:proofs}).
@@ -1005,8 +1005,8 @@ a testing framework that supports comparative execution of \CoqR{} and GNU~R. Th
 
 % Test suite sources.
 \noindent\textbf{Test suites.}
-To exercise \CoqR, we exploit different existing test suites: 
-the test suite of GNU~R itself\footnote{URL}, and two test suites from the FastR project~\parencite{kalibera2014fast}, which we refer to as FastR-1\footnote{URL} and FastR-2\footnote{URL}. These external test suites are first curated to eliminate XXX\et{explain what is left out}. In total, these curated test suites include XX \et{number} tested expressions. 
+To exercise \CoqR, we exploit different existing test suites:
+the test suite of GNU~R itself\footnote{https://github.com/wch/r-source/}, and two test suites from the FastR project~\parencite{kalibera2014fast}, which we refer to as FastR-1\footnote{https://github.com/h2oai/fastr} and FastR-2\footnote{https://github.com/oracle/fastr}. These external test suites are first curated to eliminate expressions which use certain features\td{Do I say how many are left out?}. For instance, tests which require internet connection, read or write files, or generate charts. Additionally, some tests require specific packages (for example, the JIT package) or use particular templates in Java to generate cases. In total, these curated test suites include more than 20,000 tested expressions\td{Do I have to be more precise?}.
 
 
 % \td{There are 3600 lines but it's really ~1700 expressions. Is that ok?}
@@ -1014,14 +1014,15 @@ the test suite of GNU~R itself\footnote{URL}, and two test suites from the FastR
 % \et{not the full thing: what was excluded, why, and how many lines/tests are left? talk in terms of tested expressions (instead of loc)}
 % \td{Same here, 1300 lines but actually ~2600 expressions}.
 
-In addition to these test suites, we have developed our own test suite, specifically tailored for testing corner cases of the language. 
-For instance, we did not find any test checking 
-how the \mintinline{R}{"TRUE"} string is converted into a boolean value,
-despite its behavior being non-trivial:\et{is it still true that this is not tested, considering the new test suite of FastR?}
-in the context of an \mintinline{R}{if},
-it converts into the boolean \mintinline{R}{TRUE},
-but in the context of a binary logical operation,
-it yields a typing error. Our own test suite, referred to as CornerCases, features XX \et{number} tested expressions.
+In addition to these test suites, we have developed our own test suite, specifically tailored for testing corner cases of the language. It is also meant to be used as a faster way of testing the implemented features, during the development process\td{Felt it was a bit empty without the other paragraph haha}. Our own test suite, referred to as CornerCases, features over 2,000 tested expressions\td{No, the previous corner case was not true anymore}.
+% For instance, we did not find any test checking
+% how the \mintinline{R}{"TRUE"} string is converted into a boolean value,
+% despite its behavior being non-trivial:\et{is it still true that this is not tested, considering the new test suite of FastR?}
+% in the context of an \mintinline{R}{if},
+% it converts into the boolean \mintinline{R}{TRUE},
+% but in the context of a binary logical operation,
+% it yields a typing error.
+
 % We thus developed our own test suite ($\sim$1,100 lines),
 % looking for such corner cases.
 
@@ -1090,8 +1091,9 @@ Also, some tests are supposed to be executed as a normal file, while some tests 
 After interpretation of the R code, we obtain the raw outputs for each interpreter, GNU~R and \CoqR, which are just strings. These strings cannot be compared directly for equality as many syntactic details makes them superficially different. Indeed, \CoqR{}'s pretty-printer is part of the shim (the non-formalized part)
 and does not follow an eyeball correspondence with GNU~R's pretty-printer, which is quite complex. This introduces harmless output mismatches. For instance, when printing vectors with GNU~R, some are left padded, others are right padded. Other minor sources of mismatch are spaces and newlines. Therefore, the testing framework first processes the result strings of both interpreters into a common set of values that can meaningfully be compared.
 
-This step is carried out by {\em result processors} (implemented in Python). There are two classes of processors; one that handles GNU~R outputs, and one that handles CoqR outputs.  Each processor matches the received raw string against a list of regular expressions (regexes). As soon as a regex matches, an object of type \mintinline{Python}{Result} is created and the matching stops. There are eight subclasses of \mintinline{Python}{Result}:
- \mintinline{Python}{NotImplementedResult}, \mintinline{Python}{ImpossibleResult}, \mintinline{Python}{ErrorResult}, \mintinline{Python}{NullResult}, \mintinline{Python}{FunctionResult}, \mintinline{Python}{UnknownResult}, \mintinline{Python}{InvisibleResult} and \mintinline{Python}{VectorResult}, with further subclasses: \mintinline{Python}{BooleanVectorResult}, \mintinline{Python}{NumericVectorResult} and \mintinline{Python}{StringVectorResult}.
+This step is carried out by {\em result processors} (implemented in Python). There are two classes of processors; one that handles GNU~R outputs, and one that handles CoqR outputs.  Each processor matches the received raw string against a list of regular expressions (regexes). As soon as a regex matches, an object of type \mintinline{Python}{Result} is created and the matching stops. There are nine subclasses of \mintinline{Python}{Result}:
+ \mintinline{Python}{NotImplementedResult}, \mintinline{Python}{ImpossibleResult}, \mintinline{Python}{ErrorResult}, \mintinline{Python}{NullResult}, \mintinline{Python}{FunctionResult}, \mintinline{Python}{UnknownResult}, \mintinline{Python}{InvisibleResult},
+ \mintinline{Python}{ListResult} and \mintinline{Python}{VectorResult}, with further subclasses: \mintinline{Python}{BooleanVectorResult}, \mintinline{Python}{NumericVectorResult} and \mintinline{Python}{StringVectorResult}.
 The differences between the GNU~R and \CoqR{} processors thus lies in the regexes they use to recognize result strings, and consequently in the particular instances of \mintinline{Python}{Result} they produce.
 %
 When creating result objects, processor include additional information that can be necessary for later comparison. For example, if the regex for numerical vector matches, the processor extracts the actual numerical value contained in the raw string and stores it in the \mintinline{Python}{NumericVectorResult} object. \\
@@ -1114,7 +1116,7 @@ These outcomes denote different possible scenarios in the comparison between GNU
 the ``not implemented'' and ``impossible'' results
 correspond to the Coq constructors
 \mintinline{Coq}{result_not_implemented} and \mintinline{Coq}{result_impossible}
-shown in Figure~\ref{fig:result}. 
+shown in Figure~\ref{fig:result}.
 As mentioned before, if \CoqR{} were bug free, an ``impossible'' result would correspond to a critical bug in GNU~R---in practice, all the ``impossible'' results we observed were due to mistakes in \CoqR{}.
 
 
@@ -1221,10 +1223,10 @@ we use the ``potential pass'' and ``potential fail'' outcome categories. These t
     \label{fig:library:not_implemented_fastr}
 \end{figure}
 
-\noindent\textbf{Guiding the development process.} 
+\noindent\textbf{Guiding the development process.}
 Having different categories of testing outcomes is crucial when facing a huge development, in order to apprehend the task at hand. In particular, we found extremely helpful to separate actual failures from internal uses of \mintinline{Coq}{result_not_implemented}, and from missing function definitions.
 
-Recall that a not-implemented feature generally corresponds to an entry of the symbol table that has not been translated into \CoqR{}. It can also correspond to some branch in a large switch statement that we decided to postpone for some reason. On the other hand, a missing function definition corresponds to the use of an undefined R function in the test; this is typically because the function was not imported in the \CoqR{} test code base. 
+Recall that a not-implemented feature generally corresponds to an entry of the symbol table that has not been translated into \CoqR{}. It can also correspond to some branch in a large switch statement that we decided to postpone for some reason. On the other hand, a missing function definition corresponds to the use of an undefined R function in the test; this is typically because the function was not imported in the \CoqR{} test code base.
 
 Therefore, in addition to counting the classified testing outcomes for the run of a test suite, our testing framework reports two charts reporting respectively the 10 most common not-implemented features (see for instance Figure~\ref{fig:library:not_implemented_fastr}), and, in a similar fashion, the 10 most common missing function definitions. Both reports are useful to identify ``low-hanging fruits'' to make progress in running the selected test suite. For instance, at the initial stages of the project, the base library of R showed up prominently in the list of undefined functions---especially some parts of it, as discussed below.\et{Also useful for scalability: only import needed functions from base library (Coq is slow!)}
 Also, we used the report of most used not-implemented features iteratively in order to decide which features from the symbol table to implement first, leading us to the 112 features currently implemented.
@@ -1248,7 +1250,7 @@ Also, we used the report of most used not-implemented features iteratively in or
 
 % The need to execute the base library.
 
-Unsurprisingly, our initial experiments running the test suites of GNU~R and FastR raised a huge number of undefined function errors, whose consolidated report allowed us to locate in the base library of R. As anecdote, having implemented 105 features from the symbol table, more than 80\% of the failures for the GNU~R test suite were still due to missing definitions. After extending \CoqR{} to be able to load the base library, that percentage fell down to about 10\% \et{number}, corresponding to other basic libraries, most importantly the statistics library.
+Unsurprisingly, our initial experiments running the test suites of GNU~R and FastR raised a huge number of undefined function errors, whose consolidated report allowed us to locate in the base library of R. As anecdote, having implemented 105 features from the symbol table, more than 80\% of the failures for the GNU~R test suite were still due to missing definitions\td{64\% of all results as well}. After extending \CoqR{} to be able to load the base library, that percentage fell down to about 40\% \td{I feel percentages do not show the change... At first it was 1000/1200 and it fell to 300/700}, corresponding to other basic libraries, most importantly the statistics library.
 
 The base library consists of about 160 R source files, totalizing 19,000 lines of code, which are executed by GNU~R prior to any other
 expression. This base library includes the definition of several
@@ -1283,17 +1285,17 @@ Of course, being able to execute the definitions and include
 them in the \CoqR{} environment does not mean that these definitions are usable: the internal function called by a library function may not yet be implemented in \CoqR, so if a test executes that function, it will yield a not-implemented result. This is why it is crucial to be able to differentiate real failures from not-implemented results and undefined functions. Note that several functions may end up relying on the same internal (not implemented) feature, giving more meaning to the report of the most common not implemented features.
 
 % %\et{refine/extend/etc.}
-% Indeed, the base library is crucial in order to execute the test suites of both GNU~R and FastR. 
+% Indeed, the base library is crucial in order to execute the test suites of both GNU~R and FastR.
 
-% Having implemented 105 features 
-% from the symbol table, more than 80\% of the failures for the GNU~R test suite were in fact due to missing definitions. After being able to import the base library,\footnote{Only 3 out of 159 files are currently left out.}, there are no longer failed results due to missing definitions. 
+% Having implemented 105 features
+% from the symbol table, more than 80\% of the failures for the GNU~R test suite were in fact due to missing definitions. After being able to import the base library,\footnote{Only 3 out of 159 files are currently left out.}, there are no longer failed results due to missing definitions.
 
 % missing functions from other basic libraries, such as the statistics library.
 
 % the failed results\et{put absolute number: 880?} are  \et{this is without importing anything from the library?} contained in this library. For the FastR test suite, the percentage is around 60\%. In both cases, only 3\% of failures are caused by actual value mismatches (often caused by double precision or string encoding). The remaining percentages correspond to missing definitions due to previous errors in computation.
 
-% In contrast, 
-% \et{from the base lib, I guess}. The total number of failed results for the GNU~R tests drops from 880 to 500, corresponding to 
+% In contrast,
+% \et{from the base lib, I guess}. The total number of failed results for the GNU~R tests drops from 880 to 500, corresponding to
 
 % \et{add the FastR stats (780 what?)}
 
@@ -1407,41 +1409,56 @@ them in the \CoqR{} environment does not mean that these definitions are usable:
 \label{sec:testing-results}
 
 \et{update, put table with all test suites, and categories of results. Discuss.}
+\tdi{Mhh... Do you use a particular package to show tables? And should I include the potentials + unknown results?}
+
+\begin{table}[]
+\centering
+\caption{Current results obtained executing the test suites.\footnote{Execution time from a 2-core, Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz, 4 GB RAM machine  }}
+\label{my-label}
+\begin{tabular}{|l|l|l|l|l|l|}
+\hline
+Test Suite  & Pass & Fail & Not Implemented & Impossible & Time {[}s{]} \\ \hline
+GNU R       & 234  & 29   & 744             & 1          & 5,000          \\ \hline
+FastR1      & 1044 & 65   & 988             & 5          & 6,000          \\ \hline
+FastR2      & 2485 & 2155 & 5827            & 7          & 45,000         \\ \hline
+CornerCases & 2513 & 8    & 56              & 0          & 6,000          \\ \hline
+\end{tabular}
+\end{table}
 
 
-
-In order to fully include the base library, 9 features from the symbol table had to
-be implemented, extending it from 105 to 114 entries.
-
-The results of our tool are available at \url{https://coqr.dcc.uchile.cl}.\mbi{
-    OK: we should discuss on what should be the state of this page once the paper
-    is published.
-    I guess that we should hide some old tests, for instance.
-    Should we put a link the source code too? I think it would be nice.}
-% We used our testing framework on various test suites\mbi{
-%     Outch: it would be nice to explain the test suites here,
-%     but at the same time, I like the current flow of the beginning of
-%     Section~\ref{sec:test:methodology}.
-%     Any ideas?},
-We used our testing framework on both the GNU~R test suite and the FastR test suite.
-% but also on the base library of R,
-% which already provides a large coverage.
 %
-To evaluate these test suites,
-we use the Bisect~\parencite{bisect} coverage tool for OCaml.
-Out of the 11,000 program points identified by Bisect,
-??\mb{Tomás?} were executed.
-We thus think that new test suites are being needed
-to complete this coverage.
+% In order to fully include the base library, 9 features from the symbol table had to
+% be implemented, extending it from 105 to 114 entries.
 %
-On total,
-this testing base contains 4540 steps.
-We currently get ??\todo{} success, ??\todo{} not-implemented,
-and ??\todo{} unknown.
-The failed results in the GNU~R test suite are due to missing functions from other
-basic libraries. In particular, most of the functionalities come from the stats
-library. For the FastR test suite the failed results are due to double precision.
-We get no impossible results in either case.
+% The results of our tool are available at \url{https://coqr.dcc.uchile.cl}.\mbi{
+%     OK: we should discuss on what should be the state of this page once the paper
+%     is published.
+%     I guess that we should hide some old tests, for instance.
+%     Should we put a link the source code too? I think it would be nice.}
+% % We used our testing framework on various test suites\mbi{
+% %     Outch: it would be nice to explain the test suites here,
+% %     but at the same time, I like the current flow of the beginning of
+% %     Section~\ref{sec:test:methodology}.
+% %     Any ideas?},
+% We used our testing framework on both the GNU~R test suite and the FastR test suite.
+% % but also on the base library of R,
+% % which already provides a large coverage.
+% %
+% To evaluate these test suites,
+% we use the Bisect~\parencite{bisect} coverage tool for OCaml.
+% Out of the 11,000 program points identified by Bisect,
+% ??\mb{Tomás?} were executed.
+% We thus think that new test suites are being needed
+% to complete this coverage.
+% %
+% On total,
+% this testing base contains 4540 steps.
+% We currently get ??\todo{} success, ??\todo{} not-implemented,
+% and ??\todo{} unknown.
+% The failed results in the GNU~R test suite are due to missing functions from other
+% basic libraries. In particular, most of the functionalities come from the stats
+% library. For the FastR test suite the failed results are due to double precision.
+% We get no impossible results in either case.
 
 % We however did get failure and ``impossible'' results
 % during our development.
@@ -1905,7 +1922,7 @@ is a semantics related to the third version of the ECMAScript specification.
 It had a major influence on the definitions of further JavaScript formal
 specifications~\parencite{usenix, popl14jscert, popl12-Towards, ses} andalso served as the formal basis to prove the soundness of security-related
 JavaScript subsets~\parencite{mmt-esorics09, mmt-oakland10,MMT-CSF-TR09}.
-This work was however not mechanized. 
+This work was however not mechanized.
 %making it difficult to be used as a basis for other formalization work.
 
 % The Essence of JavaScript.
@@ -1958,7 +1975,7 @@ of the C language, which aims at precisely listing all the possible behaviors of
 \section{Conclusions}
 \label{sec:conclusion}
 
-We present the first formal specification of R, written as an interpreter in Coq. We present the monadic encoding that allows \CoqR{} to be in eyeball correspondence with the GNU~R reference interpreter, provide a testing infrastructure useful to incrementally enrich \CoqR, and show that \CoqR{} can be used to formally reason about R. Considering the number of realistic test cases that \CoqR{} currently passes, and its extensible architecture, we believe that \CoqR{} can be grown \CoqR{} to fully cover R and its main libraries. On the formal reasoning side, \CoqR{} should be the basis on top of which to develop an appropriate program logic, in order to more conveniently reason about R programs. As such, it is a necessary first step towards a robust environment for formal verification of R programs. 
+We present the first formal specification of R, written as an interpreter in Coq. We present the monadic encoding that allows \CoqR{} to be in eyeball correspondence with the GNU~R reference interpreter, provide a testing infrastructure useful to incrementally enrich \CoqR, and show that \CoqR{} can be used to formally reason about R. Considering the number of realistic test cases that \CoqR{} currently passes, and its extensible architecture, we believe that \CoqR{} can be grown \CoqR{} to fully cover R and its main libraries. On the formal reasoning side, \CoqR{} should be the basis on top of which to develop an appropriate program logic, in order to more conveniently reason about R programs. As such, it is a necessary first step towards a robust environment for formal verification of R programs.
 
 \printbibliography{}
 
