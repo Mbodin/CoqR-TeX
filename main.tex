@@ -42,7 +42,7 @@
 \usepackage{minted}
 \setminted{
     encoding=utf8,
-    fontsize=\small, 
+    fontsize=\small,
     breaklines,
     linenos,
     numbersep=.6em,
@@ -1014,7 +1014,7 @@ the test suite of GNU~R itself\footnote{https://github.com/wch/r-source/}, and t
 % and the test suite of FastR ($\sim$1,300 lines).
 % \et{not the full thing: what was excluded, why, and how many lines/tests are left? talk in terms of tested expressions (instead of loc)}
 % \td{Same here, 1300 lines but actually ~2600 expressions}.
-In addition to these test suites, we have developed our own test suite, referred to as Corners, specifically tailored for testing corner cases of the R language. It is also meant to be used as a faster way of testing some implemented features, during the development process. Corners features over 2,000 tested expressions. 
+In addition to these test suites, we have developed our own test suite, referred to as Corners, specifically tailored for testing corner cases of the R language. It is also meant to be used as a faster way of testing some implemented features, during the development process. Corners features over 2,000 tested expressions.
 % For instance, we did not find any test checking
 % how the \mintinline{R}{"TRUE"} string is converted into a boolean value,
 % despite its behavior being non-trivial:\et{is it still true that this is not tested, considering the new test suite of FastR?}
@@ -1106,10 +1106,10 @@ When creating result objects, processor include additional information that can 
     \label{fig:testing:interface}
 \end{figure}
 \noindent\textbf{Testing outcomes.}
-\eti{update with ``not found'' -- update screenshot as well}
+% \eti{update with ``not found'' -- update screenshot as well}
 After processing, the testing framework obtains the result objects and uses their interface to compare them, returning the corresponding outcome of the comparison.
 The testing framework categorizes each step of computation
-in one of 7 classes (Figure~\ref{fig:testing:interface}):
+in one of 7 classes\td{Should we leave this as it is? It is still true, but seeing the figure, it seems like it's not} (Figure~\ref{fig:testing:interface}):
 %\et{Tomas: please put a screenshot after executing a large test suite}
 ``passed'', ``failed'', ``not implemented'',
 ``impossible'', ``unknown'', ``potential pass'' and ``potential fail''.
@@ -1118,7 +1118,7 @@ These outcomes denote different possible scenarios in the comparison between GNU
 the ``not implemented'' and ``impossible'' results
 correspond to the Coq constructors
 \mintinline{Coq}{result_not_implemented} and \mintinline{Coq}{result_impossible}
-shown in Figure~\ref{fig:result}.
+shown in Figure~\ref{fig:result}\td{I actually had it separate from this because it looks too cluttered. Should I just leave it like this (for the purpose of the picture)?}.
 As mentioned before, if \CoqR{} were bug free, an ``impossible'' result would correspond to a critical bug in GNU~R---in practice, all the ``impossible'' results we observed were due to mistakes in \CoqR{}.
 
 
@@ -1226,13 +1226,13 @@ we use the ``potential pass'' and ``potential fail'' outcome categories. These t
 \end{figure}
 
 \noindent\textbf{Guiding the development process.}
-Having different categories of testing outcomes is crucial when facing a huge development, in order to apprehend the task at hand. In particular, we found extremely helpful to separate actual failures from internal uses of \mintinline{Coq}{result_not_implemented}, and from missing function definitions.
+Having different categories of testing outcomes is crucial when facing a huge development, in order to apprehend the task at hand. In particular, we found extremely helpful to separate actual failures from internal uses of \mintinline{Coq}{result_not_implemented}, and from missing function definitions\td{Missing objects as well, but not as useful as functions (mostly facilitates reading results)}.
 
-Recall that a not-implemented feature generally corresponds to an entry of the symbol table that has not been translated into \CoqR{}. It can also correspond to some branch in a large switch statement that we decided to postpone for some reason. On the other hand, a missing function definition corresponds to the use of an undefined R function in the test; this is typically because the function was not imported in the \CoqR{} test code base.
+Recall that a not-implemented feature generally corresponds to an entry of the symbol table that has not been translated into \CoqR{}. It can also correspond to some branch in a large switch statement that we decided to postpone for some reason. On the other hand, a missing function definition corresponds to the use of an undefined R function in the test; this is typically because the function was not imported in the \CoqR{} test code base\td{Missing "objects" (variables) are often just failed assignments due to previous errors. Sometimes they refer to things from libraries or the T id (for true). }.
 
 Therefore, in addition to counting the classified testing outcomes for the run of a test suite, our testing framework reports two charts reporting respectively the 10 most common not-implemented features (see for instance Figure~\ref{fig:library:not_implemented_fastr}), and, in a similar fashion, the 10 most common missing function definitions. Both reports are useful to identify ``low-hanging fruits'' to make progress in running the selected test suite. For instance, at the initial stages of the project, the base library of R showed up prominently in the list of undefined functions, as discussed below.
 % ---especially some parts of it\et{Also useful for scalability: only import needed functions from base library (Coq is slow!)}
-Also, we used the report of most used not-implemented features iteratively in order to decide which features from the symbol table to implement first, leading us to the 112 features that are currently implemented.
+Also, we used the report of most used not-implemented features iteratively in order to decide which features from the symbol table to implement first, leading us to the 112\td{Can't forget to update} features that are currently implemented.
 %
 
 
@@ -1252,11 +1252,11 @@ Also, we used the report of most used not-implemented features iteratively in or
 
 % The need to execute the base library.
 
-Unsurprisingly, our initial experiments running the test suites of GNU~R and FastR raised a huge number of undefined function errors, whose consolidated report allowed us to locate in the base library of R. As anecdote, having implemented 105 features from the symbol table, around 1,000 of 1,200 failures 
+Unsurprisingly, our initial experiments running the test suites of GNU~R and FastR raised a huge number of undefined function errors, whose consolidated report allowed us to locate in the base library of R. As anecdote, having implemented 105 features from the symbol table, around 1,000 of 1,200 failures
 for the GNU~R test suite were due to missing definitions.
-% 80\% of the failures \td{64\% of all results as well}. 
+% 80\% of the failures \td{64\% of all results as well}.
 After extending \CoqR{} to be able to load the base library, the total number of failures fell to 700, with only 300 due to missing definitions, corresponding to other basic libraries, most importantly the statistics library.
-% that percentage fell down to about 40\% \td{I feel percentages do not show the change... At first it was 1000/1200 and it fell to 300/700}, 
+% that percentage fell down to about 40\% \td{I feel percentages do not show the change... At first it was 1000/1200 and it fell to 300/700},
 
 The base library consists of about 160 R source files, totalizing 19,000 lines of code, which are executed by GNU~R prior to any other
 expression. This base library includes the definition of several
@@ -1414,21 +1414,21 @@ them in the \CoqR{} environment does not mean that these definitions are usable:
 \subsection{Current Status}
 \label{sec:testing-results}
 
-\eti{put all numbers in the table / complete (should match the 22,000 total that we mention in 3.1)}
+% \eti{put all numbers in the table / complete (should match the 22,000 total that we mention in 3.1)}
 
 
 \begin{figure}[]
 \centering
 \begin{tabular}{|l||r|r|r|r|r|r|r|r|}
 \hline
-{\bf Test Suite}  & {\bf P} & {\bf F} & {\bf NI} & {\bf NF} & {\bf I} 
+{\bf Test Suite}  & {\bf P} & {\bf F} & {\bf NI} & {\bf NF} & {\bf I}
 & {\bf U} & {\bf PP} & {\bf PF} \\ \hline\hline
-Corners     & 2513 & 8    & 56      &        & 0    &  &  &  \\ \hline
-GNU R       & 234  & 29   & 744     &        & 1    &  &  &  \\ \hline
-FastR1      & 1044 & 65   & 988     &        & 5    &  &  &  \\ \hline
-FastR2      & 2485 & 2155 & 5827    &        & 7    &  &  &  \\ \hline
+Corners     & 2513 & 8    & 56      &   233     & 0    & 134 & 42 & 5 \\ \hline
+GNU R       & 234  & 29   & 744     &   737     & 1    & 19 & 0 & 0 \\ \hline
+FastR1      & 1044 & 65   & 988     &    1    & 5    & 175 & 61 & 98 \\ \hline
+FastR2      & 2504 & 2157 & 6355    &   1224     & 7    & 575 & 437 & 217 \\ \hline
 \end{tabular}
-\caption{Current results of running the different test suites. 
+\caption{Current results of running the different test suites.
 {\footnotesize (P = Pass, F = Fail, NI = Not Implemented, NF = Not Found, I = Impossible, \newline U = Unknown, PP = Potential Pass, PF = Potential Fail)}}
 \label{fig:results}
 \end{figure}
@@ -1438,12 +1438,21 @@ Figure~\ref{fig:results} presents the current status of executing the four test 
 
 \eti{describe the results}
 
+Without considering the Corners test suite, most of the results are of the type Not Implemented. This is an expected result, considering the incremental development being carried out and that there are currently only 112\td{Update} out of 700 features implemented from the symbol table, described earlier.
+
+Most of the failed results are due to double precision or string encoding. There are however real discrepancies in certain cases, which are already reported to be fixed.
+
+The Not Found results are also along the lines of what was expected. The basic libraries are being partially loaded as required by the test suites, in order to reduce execution times. This means that new functions may be needed after implementing new features due to allowing new code to be executed. Following an iterative process, these definitions can be incorporated as per case.
+
+The Impossible results are bugs from \CoqR{} which are reported and being worked on.
 
 Due to the various ways GNU~R's pretty printer works, there is a large number of
 printing modes and possible results. Our testing framework thus categorizes
-many cases as  ``unknown'' (leading to potential passes and failures in the next steps).
+many cases as  ``unknown'' (leading to potential passes and failures in the next steps). Reducing this number could be a little tricky, given the different printing modes.
 However, we designed our framework so it would be simple to add a particular type of result
-if a user would need it.\et{is this paragraph still useful/accurate?}
+if a user would need it.
+
+With the current results and with the tools provided by our testing framework, we believe that given more engineering power, it is possible to scale up to the full language and its main libraries.
 
 %
 % In order to fully include the base library, 9 features from the symbol table had to
