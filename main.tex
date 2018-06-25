@@ -1421,40 +1421,46 @@ them in the \CoqR{} environment does not mean that these definitions are usable:
 \centering
 \begin{tabular}{|l||r|r|r|r|r|r|r|r|}
 \hline
-{\bf Test Suite}  & {\bf P} & {\bf F} & {\bf NI} & {\bf NF} & {\bf I}
+{\bf Suite}  & {\bf P} & {\bf F} & {\bf NI} & {\bf NF} & {\bf I}
 & {\bf U} & {\bf PP} & {\bf PF} \\ \hline\hline
-Corners     & 2513 & 8    & 56      &   233     & 0    & 134 & 42 & 5 \\ \hline
-GNU R       & 234  & 29   & 744     &   737     & 1    & 19 & 0 & 0 \\ \hline
-FastR1      & 1044 & 65   & 988     &    1    & 5    & 175 & 61 & 98 \\ \hline
-FastR2      & 2504 & 2157 & 6355    &   1224     & 7    & 575 & 437 & 217 \\ \hline
+Corners     & 2513 & 8    & 56    &   233    & 0   & 134  &   42  & 5 \\ \hline
+GNU R       & 234  & 29   & 744   &   737    & 1   & 19   &   0   & 0 \\ \hline
+FastR1      & 1044 & 65   & 988   &    1     & 5   & 175  &   61  & 98 \\ \hline
+FastR2      & 2504 & 2157 & 6355  &   1224   & 7   & 575  &   437 & 217 \\ \hline\hline
+{\bf Total} & 6285 & 2259 & 8143  &   2195   &  13 & 903  &   540 & 320 \\
+\hline
 \end{tabular}
+{\em total number of tests:} 20,658
 \caption{Current results of running the different test suites.
 {\footnotesize (P = Pass, F = Fail, NI = Not Implemented, NF = Not Found, I = Impossible, \newline U = Unknown, PP = Potential Pass, PF = Potential Fail)}}
 \label{fig:results}
 \end{figure}
 
 
-Figure~\ref{fig:results} presents the current status of executing the four test suites described earlier with \CoqR{}. On a 2-core Intel Xeon 2.20GHz with 4 GB of RAM, execution times range from 1.5~hrs for GNU~R to over 12~hrs for FastR2.
+Figure~\ref{fig:results} presents the current status of executing the four test suites described earlier with \CoqR{}. On a 2-core Intel Xeon 2.20GHz with 4 GB of RAM, execution times range from 1.5~hrs for GNU~R to over 12~hrs for FastR2. 
 
-\eti{describe the results}
+Overall, \CoqR{} successfully covers 30\% of all the tests. The Corners test suite is almost completely covered, while FastR2, which we integrated more recently in our development process, is lagging behind compared to FastR1.
 
-Without considering the Corners test suite, most of the results are of the type Not Implemented. This is an expected result, considering the incremental development being carried out and that there are currently only 112\td{Update} out of 700 features implemented from the symbol table, described earlier.
+Unsurprisingly, 50\% of the negative results are either ``not implemented'' or ``not found''. This was to be expected considering that we have currently implemented only 112 \td{Update} out of the 700 features of the symbol table (Section~\ref{sec:coq:structure}), and that only part of libraries are loaded for running the test suites in order to keep execution times under control.\et{this is weird: what would the results be if you would import everything you could?}
+% This means that new functions may be needed after implementing new features due to allowing new code to be executed. Following an iterative process, these definitions can be incorporated as per case.
 
-Most of the failed results are due to double precision or string encoding. There are however real discrepancies in certain cases, which are already reported to be fixed.\et{can you get a number here? how many are in fact precision/strings issues?}
+We manually analyzed the reported failed results (11\%) and observed that most are due to mismatches of double numbers precision and string encodings. We are currently exploring the actual discrepancies, as well as finding ways to eradicate these mismatches. \et{can you get a number here? how many are in fact precision/strings issues?}
 
-The Not Found results are also along the lines of what was expected. The basic libraries are being partially loaded as required by the test suites, in order to reduce execution times. This means that new functions may be needed after implementing new features due to allowing new code to be executed. Following an iterative process, these definitions can be incorporated as per case.
+4.4\% of test cases end up classified as ``unknown'', which subsequently lead to potential passes and fails (4.2\%). Recall that these are due to the various ways in which GNU~R's pretty printer works, which \CoqR{} currently does not mimic properly. However, the relatively low percentage of these cases does not seriously question the validity of the implementation. Fixing these unknown results is tiresome, but not conceptually challenging.
+% , enhancements to the pretty printer of \CoqR{}.
 
-The Impossible results are bugs from \CoqR{} which are reported and being worked on.
+% Our testing framework thus categorizes
+% many cases as  ``unknown'' . Including these unknown results can be a bit more difficult, due to the subtleties in printing and how we currently process them with regexes. We are currently in process of including results for matrices and lists\td{I don't know if it makes any sense to say this without showing an example or saying something else. Besides the names "list" or "matrix" are actually the ones I give them}. Another option to better handle these unknown results would be to directly interface with the R interpreter and obtain the values from there, but there is no work in this area for the moment\td{There is a Python library that does but it doesn't give outputs when there are side effects. And there is still the issue of parsing the CoqR results}.
 
-Due to the various ways GNU~R's pretty printer works, there is a large number of
-printing modes and possible results. Our testing framework thus categorizes
-many cases as  ``unknown'' (leading to potential passes and failures in the next steps). Including these unknown results can be a bit more difficult, due to the subtleties in printing and how we currently process them with regexes. We are currently in process of including results for matrices and lists\td{I don't know if it makes any sense to say this without showing an example or saying something else. Besides the names "list" or "matrix" are actually the ones I give them}. Another option to better handle these unknown results would be to directly interface with the R interpreter and obtain the values from there, but there is no work in this area for the moment\td{There is a Python library that does but it doesn't give outputs when there are side effects. And there is still the issue of parsing the CoqR results}.
+Finally, it is worth highlighting that only 13 impossible results have been detected (0.06\%); these all correspond to actual bugs in \CoqR{}, which are already tracked and currently under scrutiny. 
+Overall, this report shows that \CoqR{} is a realistic implementation that, given more engineering power, can be grown to fully cover R and its libraries. The testing framework we developed provides important clues into where to direct implementation efforts.
+
 
 % Reducing this number could be a little tricky\et{what does this mean?}, given the different printing modes.
 % However, we designed our framework so it would be simple to add a particular type of result
 % if a user would need it.\et{which ones are needed? be precise here, this paragraph is too "cooool"}
 
-With the current results and with the tools provided by our testing framework, we believe that given more engineering power, it is possible to scale up to the full language and its main libraries.
+
 
 %
 % In order to fully include the base library, 9 features from the symbol table had to
