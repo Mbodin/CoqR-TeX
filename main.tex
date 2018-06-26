@@ -1007,14 +1007,14 @@ a testing framework that supports comparative execution of \CoqR{} and GNU~R. Th
 \noindent\textbf{Test suites.}
 To exercise \CoqR, we exploit different existing test suites:
 the test suite of GNU~R itself\footnote{https://github.com/wch/r-source/}, and two test suites from the FastR project~\parencite{kalibera2014fast}, which we refer to as FastR1\footnote{https://github.com/h2oai/fastr} and FastR2\footnote{https://github.com/oracle/fastr}. These external test suites are first curated to eliminate expressions which rely on external effects and resources, such as internet connection, access files, and generate charts.
- Additionally, other excluded tests require specific packages (for example, the JIT package) or use particular templates in Java to generate cases. In total, these curated test suites include more than 20,000 tested expressions.\et{say how many are left out} Overall, as far as we were able to observe, all these test suites have very little overlap.\et{is that true?}
-
+ Additionally, other excluded tests require specific packages (for example, the JIT package) or use particular templates in Java to generate cases. In total, these curated test suites include over 17,000 tested expressions. 
+ % Overall, as far as we can tell, all these test suites have very little overlap.\et{is that true?}
 
 % \td{There are 3600 lines but it's really ~1700 expressions. Is that ok?}
 % and the test suite of FastR ($\sim$1,300 lines).
 % \et{not the full thing: what was excluded, why, and how many lines/tests are left? talk in terms of tested expressions (instead of loc)}
 % \td{Same here, 1300 lines but actually ~2600 expressions}.
-In addition to these test suites, we have developed our own test suite, referred to as Corners, specifically tailored for testing corner cases of the R language. It is also meant to be used as a faster way of testing some implemented features, during the development process. Corners features over 2,000 tested expressions.
+In addition to these test suites, we have developed our own test suite, referred to as Corners, specifically tailored for testing corner cases of the R language. It is also meant to be used as a faster way of testing some implemented features, during the development process. Corners features around 3,000 tested expressions.
 % For instance, we did not find any test checking
 % how the \mintinline{R}{"TRUE"} string is converted into a boolean value,
 % despite its behavior being non-trivial:\et{is it still true that this is not tested, considering the new test suite of FastR?}
@@ -1106,21 +1106,9 @@ When creating result objects, processor include additional information that can 
     \label{fig:testing:interface}
 \end{figure}
 \noindent\textbf{Testing outcomes.}
-% \eti{update with ``not found'' -- update screenshot as well}
 After processing, the testing framework obtains the result objects and uses their interface to compare them, returning the corresponding outcome of the comparison.
 The testing framework categorizes each step of computation
-in one of 7 classes\td{Should we leave this as it is? It is still true, but seeing the figure, it seems like it's not}\et{to be updated once we've have definitely converged on the "good way" to present} (Figure~\ref{fig:testing:interface}):
-%\et{Tomas: please put a screenshot after executing a large test suite}
-``passed'', ``failed'', ``not implemented'',
-``impossible'', ``unknown'', ``potential pass'' and ``potential fail''.
-%
-These outcomes denote different possible scenarios in the comparison between GNU~R and \CoqR{}. Beyond the expected ``passed'' and ``failed'',
-the ``not implemented'' and ``impossible'' results
-correspond to the Coq constructors
-\mintinline{Coq}{result_not_implemented} and \mintinline{Coq}{result_impossible}
-shown in Figure~\ref{fig:result}.
-As mentioned before, if \CoqR{} were bug free, an ``impossible'' result would correspond to a critical bug in GNU~R---in practice, all the ``impossible'' results we observed were due to mistakes in \CoqR{}.
-
+in one of 7 categories (Figure~\ref{fig:testing:interface}), denoting different possible scenarios. The ``passed'' category corresponds to successfully executed test cases. All other categories are there to help the development of \CoqR{} by refining why a test has not passed. The ``not implemented'' category gathers tests whose execution has reached the Coq constructor \mintinline{Coq}{result_not_implemented} inside \CoqR{} (recall Figure~\ref{fig:result}), signaling that the test requires some unimplemented functionality. The ``not found'' category corresponds to failures due to the test requiring a function or object that is not defined in the \CoqR{} environment. The ``impossible'' category corresponds to the \mintinline{Coq}{result_impossible} constructor; as mentioned before, if \CoqR{} were bug free, an impossible result would correspond to a critical bug in GNU~R. In practice, all the impossible results we observed were due to bugs in \CoqR{}. 
 
 % \noindent\textbf{Two-step comparison.\td{Not quite, there's the "processing"/"normalization" phase then the comparison}}
 % To compare each result, we adopt the general scheme shown in Figure~\ref{fig:methodology}.
@@ -1196,7 +1184,7 @@ the way vectors are printed, and our pretty-printer is not aware of all of these
 % Indeed, test suites always include a latter step printing down variables:
 % if the computed value is not correct, the testing framework
 % will catch it when GNU~R will print down the computed value.
-
+%
 Also, once a single step in a line-by-line test file fails, or leads to a not-implemented result, we cannot say anything about the steps that follow in the test file: subsequent errors and success could both be coincidental.
 % Indeed, if we get the same result in both interpreter,
 % it could be out of luck:
@@ -1210,13 +1198,13 @@ Also, once a single step in a line-by-line test file fails, or leads to a not-im
 % typically if the previous step was an assignment.
 % who failed to execute
 % and the current step just displays the value of the assigned variable.
-Marking such tests as failing would be counter-productive, as
-this would lead to a large amount of false positives
-in the tests marked as failed.
+% Marking such tests as failing would be counter-productive, as
+% this would lead to a large amount of false positives
+% in the tests marked as failed.
 % (only marked as failing because of a previous failing result).
 %
 To categorize these tests,
-we use the ``potential pass'' and ``potential fail'' outcome categories. These two categories mean nothing for correctness (we cannot conclude anything certain from a potential outcome), but they really help in the development process by showing possible future results.\\
+we use the ``potential pass/fail'' category; while it means nothing for correctness, this category helps in the development process by showing possible future results.\\
 
 
 \begin{figure}
@@ -1226,13 +1214,16 @@ we use the ``potential pass'' and ``potential fail'' outcome categories. These t
 \end{figure}
 
 \noindent\textbf{Guiding the development process.}
-Having different categories of testing outcomes is crucial when facing a huge development, in order to apprehend the task at hand. In particular, we found extremely helpful to separate actual failures from internal uses of \mintinline{Coq}{result_not_implemented}, and from missing function definitions\td{Missing objects as well, but not as useful as functions (mostly facilitates reading results)}.
+Having different categories of testing outcomes is crucial when facing a huge development, in order to apprehend the task at hand. In particular, we found extremely helpful to separate actual failures from internal uses of \mintinline{Coq}{result_not_implemented}, and from missing definitions (mostly functions).
+% \td{Missing objects as well, but not as useful as functions (mostly facilitates reading results)}.
 
-Recall that a not-implemented feature generally corresponds to an entry of the symbol table that has not been translated into \CoqR{}. It can also correspond to some branch in a large switch statement that we decided to postpone for some reason. On the other hand, a missing function definition corresponds to the use of an undefined R function in the test; this is typically because the function was not imported in the \CoqR{} test code base\td{Missing "objects" (variables) are often just failed assignments due to previous errors. Sometimes they refer to things from libraries or the T id (for true). }.
+Recall that a not-implemented feature generally corresponds to an entry of the symbol table that has not been translated into \CoqR{}. It can also correspond to some branch in a large switch statement that we decided to postpone for some reason. On the other hand, a missing function definition corresponds to the use of an undefined R function in the test; this is typically because the function was not imported in the \CoqR{} test code base. (Missing objects are often failed assignments due to previous errors.) 
+% and occasionally refer to missing import
+%  Sometimes they refer to things from libraries or the T id (for true). }.
 
-Therefore, in addition to counting the classified testing outcomes for the run of a test suite, our testing framework reports two charts reporting respectively the 10 most common not-implemented features (see for instance Figure~\ref{fig:library:not_implemented_fastr}), and, in a similar fashion, the 10 most common missing function definitions. Both reports are useful to identify ``low-hanging fruits'' to make progress in running the selected test suite. For instance, at the initial stages of the project, the base library of R showed up prominently in the list of undefined functions, as discussed below.
+Therefore, in addition to counting the classified testing outcomes for the run of a test suite, our testing framework reports two charts reporting respectively the 10 most common not-implemented features (see for instance Figure~\ref{fig:library:not_implemented_fastr}), and, in a similar fashion, the 10 most common missing function definitions. Both reports are useful to identify ``low-hanging fruits'' to make progress in running the selected test suite. For instance, at the initial stages of the project, the base library of R showed up prominently in the list of missing functions, as discussed below.
 % ---especially some parts of it\et{Also useful for scalability: only import needed functions from base library (Coq is slow!)}
-Also, we used the report of most used not-implemented features iteratively in order to decide which features from the symbol table to implement first, leading us to the 112\td{Can't forget to update} features that are currently implemented.
+Also, we used the report of most used not-implemented features iteratively in order to decide which features from the symbol table to implement first, leading us to the 112 \td{Can't forget to update} features that are currently implemented.
 %
 
 
@@ -1252,7 +1243,7 @@ Also, we used the report of most used not-implemented features iteratively in or
 
 % The need to execute the base library.
 
-Unsurprisingly, our initial experiments running the test suites of GNU~R and FastR raised a huge number of undefined function errors, whose consolidated report allowed us to locate in the base library of R. As anecdote, having implemented 105 features from the symbol table, around 1,000 of 1,200 failures
+Unsurprisingly, our initial experiments running the test suites of GNU~R and FastR raised a huge number of missing function errors, whose consolidated report allowed us to locate in the base library of R. As anecdote, having implemented 105 features from the symbol table, around 1,000 of 1,200 failures
 for the GNU~R test suite were due to missing definitions.
 % 80\% of the failures \td{64\% of all results as well}.
 After extending \CoqR{} to be able to load the base library, the total number of failures fell to 700, with only 300 due to missing definitions, corresponding to other basic libraries, most importantly the statistics library.
@@ -1288,7 +1279,7 @@ In order to evaluate this expression, the \mintinline{R}{atan} function has to b
 % \label{sec:missing}
 
 Of course, being able to execute the definitions and include
-them in the \CoqR{} environment does not mean that these definitions are usable: the internal function called by a library function may not yet be implemented in \CoqR, so if a test executes that function, it will yield a not-implemented result. This is why it is crucial to be able to differentiate real failures from not-implemented results and undefined functions. Note that several functions may end up relying on the same internal (not implemented) feature, giving more meaning to the report of the most common not implemented features.
+them in the \CoqR{} environment does not mean that these definitions are usable: the internal function called by a library function may not yet be implemented in \CoqR, so if a test executes that function, it will yield a not-implemented result. This is why it is crucial to be able to differentiate actual failures from not-implemented and not-found results. Note that several functions may end up relying on the same internal (not implemented) feature, giving more meaning to the report of the most common unimplemented features.
 
 % %\et{refine/extend/etc.}
 % Indeed, the base library is crucial in order to execute the test suites of both GNU~R and FastR.
