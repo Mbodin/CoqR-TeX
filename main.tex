@@ -1864,20 +1864,20 @@ with a lemma about \mintinline{Coq}{matchArgs},
 then \mintinline{Coq}{computeR} to propagate the hypotheses. And so on.
 
 We have proven that the invariants are safely propagated throughout the execution of 20 simple functions.
-Some of these functions change the structures described by the invariants,
+Some of these change the structures described by the invariants,
 but eventually preserve the invariants. 
-For instance, when an element is added to a shared list,
-a lot of things are updated in GNU~R's memory state.
-In Coq, this translates into a large number of intermediate states.
-Some invariants are automatically discharged by the \mintinline{Coq}{computeR} tactic,
-but not all of them.
-Typically, if the invariants are temporarily broken during the execution of a function,
-but that its final state actually puts the invariants back,
-the automatic tactics won't be able to prove that the invariants hold in all states: they don't.
-Proving that the invariants hold for such functions
-involve to prove that everything has been set back into places.
+% For instance, when an element is added to a shared list,
+% a lot of things are updated in GNU~R's memory state.
+In Coq, this translates into a large number of different intermediate states being generated,
+and some invariants proofs not being automatically discharged by the \mintinline{Coq}{computeR} tactic---%
+typically when the invariants are temporarily broken during the execution of a function.
+% but that its final state actually puts the invariants back,
+% the automatic tactics won't be able to prove that the invariants hold in all states: they don't.
+The proofs about such functions sometimes
+involve proving from scratch that the invariants hold.
 This typically involve following all possible paths
 from the newly allocated objects and show that the invariants hold for each of them.
+This is a rather complex proof to build.
 
 % The proof for the whole formalization is still work in progress.
 The proofs of our 20 simple functions spans over 440 lines of proofs.
@@ -1888,14 +1888,14 @@ The compiled file for the proofs about our 20 simple functions
 is however larger than the one containing all the lemmae used by the tactics:
 automation enabled us to build large proofs through relatively small proof scripts.
 %
-Given the size of the formalization,
-we consider that proving such simple typing invariants
-is already too much work to be entirely manually proven:
-automation is necessary to ease the proving process
-and deal with such sizes.\et{the point about size and the need for automation is already in the third paragraph of this section}
+% Given the size of the formalization,
+% we consider that proving such simple typing invariants
+% is already too much work to be entirely manually proven:
+% automation is necessary to ease the proving process
+% and deal with such sizes.\et{the point about size and the need for automation is already in the third paragraph of this section}
 %
-Building tactics like \mintinline{Coq}{cutR}
-and \mintinline{Coq}{computeR} is not complex and helps a lot.
+% Building tactics like \mintinline{Coq}{cutR}
+% and \mintinline{Coq}{computeR} is not complex and helps a lot.
 However, in the long run, in order for formal reasoning about R to scale, it will be necessary to develop a program logic on top of \CoqR.
 This is a major undertaking, towards which \CoqR{} is an essential first step.
 
