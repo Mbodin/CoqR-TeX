@@ -1863,12 +1863,32 @@ The proof continues by applying the tactic \mintinline{Coq}{cutR} again
 with a lemma about \mintinline{Coq}{matchArgs},
 then \mintinline{Coq}{computeR} to propagate the hypotheses. And so on.
 
-We have proven that the invariants are safely propagated throughout the execution of several basic functions.
+We have proven that the invariants are safely propagated throughout the execution of 20 simple functions.
 Some of these functions change the structures described by the invariants,
 but eventually preserve the invariants. 
-For instance, an element of the expected type is added to a shared list.\et{expand a bit: what's the invariant being preserved, and what is tricky about proving that it is preserved}
+For instance, when an element is added to a shared list,
+a lot of things are updated in GNU~R's memory state.
+In Coq, this translates into a large number of intermediate states.
+Some invariants are automatically discharged by the \mintinline{Coq}{computeR} tactic,
+but not all of them.
+Typically, if the invariants are temporarily broken during the execution of a function,
+but that its final state actually puts the invariants back,
+the automatic tactics won't be able to prove that the invariants hold in all states: they don't.
+Proving that the invariants hold for such functions
+involve to prove that everything has been set back into places.
+This typically involve following all possible paths
+from the newly allocated objects and show that the invariants hold for each of them.
+
 % The proof for the whole formalization is still work in progress.
-Given the size of the formalization,\et{put size of proofs for now, considering X functions}
+The proofs of our 20 simple functions spans over 440 lines of proofs.
+This is to be compared to the size of the definition of the automation:
+1900 lines of tactic definition,
+and more than a thousand lines for the lemmae used by these tactics.
+The compiled file for the proofs about our 20 simple functions
+is however larger than the one containing all the lemmae used by the tactics:
+automation enabled us to build large proofs through relatively small proof scripts.
+%
+Given the size of the formalization,
 we consider that proving such simple typing invariants
 is already too much work to be entirely manually proven:
 automation is necessary to ease the proving process
