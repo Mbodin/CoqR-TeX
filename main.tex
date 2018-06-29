@@ -1832,8 +1832,9 @@ such as \mintinline{Coq}{result_not_implemented} or \mintinline{Coq}{result_bott
 The proof closely follows the source code of \mintinline{Coq}{do_attr}.
 After introducing the hypotheses, the function \mintinline{Coq}{do_attr} is unfolded,
 leaving its definition ready to be processed by further tactics.
-In Figure~\ref{fig:coq:do_attr}, we can see that \mintinline{Coq}{do_attr}
-starts by calling \mintinline{Coq}{R_length}.
+The function \mintinline{Coq}{do_attr}
+starts by calling \mintinline{Coq}{R_length}
+(see Figure~\ref{fig:coq:do_attr}).
 In the proof we use the \mintinline{Coq}{cutR} tactic with a lemma about \mintinline{Coq}{R_length}. This novel tactic discharges the premises of the lemma and introduces the resulting state:
 only the success case is left, the other kinds of results being transparently propagated.
 % As for \mintinline{Coq}{do_attr}, the error case yields \mintinline{Coq}{False}
@@ -1848,21 +1849,27 @@ This is the most important tactic provided by our framework:
 it moves forwards in the current expression,
 propagating everything that can be propagated.
 In the example, it unfolds the \mintinline{Coq}{let%success} monadic binder,
-as this binder is now associated by a fully-computed result
+as this binder is now given a fully-computed result%
 ---thanks to the \mintinline{Coq}{cutR} tactic.
 It also updates all properties known to hold for the previous state \mintinline{Coq}{S}
 to the new state \mintinline{Coq}{S'} using the results
 of the \mintinline{Coq}{R_length_result} lemma.
 For instance, the hypothesis \mintinline{Coq}{safe_pointer S args}
 is replaced by \mintinline{Coq}{safe_pointer S' args}.
-This transition is not particularly difficult to prove
-given the right lemmae, but it can be extremely cumbersome to manually perform this transition for each and every available hypotheses.
+This transition would not be particularly difficult to prove by hand
+given the right lemmae, but it would be cumbersome and repetitive.
 %
 The proof continues by applying the tactic \mintinline{Coq}{cutR} again
 with a lemma about \mintinline{Coq}{matchArgs},
 then \mintinline{Coq}{computeR} to propagate the hypotheses. And so on.
 
-We have proven that the invariants are safely propagated throughout the execution of several functions\et{which ones?}. The proof for the whole formalization is still work in progress. Given the size of the formalization,
+We have proven that the invariants are safely propagated throughout the execution of several basic functions.
+Some of these functions change the structures described by the invariants,
+but leave the invariants unchanged.
+For instance, an element of the expected type
+is added to a shared list.
+The proof for the whole formalization is still work in progress.
+Given the size of the formalization,
 we consider that proving such simple typing invariants
 is already too much work to be entirely manually proven:
 automation is necessary to ease the proving process
@@ -1870,7 +1877,8 @@ and deal with such sizes.
 %
 Building tactics like \mintinline{Coq}{cutR}
 and \mintinline{Coq}{computeR} is not complex and helps a lot.
-However, in the long run, in order for formal reasoning about R to scale, it will be necessary to develop a program logic on top of \CoqR; this is a major undertaking, towards which \CoqR{} is an essential first step.
+However, in the long run, in order for formal reasoning about R to scale, it will be necessary to develop a program logic on top of \CoqR.
+This is a major undertaking, towards which \CoqR{} is an essential first step.
 
 % We also found that building the \mintinline{Coq}{cutR}
 % and \mintinline{Coq}{computeR} in Ltac---%
