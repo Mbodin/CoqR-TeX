@@ -242,7 +242,7 @@ First, the Coq interpreter has been written using a monadic encoding that allows
 
 Second, we have developed a testing framework that streamlines the process of running both the Coq interpreter and GNU~R on a set of test cases and report on mismatches and errors, among others (Section~\ref{sec:testing:architecture}). We use several test suites to measure the advancement of the \CoqR{} implementation.
 % the test suite of GNU~R itself ($\sim$3,600 loc), a test suite of the FastR implementation ($\sim$1,300 loc)~\parencite{kalibera2014fast}, and a test suite that we developed to exercise corner cases ($\sim$1,100 loc).
-% Additionally,\et{update once finished} we report on the process of scaling up our interpreter in order to be able to load existing R libraries (Section~\ref{sec:library}), in particular the R base library. 
+% Additionally,\et{update once finished} we report on the process of scaling up our interpreter in order to be able to load existing R libraries (Section~\ref{sec:library}), in particular the R base library.
 
 We also report on a proof effort to establish that memory invariants are preserved during execution, including some specific proof automation (Section~\ref{sec:proofs}).
 %
@@ -1008,7 +1008,7 @@ a testing framework that supports comparative execution of \CoqR{} and GNU~R. Th
 \noindent\textbf{Test suites.}
 To exercise \CoqR, we exploit different existing test suites:
 the test suite of GNU~R itself\footnote{https://github.com/wch/r-source/}, and two test suites from the FastR project~\parencite{kalibera2014fast}, which we refer to as FastR1\footnote{https://github.com/h2oai/fastr} and FastR2\footnote{https://github.com/oracle/fastr}. These external test suites are first curated to eliminate expressions which rely on external effects and resources, such as internet connection, access files, and generate charts.
- Additionally, other excluded tests require specific packages (for example, the JIT package) or use particular templates in Java to generate cases. In total, these curated test suites include over 17,000 tested expressions. 
+ Additionally, other excluded tests require specific packages (for example, the JIT package) or use particular templates in Java to generate cases. In total, these curated test suites include over 17,000 tested expressions.
  % Overall, as far as we can tell, all these test suites have very little overlap.\et{is that true?}
 
 % \td{There are 3600 lines but it's really ~1700 expressions. Is that ok?}
@@ -1109,7 +1109,7 @@ When creating result objects, processor include additional information that can 
 \noindent\textbf{Testing outcomes.}
 After processing, the testing framework obtains the result objects and uses their interface to compare them, returning the corresponding outcome of the comparison.
 The testing framework categorizes each step of computation
-in one of 7 categories (Figure~\ref{fig:testing:interface}), denoting different possible scenarios. The ``passed'' category corresponds to successfully executed test cases. All other categories are there to help the development of \CoqR{} by refining why a test has not passed. The ``not implemented'' category gathers tests whose execution has reached the Coq constructor \mintinline{Coq}{result_not_implemented} inside \CoqR{} (recall Figure~\ref{fig:result}), signaling that the test requires some unimplemented functionality. The ``not found'' category corresponds to failures due to the test requiring a function or object that is not defined in the \CoqR{} environment. The ``impossible'' category corresponds to the \mintinline{Coq}{result_impossible} constructor; as mentioned before, if \CoqR{} were bug free, an impossible result would correspond to a critical bug in GNU~R. In practice, all the impossible results we observed were due to bugs in \CoqR{}. 
+in one of 7 categories (Figure~\ref{fig:testing:interface}), denoting different possible scenarios. The ``passed'' category corresponds to successfully executed test cases. All other categories are there to help the development of \CoqR{} by refining why a test has not passed. The ``not implemented'' category gathers tests whose execution has reached the Coq constructor \mintinline{Coq}{result_not_implemented} inside \CoqR{} (recall Figure~\ref{fig:result}), signaling that the test requires some unimplemented functionality. The ``not found'' category corresponds to failures due to the test requiring a function or object that is not defined in the \CoqR{} environment. The ``impossible'' category corresponds to the \mintinline{Coq}{result_impossible} constructor; as mentioned before, if \CoqR{} were bug free, an impossible result would correspond to a critical bug in GNU~R. In practice, all the impossible results we observed were due to bugs in \CoqR{}.
 
 % \noindent\textbf{Two-step comparison.\td{Not quite, there's the "processing"/"normalization" phase then the comparison}}
 % To compare each result, we adopt the general scheme shown in Figure~\ref{fig:methodology}.
@@ -1218,13 +1218,13 @@ we use the ``potential pass/fail'' category; while it means nothing for correctn
 Having different categories of testing outcomes is crucial when facing a huge development, in order to apprehend the task at hand. In particular, we found extremely helpful to separate actual failures from internal uses of \mintinline{Coq}{result_not_implemented}, and from missing definitions (mostly functions).
 % \td{Missing objects as well, but not as useful as functions (mostly facilitates reading results)}.
 
-Recall that a not-implemented feature generally corresponds to an entry of the symbol table that has not been translated into \CoqR{}. It can also correspond to some branch in a large switch statement that we decided to postpone for some reason. On the other hand, a missing function definition corresponds to the use of an undefined R function in the test; this is typically because the function was not imported in the \CoqR{} test code base. (Missing objects are often failed assignments due to previous errors.) 
+Recall that a not-implemented feature generally corresponds to an entry of the symbol table that has not been translated into \CoqR{}. It can also correspond to some branch in a large switch statement that we decided to postpone for some reason. On the other hand, a missing function definition corresponds to the use of an undefined R function in the test; this is typically because the function was not imported in the \CoqR{} test code base. (Missing objects are often failed assignments due to previous errors.)
 % and occasionally refer to missing import
 %  Sometimes they refer to things from libraries or the T id (for true). }.
 
 Therefore, in addition to counting the classified testing outcomes for the run of a test suite, our testing framework reports two charts reporting respectively the 10 most common not-implemented features (see for instance Figure~\ref{fig:library:not_implemented_fastr}), and, in a similar fashion, the 10 most common missing function definitions. Both reports are useful to identify ``low-hanging fruits'' to make progress in running the selected test suite. For instance, at the initial stages of the project, the base library of R showed up prominently in the list of missing functions, as discussed below.
 % ---especially some parts of it\et{Also useful for scalability: only import needed functions from base library (Coq is slow!)}
-Also, we used the report of most used not-implemented features iteratively in order to decide which features from the symbol table to implement first, leading us to the 112 \td{Can't forget to update} features that are currently implemented.
+Also, we used the report of most used not-implemented features iteratively in order to decide which features from the symbol table to implement first, leading us to the 128 features that are currently implemented.
 %
 
 
@@ -1415,30 +1415,32 @@ them in the \CoqR{} environment does not mean that these definitions are usable:
 \hline
 {\bf Suite}  & {\bf P} & {\bf F} & {\bf NI} & {\bf NF} & {\bf I}
 & {\bf U} & {\bf PP} & {\bf PF} \\ \hline\hline
-Corners     & 2513 & 8    & 56    &   233    & 0   & 134  &   42  & 5 \\ \hline
-GNU R       & 234  & 29   & 744   &   737    & 1   & 19   &   0   & 0 \\ \hline
-FastR1      & 1044 & 65   & 988   &    1     & 5   & 175  &   61  & 98 \\ \hline
-FastR2      & 2504 & 2157 & 6355  &   1224   & 7   & 575  &   437 & 217 \\ \hline\hline
-{\bf Total} & 6285 & 2259 & 8143  &   2195   &  13 & 903  &   540 & 320 \\
+Corners     & 2613 & 7    & 48    &   119    & 0   & 149  &   20  & 6 \\ \hline
+GNU R       & 234  & 29   & 745   &   724    & 1   & 31   &   0   & 0 \\ \hline
+FastR1      & 1103 & 25   & 987   &    115     & 0   & 161  &   59  & 326 \\ \hline
+FastR2      & 2411 & 1128 & 6888  &   493   & 0   & 1914  &   297 & 343 \\ \hline\hline
+{\bf Total} & 6361 & 1189 & 8668  &   1451   &  1 & 2255  &   376 & 675 \\
 \hline
 \end{tabular}
-{\em total number of tests:} 20,658
+{\em total number of tests:} 20,976
 \caption{Current results of running the different test suites.
 {\footnotesize (P = Pass, F = Fail, NI = Not Implemented, NF = Not Found, I = Impossible, \newline U = Unknown, PP = Potential Pass, PF = Potential Fail)}}
 \label{fig:results}
 \end{figure}
 
 
-Figure~\ref{fig:results} presents the current status of executing the four test suites described earlier with \CoqR{}. On a 2-core Intel Xeon 2.20GHz with 4 GB of RAM, execution times range from 1.5~hrs for GNU~R to over 12~hrs for FastR2. 
+Figure~\ref{fig:results} presents the current status of executing the four test suites described earlier with \CoqR{}. On a 2-core Intel Xeon 2.20GHz with 4 GB of RAM, execution times range from 1.5~hrs for GNU~R to over 12~hrs for FastR2.
 
 Overall, \CoqR{} successfully covers 30\% of all the tests. The Corners test suite is almost completely covered, while FastR2, which we integrated more recently in our development process, is lagging behind compared to FastR1.
 
-Unsurprisingly, 50\% of the negative results are either ``not implemented'' or ``not found''. This was to be expected considering that we have currently implemented only 112 \td{Update} out of the 700 features of the symbol table (Section~\ref{sec:coq:structure}), and that only part of libraries are loaded for running the test suites in order to keep execution times under control.\et{this is weird: what would the results be if you would import everything you could?}
+Unsurprisingly, 50\% of the negative results are either ``not implemented'' or ``not found''. This was to be expected considering that we have currently implemented only 128 out of the 700 features of the symbol table (Section~\ref{sec:coq:structure}), and that only part of libraries are loaded for running the test suites in order to keep execution times under control.
+% \et{this is weird: what would the results be if you would import everything you could?}
 % This means that new functions may be needed after implementing new features due to allowing new code to be executed. Following an iterative process, these definitions can be incorporated as per case.
 
-We manually analyzed the reported failed results (11\%) and observed that most are due to mismatches of double numbers precision and string encodings. We are currently exploring the actual discrepancies, as well as finding ways to eradicate these mismatches. \et{can you get a number here? how many are in fact precision/strings issues?}
+We manually analyzed the reported failed results (5.7\%) and observed that most are due to mismatches of double numbers precision and string encodings\td{~40\% double mismatch, barely 3\% strings, the rest is a mix}. We are currently exploring the actual discrepancies, as well as finding ways to eradicate these mismatches.
+%\et{can you get a number here? how many are in fact precision/strings issues?}
 
-4.4\% of test cases end up classified as ``unknown'', which subsequently lead to potential passes and fails (4.2\%). Recall that these are due to the various ways in which GNU~R's pretty printer works, which \CoqR{} currently does not mimic properly. However, the relatively low percentage of these cases does not seriously question the validity of the implementation. Fixing these unknown results is tiresome, but not conceptually challenging.
+10.7\% of test cases end up classified as ``unknown'', which subsequently lead to potential passes and fails (5\%)\td{Actually, around 80-90\% (al ojo) of potential fails are due to missing objects, caused by failed assignments}. Recall that these are due to the various ways in which GNU~R's pretty printer works, which \CoqR{} currently does not mimic properly. However, the relatively low percentage of these cases does not seriously question the validity of the implementation. Fixing these unknown results is tiresome, but not conceptually challenging.
 % , enhancements to the pretty printer of \CoqR{}.
 
 % Our testing framework thus categorizes
