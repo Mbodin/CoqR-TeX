@@ -1444,7 +1444,7 @@ We manually analyzed the reported failed results (11\%) and observed that most a
 % Our testing framework thus categorizes
 % many cases as  ``unknown'' . Including these unknown results can be a bit more difficult, due to the subtleties in printing and how we currently process them with regexes. We are currently in process of including results for matrices and lists\td{I don't know if it makes any sense to say this without showing an example or saying something else. Besides the names "list" or "matrix" are actually the ones I give them}. Another option to better handle these unknown results would be to directly interface with the R interpreter and obtain the values from there, but there is no work in this area for the moment\td{There is a Python library that does but it doesn't give outputs when there are side effects. And there is still the issue of parsing the CoqR results}.
 
-Finally, it is worth highlighting that only 13 impossible results have been detected (0.06\%); these all correspond to actual bugs in \CoqR{}, which are already tracked and currently under scrutiny. 
+Finally, it is worth highlighting that only 1 impossible result reamins in the current version, which corresponds to an actual bug in \CoqR{}, which is currently under scrutiny. 
 Overall, this report shows that \CoqR{} is a realistic implementation that, given more engineering power, can be grown to fully cover R and its libraries. The testing framework we developed provides important clues into where to direct implementation efforts.
 
 
@@ -1863,15 +1863,14 @@ then \mintinline{Coq}{computeR} to propagate the hypotheses. And so on.
 
 We have proven that the invariants are safely propagated throughout the execution of several basic functions.
 Some of these functions change the structures described by the invariants,
-but leave the invariants unchanged.
-For instance, an element of the expected type
-is added to a shared list.
-The proof for the whole formalization is still work in progress.
-Given the size of the formalization,
+but eventually preserve the invariants. 
+For instance, an element of the expected type is added to a shared list.\et{expand a bit: what's the invariant being preserved, and what is tricky about proving that it is preserved}
+% The proof for the whole formalization is still work in progress.
+Given the size of the formalization,\et{put size of proofs for now, considering X functions}
 we consider that proving such simple typing invariants
 is already too much work to be entirely manually proven:
 automation is necessary to ease the proving process
-and deal with such sizes.
+and deal with such sizes.\et{the point about size and the need for automation is already in the third paragraph of this section}
 %
 Building tactics like \mintinline{Coq}{cutR}
 and \mintinline{Coq}{computeR} is not complex and helps a lot.
