@@ -1416,10 +1416,10 @@ them in the \CoqR{} environment does not mean that these definitions are usable:
 {\bf Suite}  & {\bf P} & {\bf F} & {\bf NI} & {\bf NF} & {\bf I}
 & {\bf U} & {\bf PP} & {\bf PF} \\ \hline\hline
 Corners     & 2613 & 7    & 48    &   119    & 0   & 149  &   20  & 6 \\ \hline
-GNU R       & 234  & 29   & 745   &   724    & 1   & 31   &   0   & 0 \\ \hline
+GNU R       & 243  & 31   & 739   &   723    & 1   & 27   &   0   & 0 \\ \hline
 FastR1      & 1103 & 25   & 987   &    115     & 0   & 161  &   59  & 326 \\ \hline
 FastR2      & 2411 & 1128 & 6888  &   493   & 0   & 1914  &   297 & 343 \\ \hline\hline
-{\bf Total} & 6361 & 1189 & 8668  &   1451   &  1 & 2255  &   376 & 675 \\
+{\bf Total} & 6370 & 1191 & 8662  &   1450   &  1 & 2251  &   376 & 675 \\
 \hline
 \end{tabular}
 {\em total number of tests:} 20,976
@@ -1446,7 +1446,7 @@ We manually analyzed the reported failed results (5.7\%) and observed that most 
 % Our testing framework thus categorizes
 % many cases as  ``unknown'' . Including these unknown results can be a bit more difficult, due to the subtleties in printing and how we currently process them with regexes. We are currently in process of including results for matrices and lists\td{I don't know if it makes any sense to say this without showing an example or saying something else. Besides the names "list" or "matrix" are actually the ones I give them}. Another option to better handle these unknown results would be to directly interface with the R interpreter and obtain the values from there, but there is no work in this area for the moment\td{There is a Python library that does but it doesn't give outputs when there are side effects. And there is still the issue of parsing the CoqR results}.
 
-Finally, it is worth highlighting that only 1 impossible result reamins in the current version, which corresponds to an actual bug in \CoqR{}, which is currently under scrutiny. 
+Finally, it is worth highlighting that only 1 impossible result reamins in the current version, which corresponds to an actual bug in \CoqR{}, which is currently under scrutiny.
 Overall, this report shows that \CoqR{} is a realistic implementation that, given more engineering power, can be grown to fully cover R and its libraries. The testing framework we developed provides important clues into where to direct implementation efforts.
 
 
@@ -1865,7 +1865,7 @@ then \mintinline{Coq}{computeR} to propagate the hypotheses. And so on.
 
 We have proven that the invariants are safely propagated throughout the execution of 20 simple functions.
 Some of these change the structures described by the invariants,
-but eventually preserve the invariants. 
+but eventually preserve the invariants.
 % For instance, when an element is added to a shared list,
 % a lot of things are updated in GNU~R's memory state.
 In Coq, this translates into a large number of different intermediate states being generated,
