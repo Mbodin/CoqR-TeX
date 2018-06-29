@@ -1862,7 +1862,12 @@ with a lemma about \mintinline{Coq}{matchArgs},
 then \mintinline{Coq}{computeR} to propagate the hypotheses. And so on.
 
 We have proven that the invariants are safely propagated throughout the execution of several basic functions.
-The proof for the whole formalization is still work in progress. Given the size of the formalization,
+Some of these functions change the structures described by the invariants,
+but leave the invariants unchanged.
+For instance, an element of the expected type
+is added to a shared list.
+The proof for the whole formalization is still work in progress.
+Given the size of the formalization,
 we consider that proving such simple typing invariants
 is already too much work to be entirely manually proven:
 automation is necessary to ease the proving process
