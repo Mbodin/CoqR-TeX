@@ -204,6 +204,7 @@ f(1, d=3, 2)         # Mixed
 f(3, a=1, ab=2)      # a is associated to abc
 f(a=3, 1, 2)         # error: several prefixes
 \end{minted}
+\vspace{-1em}
 \caption{Exploring function calls in R.}
 \label{fig:calls}
 \end{figure}
@@ -249,7 +250,7 @@ We also report on a proof effort to establish that memory invariants are preserv
 Section~\ref{sec:related:work} discusses related work and Section~\ref{sec:conclusion} concludes.
 
 
-The current implementation of \CoqR{} is not feature complete; R is a very large programming language and achieving 100\% coverage of the language and its main libraries is a huge implementation effort, which would need involvement from the R community at large. The contribution of this work is to provide realistic foundations for a trustworthy R formalization in Coq. First, the interpreter covers the core of the language and over 100 additional features. It is implemented in an extensible manner, following the architecture of GNU~R itself. Second, the testing infrastructure we provide is designed to help drive the development effort towards the most pressing missing features. At present, the \CoqR{} implementation passes a substantial number of tests from real-world R projects. This is realistic enough to support the claim that, given more engineering power, our approach can scale up to the full language and its main libraries.
+The current implementation of \CoqR{}\footnote{\url{https://github.com/Mbodin/CoqR/releases/tag/DLS2018}} is not feature complete; R is a very large programming language and achieving 100\% coverage of the language and its main libraries is a huge implementation effort. The contribution of this work is to provide realistic foundations for a trustworthy R formalization in Coq. First, the interpreter covers the core of the language and over 100 additional features. It is implemented in an extensible manner, following the architecture of GNU~R itself. Second, the testing infrastructure we provide is designed to help drive the development effort towards the most pressing missing features. At present, the \CoqR{} implementation passes a substantial number of tests from real-world R projects. This is realistic enough to support the claim that, given more engineering power, our approach can scale up to the full language and its main libraries.
 
 
 % Given the size of our formalization,
@@ -293,10 +294,11 @@ The current implementation of \CoqR{} is not feature complete; R is a very large
 \section{\CoqR: An R Interpreter in Coq}
 \label{sec:coq:interp}
 
-We develop the formal semantics of R in the form of an interpreter defined in Coq; therefore, this is a big-step operational semantics.
+We develop the formal semantics of R in the form of an interpreter defined in Coq; therefore, \CoqR{} is a big-step operational semantics.
 Operational semantics written as a Coq recursive function is usually not the best fit for Coq proofs---an inductive definition of the operational semantics is usually more convenient for reasoning---but our approach comes with a crucial advantage: it can be run, and thus tested.
 %
-In this section, we show how we define the Coq interpreter in order to achieve the first of the two mechanisms in place for trust, namely the eyeball correspondence with the GNU~R interpreter.
+We show how we define \CoqR{} in order to achieve the first of the two mechanisms in place for trust, 
+namely the eyeball correspondence with the GNU~R interpreter.
 
 \subsection{Bridging the Gap between C and Coq}
 \label{sec:monad}
@@ -322,6 +324,7 @@ Inductive result (A : Type) :=
   | result_not_implemented : string -> result A
   | result_bottom : state -> result A.
 \end{minted}
+\vspace{-1em}
 \caption{The result monad.}
 \label{fig:result}
 \end{figure}
@@ -329,7 +332,7 @@ Inductive result (A : Type) :=
 In order to limit the impact that these differences can have on the eyeball correspondence, we introduce a {\em result monad}, which combines both the state, error, and fuel monads (Figure~\ref{fig:result}), and allows us to program in Coq ``as if it were C''.%
 %
 \footnote{Recall that monads allow purely functional programs to account for effectful computation, by means of implicit threading of information using a {\em binder}~\parencite{wadler:mscs1992}. For instance, the state monad threads a piece of state through a functional computation, accessible via monadic operations like \mintinline{Coq}{put} and \mintinline{Coq}{get}, thereby simulating a mutable store.}
-More precisely, the result monad features the following constructors:\footnote{The result monad is similar to the one used in the JSExplain project~\parencite{JSExplain}, which aims at defining a JavaScript interpreter in Coq, readable by non-specialists.
+The monad constructors are:\footnote{The result monad is similar to the one used in the JSExplain project~\parencite{JSExplain}, which aims at defining a JavaScript interpreter in Coq, readable by non-specialists.
 }
 \begin{itemize}
 \item The main constructor is \mintinline{Coq}{result_success}, used when a computation is successful.
@@ -432,6 +435,7 @@ EXP* do_attr (EXP* call, EXP* op,
   return ans;
 }
 \end{minted}
+\vspace{-0.5em}
     \caption{original C function}
     \label{fig:c:do_attr}
 \end{subfigure}
@@ -451,9 +455,11 @@ Definition do_attr globals runs S
     (* ... *)
     result_success S ans.
 \end{minted}
+\vspace{-0.5em}
     \caption{Coq translation}
     \label{fig:coq:do_attr}
 \end{subfigure}
+\vspace{-1em}
     \caption{Original C function and Coq translation of \mintinline{C}{do_attr}}
     \label{fig:do_attr}
 \end{figure*}
@@ -518,6 +524,7 @@ instead of \mintinline{C}{CAR} in the C version, and the fact that the use of th
         \node [draw = black, rectangle, minimum height = 6mm, minimum width = 1cm, anchor = base, right = 0pt of c3] (cn) {\(c_n\)} ;
         \node [left = 2mm of hvector2] (nvector2) {Complex vector:} ;
     \end{tikzpicture}
+\vspace{-1em}
     \caption{Basic language elements in memory}
     \label{fig:basic:language:elements}
 \end{figure}
@@ -601,6 +608,7 @@ Record EXP := make_EXP {
     EXP_data :> EXPdata
   }.
 \end{minted}
+\vspace{-1em}
     \caption{Basic language elements (\mintinline{C}{EXP}) in Coq}
     \label{fig:EXP}
 \end{figure}
@@ -701,6 +709,7 @@ Definition do_attr_init globals runs S :=
     \caption{Coq translation}
     \label{fig:coq:do_attr:formals}
 \end{subfigure}
+\vspace{-1em}
     \caption{Another snippet of \mintinline{C}{do_attr} and its Coq translation}
     \label{fig:do_attr:formals}
 \end{figure*}
@@ -761,6 +770,7 @@ Definition while_loop runs A S (a : A) expr stat :=
     runs_while_loop runs S a expr stat@\label{line:runs_while:recursive:call}@
   else result_success S a.
 \end{minted}
+\vspace{-1em}
     \caption{Definition of loops as a fix-point combinator}
     \label{fig:while_loop}
 \end{figure}
@@ -802,6 +812,7 @@ Fixpoint runs max_step globals : Runs :=
       (* ... *) |}
   end.
 \end{minted}
+\vspace{-1em}
     \caption{Definition of \mintinline{Coq}{runs} in Coq}
     \label{fig:runs}
 \end{figure}
@@ -857,6 +868,7 @@ FUNTAB R_FunTab[] = {
   {"sin",       do_math21,   1,  true,  true},
   /* ... */ }
 \end{minted}
+\vspace{-1em}
     \caption{Symbol table of GNU~R}
     \label{fig:names}
 \end{figure}
@@ -1103,6 +1115,7 @@ When creating result objects, processor include additional information that can 
 
 \begin{figure}
     \includegraphics[width=.5\textwidth]{framework.png}
+\vspace{-1em}
     \caption{Graphical interface of the testing framework}
     \label{fig:testing:interface}
 \end{figure}
@@ -1210,6 +1223,7 @@ we use the ``potential pass/fail'' category; while it means nothing for correctn
 
 \begin{figure}
     \includegraphics[width=.5\textwidth]{not_implemented_fastr.png}
+\vspace{-2em}
     \caption{Chart displaying the most needed features to be implemented.}
     \label{fig:library:not_implemented_fastr}
 \end{figure}
@@ -1433,14 +1447,17 @@ Figure~\ref{fig:results} presents the current status of executing the four test 
 
 Overall, \CoqR{} successfully covers 30\% of all the tests. The Corners test suite is almost completely covered, while FastR2, which we integrated more recently in our development process, is lagging behind compared to FastR1.
 
-Unsurprisingly, 50\% of the negative results are either ``not implemented'' or ``not found''. This was to be expected considering that we have currently implemented only 128 out of the 700 features of the symbol table (Section~\ref{sec:coq:structure}), and that only part of libraries are loaded for running the test suites in order to keep execution times under control.
+Unsurprisingly, 50\% of the negative results are either ``not implemented'' or ``not found''. This was to be expected considering in particular that we have currently implemented only 128 out of the 700 features of the symbol table (Section~\ref{sec:coq:structure}).
+% , and that only part of libraries are loaded for running the test suites in order to keep execution times under control.
 % \et{this is weird: what would the results be if you would import everything you could?}
 % This means that new functions may be needed after implementing new features due to allowing new code to be executed. Following an iterative process, these definitions can be incorporated as per case.
-
-We manually analyzed the reported failed results (5.7\%) and observed that most are due to mismatches of double numbers precision and string encodings\td{~40\% double mismatch, barely 3\% strings, the rest is a mix}. We are currently exploring the actual discrepancies, as well as finding ways to eradicate these mismatches.
+%
+We manually analyzed the reported failed results (5.7\%) and observed that about 40\% are due to mismatch of double numbers precision. We are currently looking for ways to eradicate such mismatch, and exploring the actual discrepancies.
 %\et{can you get a number here? how many are in fact precision/strings issues?}
-
-10.7\% of test cases end up classified as ``unknown'', which subsequently lead to potential passes and fails (5\%)\td{Actually, around 80-90\% (al ojo) of potential fails are due to missing objects, caused by failed assignments}. Recall that these are due to the various ways in which GNU~R's pretty printer works, which \CoqR{} currently does not mimic properly. However, the relatively low percentage of these cases does not seriously question the validity of the implementation. Fixing these unknown results is tiresome, but not conceptually challenging.
+%
+10.7\% of test cases end up classified as ``unknown'', which subsequently lead to potential passes and fails (5\%).
+% \td{Actually, around 80-90\% (al ojo) of potential fails are due to missing objects, caused by failed assignments}. 
+Recall that these are due to mismatches with GNU~R's pretty printer. However, the relatively low percentage of these cases does not seriously question the validity of the implementation. Fixing these unknown results is tiresome, but not conceptually challenging.
 % , enhancements to the pretty printer of \CoqR{}.
 
 % Our testing framework thus categorizes
@@ -1745,7 +1762,7 @@ As described in Section~\ref{sec:heap},
 each basic language element in R is associated one of 24 types,
 and each of these types are differently stored in memory.
 Figure~\ref{fig:invariants:definition} shows a snippet
-of our invariants defined by the \mintinline{Coq}{safe_SExp} inductive property.
+of the invariants defined by the \mintinline{Coq}{safe_SExp} inductive property (the full definition is 230 loc).
 %
 The constructor \mintinline{Coq}{safe_ListStruct} captures the requirements on well-formed lists. The requirements are expressed using the predicate \mintinline{Coq}{may_have_types S l p}, which
 states that the pointer \mintinline{Coq}{p}
@@ -1759,7 +1776,7 @@ Note that no constraint is specified for the first element \mintinline{Coq}{car}
 As another example, the constructor \mintinline{Coq}{safe_StrStruct} states that a string vector contains an array of C pointers,
 all of which should be associated with a character vector in memory.
 
-\begin{figure}
+\begin{figure}[t]
 \begin{minted}{Coq}
 Inductive safe_SExp S : SExp -> Prop :=
   | safe_ListStruct : forall car cdr tag,
@@ -1772,34 +1789,11 @@ Inductive safe_SExp S : SExp -> Prop :=
     safe_SExp S (make_StrStruct data)
   (* ... *).
 \end{minted}
+\vspace{-1em}
     \caption{Typing invariants for memory} % during R execution
     \label{fig:invariants:definition}
 \end{figure}
 
-
-\begin{figure}
-\begin{minted}{Coq}
-Lemma do_attr_result :
-  forall S globals call op args env,
-  safe_state S ->
-  safe_globals S globals ->
-  safe_pointer S args ->
-  may_have_types S [NilSxp; ListSxp] args ->
-  (* ... *)
-  result_prop (fun S' ans =>
-      safe_state S' /\ safe_globals S' globals
-      /\ safe_pointer S' ans)
-    (do_attr globals runs S call op args env).
-Proof.
-  introv OKS OKglobals OKargs Targs. unfolds do_attr.
-  cutR R_length_result. computeR.
-  cutR matchArgs_result. computeR.
-  (* ... *)
-Qed.
-\end{minted}
-    \caption{Example of specification and tactic usage.}
-    \label{fig:do_attr_result}
-\end{figure}
 
 Such invariants are relatively simple, but given the size of the formalization,
 they are quite long to establish. Proving that some step of the interpreter preserves the invariants quickly becomes very tedious. In order to address this, we developed various Coq tactics to ease the proof process.
@@ -1863,21 +1857,48 @@ The proof continues by applying the tactic \mintinline{Coq}{cutR} again
 with a lemma about \mintinline{Coq}{matchArgs},
 then \mintinline{Coq}{computeR} to propagate the hypotheses. And so on.
 
+
+
+\begin{figure}[t]
+\begin{minted}{Coq}
+Lemma do_attr_result :
+  forall S globals call op args env,
+  safe_state S ->
+  safe_globals S globals ->
+  safe_pointer S args ->
+  may_have_types S [NilSxp; ListSxp] args ->
+  (* ... *)
+  result_prop (fun S' ans =>
+      safe_state S' /\ safe_globals S' globals
+      /\ safe_pointer S' ans)
+    (do_attr globals runs S call op args env).
+Proof.
+  introv OKS OKglobals OKargs Targs. unfolds do_attr.
+  cutR R_length_result. computeR.
+  cutR matchArgs_result. computeR.
+  (* ... *)
+Qed.
+\end{minted}
+\vspace{-1em}
+    \caption{Example of specification and tactic usage.}
+    \label{fig:do_attr_result}
+\end{figure}
+
 We have proven that the invariants are safely propagated throughout the execution of 20 simple functions.
-Some of these change the structures described by the invariants,
-but eventually preserve the invariants.
+Some of these significantly change the structures described by the invariants,
+but eventually preserve the invariants. 
 % For instance, when an element is added to a shared list,
 % a lot of things are updated in GNU~R's memory state.
 In Coq, this translates into a large number of different intermediate states being generated,
-and some invariants proofs not being automatically discharged by the \mintinline{Coq}{computeR} tactic---%
-typically when the invariants are temporarily broken during the execution of a function.
+and some invariants proofs are not automatically discharged by the \mintinline{Coq}{computeR} tactic.
+% ---%
+% typically when the invariants are temporarily broken during the execution of a function.
 % but that its final state actually puts the invariants back,
 % the automatic tactics won't be able to prove that the invariants hold in all states: they don't.
 The proofs about such functions sometimes
 involve proving from scratch that the invariants hold.
 This typically involve following all possible paths
-from the newly allocated objects and show that the invariants hold for each of them.
-This is a rather complex proof to build.
+from the newly-allocated objects and show that the invariants hold for each of them; this is a rather complex proof to build.
 
 % The proof for the whole formalization is still work in progress.
 The proofs of our 20 simple functions spans over 440 lines of proofs.
