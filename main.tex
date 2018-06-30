@@ -231,7 +231,7 @@ This complexity in turn raises a meta-trust issue:
 how can a large semantics (and consequently the proofs made from it)
 be trusted? Being able to relate a formalism to {\em trust sources} is a crucial aspect of the formalization process, and often requires a large amount of work to be done properly~\parencite{leroy2014pip}. This challenge has been faced repeatedly in attempts to provide formal foundations to JavaScript, for instance.
 %
-Some formalization approaches like $\lambda_{JS}$~\cite{Guha2010} and KJS~\cite{kjs} augment trust through extensive testing and comparison with existing implementations. JSCert~\parencite{popl14jscert} only uses testing, without directly comparing to an existing implementation, but further augments trust through the notion of a so-called {\em eyeball correspondence}, i.e.~a line-to-line syntactic connection, between the formalization (in Coq) and the ECMAScript specification (in English and pseudo-code).
+Some formalization approaches like $\lambda_{JS}$~\cite{Guha2010} and KJS~\cite{kjs} augment trust through extensive testing and comparison with existing implementations. JSCert~\parencite{popl14jscert} also uses testing and further augments trust through the notion of a so-called {\em eyeball correspondence}, i.e.~a line-to-line syntactic connection, between the formalization (in Coq) and the ECMAScript specification (in English and pseudo-code).
 
 \paragraph{Contributions.}
 We present \CoqR{}, a trustworthy formalization of the R programming language in the Coq proof assistant.
@@ -337,7 +337,7 @@ The monad constructors are:\footnote{The result monad is similar to the one used
 \begin{itemize}
 \item The main constructor is \mintinline{Coq}{result_success}, used when a computation is successful.
 In addition to the result (of type \mintinline{Coq}{A} in the definition),
-it carries the global state (of type \mintinline{Coq}{state}). (We describe the representation of state later on in this section.)
+it carries the global state (of type \mintinline{Coq}{state}). We describe the representation of state later on in this section.
 %
 \item The constructor \mintinline{Coq}{result_error} is meant to catch
 errors thrown by GNU~R, for instance an R runtime typing error:
@@ -370,7 +370,7 @@ are translated into
 \mintinline{Coq}{result_impossible}.
 Getting this result immediately ends the Coq interpreter:
 it is meant to be unreachable.
-Observing such a result would mean that a bug in GNU~R has been found, which could possibly be undetectable by running GNU~R due to a C compiler optimization.\footnote{At this date, we have not encountered this situation (yet?).}
+Observing such a result either means \CoqR{} has a bug, or that an actual bug in GNU~R has been found, which could possibly be undetectable by running GNU~R due to a C compiler optimization. At this date, we have not encountered the latter situation.
 % \et{has this happened? I guess not}
 % \mbi{No it hasn't. What I meant is that in \CoqR{}, undefined behaviors always result in a special error,
 %      whilst in GNU~R, this could result in a silent error due to compiler optimizations:
@@ -559,7 +559,7 @@ The size of this array depends both of its length
 and the type of vector.
 Figure~\ref{fig:basic:language:elements} illustrates this
 with integer and complex vectors
-(complexes are composed of two floats).
+(complexes are composed of two floating-point numbers).
 %
 The way memory is used in C
 makes it easy to unguardedly access a cell out of bounds,
@@ -792,7 +792,7 @@ Figure~\ref{fig:runs} shows its Coq definition.
 % Addition: this is called the “Landin’s knot”, but we probably still don’t want to speak about it ☺
 % }
 % %
-In addition to passing the extra-argument argument, this idiom only requires one pattern-matching on fuel in the whole \CoqR{} interpreter; it is thus a very lightweight way to introduce termination.
+In addition to passing the extra-argument argument, this idiom only requires one pattern-matching on fuel in the whole \CoqR{} interpreter; it is thus a very lightweight way to enforce termination.
 
 \begin{figure}
 \begin{minted}{Coq}
@@ -843,7 +843,7 @@ Note that the eyeball correspondence between GNU~R and \CoqR{} would pay off in 
 
 R is by no means a small language.
 Currently, \CoqR{} spans over 18,000 lines of Coq definitions.
-This is larger than JSCert~\parencite{popl14jscert}, which consists of 12,500 lines of Coq definitions.
+This is larger than the interpreter of JSCert, named JSRef~\parencite{popl14jscert}, which consists of 12,500 lines of Coq definitions.
 % \et{ref + how large is JSCert?}\mb{We already quote it several times in the paper: isn't it too much?}
 % \mbi{For the statistics: \CoqR{} is 18,000 lines of Coq definitions + 1500 lines of Coq proofs.
 %     JSCert is 12,500 lines of Coq definitions + 5,000 lines of Coq proofs. Both according to \texttt{coqwc}.
@@ -880,7 +880,7 @@ The symbol table contains more than 700 entries.
 % \mb{112 out of 722. Some of these functions are only partially implemented, but most of the 112 are completely translated.}
 Interestingly, all syntactic constructs correspond to a C function. This includes constructs like \mintinline{R}{if}, \mintinline{R}{while}, \mintinline{R}{return}, and even assignments: although the parser accepts a seemingly imperative syntax, it is internally replaced by Lisp-style function calls!
 For instance, the two abstract syntax trees generated
-by GNU~R parser for the two lines below are identical.\footnote{
+by GNU~R's parser for the two lines below are identical.\footnote{
     R usually uses a lazy evaluation strategy:
     the expression \mintinline{R}{x <- 1} is only evaluated
     when actually used.
