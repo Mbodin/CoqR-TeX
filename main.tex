@@ -1233,7 +1233,7 @@ we use the ``potential pass/fail'' category; while it means nothing for correctn
 Having different categories of testing outcomes is crucial when facing a huge development, in order to apprehend the task at hand. In particular, we found extremely helpful to separate actual failures from internal uses of \mintinline{Coq}{result_not_implemented}, and from missing definitions (mostly functions).
 % \td{Missing objects as well, but not as useful as functions (mostly facilitates reading results)}.
 
-Recall that a not-implemented feature generally corresponds to an entry of the symbol table that has not been translated into \CoqR{}. It can also correspond to some branch in a large switch statement that we decided to postpone for some reason. On the other hand, a missing function definition corresponds to the use of an undefined R function in the test; this is typically because the function was not imported in the \CoqR{} test code base. (Missing objects are often failed assignments due to previous errors.)
+Recall that a not-implemented feature generally corresponds to an entry of the symbol table that has not been translated into \CoqR{}. It can also correspond to some branch in a large \mintinline{C}{switch} statement that we decided to postpone for some reason. On the other hand, a missing function definition corresponds to the use of an undefined R function in the test; this is typically because the function was not imported in the \CoqR{} test code base. (Missing objects are often failed assignments due to previous errors.)
 % and occasionally refer to missing import
 %  Sometimes they refer to things from libraries or the T id (for true). }.
 
@@ -1464,7 +1464,7 @@ Recall that these are due to mismatches with GNU~R's pretty printer. However, th
 % Our testing framework thus categorizes
 % many cases as  ``unknown'' . Including these unknown results can be a bit more difficult, due to the subtleties in printing and how we currently process them with regexes. We are currently in process of including results for matrices and lists\td{I don't know if it makes any sense to say this without showing an example or saying something else. Besides the names "list" or "matrix" are actually the ones I give them}. Another option to better handle these unknown results would be to directly interface with the R interpreter and obtain the values from there, but there is no work in this area for the moment\td{There is a Python library that does but it doesn't give outputs when there are side effects. And there is still the issue of parsing the CoqR results}.
 
-Finally, it is worth highlighting that only 1 impossible result reamins in the current version, which corresponds to an actual bug in \CoqR{}, which is currently under scrutiny.
+Finally, it is worth highlighting that only 1 ``impossible'' result remains in the current version.  This corresponds to an actual bug in \CoqR{}, which is currently under scrutiny.
 Overall, this report shows that \CoqR{} is a realistic implementation that, given more engineering power, can be grown to fully cover R and its libraries. The testing framework we developed provides important clues into where to direct implementation efforts.
 
 
@@ -1995,7 +1995,7 @@ each related with some of its trust sources.
 The first full formal semantics of JavaScript~\parencite{aplas08}
 is a semantics related to the third version of the ECMAScript specification.
 It had a major influence on the definitions of further JavaScript formal
-specifications~\parencite{usenix, popl14jscert, popl12-Towards, ses} andalso served as the formal basis to prove the soundness of security-related
+specifications~\parencite{usenix, popl14jscert, popl12-Towards, ses} and also served as the formal basis to prove the soundness of security-related
 JavaScript subsets~\parencite{mmt-esorics09, mmt-oakland10,MMT-CSF-TR09}.
 This work was however not mechanized.
 %making it difficult to be used as a basis for other formalization work.
