@@ -78,6 +78,8 @@
 
 \newcommand\CoqR{CoqR}
 
+\newcommand\newtext[1]{#1}
+
 \begin{document}
 
 \title{A Trustworthy Mechanized Formalization of R}
@@ -1952,14 +1954,13 @@ In particular,
 there exist few testing frameworks in R.
 The testR project~\parencite{maj2013testr, 2014testr},
 which later evolved into the Genthat library~\parencite{genthat},
-is based on an interesting way of generating unit tests for R functions.
+aims at generating unit tests for R functions.
 It starts from a program using the functions to be tested.
 It then annotates and executes this program,
 storing the trace of the calls to the functions to be tested.
 Unit tests are then generated from this trace.
-The Genthat library is thus useful to generate tests for a library
-given some program using it,
-which can then be used to ensure that further versions of the library
+These tests can be used
+to ensure that further versions of a library
 do not break existing code.
 
 % FastR
@@ -1974,13 +1975,32 @@ FastR is faster than the reference interpreter not only in the linear-algebraic 
 %
 FastR agrees with us that the GNU~R interpreter is the reference semantics: any behavioral difference between FastR and GNU~R is considered a FastR bug.
 
+% Other works on R.
+\newtext{
+Previous works on formal specification of R are sparse.
+%
+We have seen in the introduction that the language definition document~\parencite{R}
+is unfit for verification due to its ambiguities,
+as well as several mismatches between the document and the behaviour of GNU~R.
+%
+The only other work we found about formalising R~\parencite{morandat2012evaluating}
+only describes a small core of R
+containing functions and some assignments---%
+but no flow-control constructs like \mintinline{R}{if} or \mintinline{R}{return}
+and their associated implicit type conversions.
+}
+%
+To the best of our knowledge, we are the first to provide a mechanized specification of R.
+
+% 4 paragraphs just for JavaScript… This is probably far too much for an R paper ☺
+
 % JavaScript semantics and their trust sources.
-To the best of our knowledge, we are the first to provide a mechanized specification of R. But the general goal of formalizing full real-world languages---%
+However, the general goal of formalizing full real-world languages---%
 as opposed to small subsets---is not new.
 %
 JavaScript is a particularly relevant example.
-Indeed, empirical analyses
-have confirmed that the language features
+Empirical analyses
+have indeed confirmed that the language features
 that are usually ignored in the formalized subsets of JavaScript
 are actually important for actual web developers~\parencite{RichardsHBV11}.
 %
