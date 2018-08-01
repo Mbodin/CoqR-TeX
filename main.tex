@@ -252,7 +252,8 @@ We also report on a proof effort to establish that memory invariants are preserv
 Section~\ref{sec:related:work} discusses related work and Section~\ref{sec:conclusion} concludes.
 
 
-The current implementation of \CoqR{}\footnote{\url{https://github.com/Mbodin/CoqR/releases/tag/DLS2018}} is not feature complete; R is a very large programming language and achieving 100\% coverage of the language and its main libraries is a huge implementation effort. The contribution of this work is to provide realistic foundations for a trustworthy R formalization in Coq. First, the interpreter covers the core of the language and over 120 additional features. It is implemented in an extensible manner, following the architecture of GNU~R itself. Second, the testing infrastructure we provide is designed to help drive the development effort towards the most pressing missing features. At present, the \CoqR{} implementation passes a substantial number of tests from real-world R projects. This is realistic enough to support the claim that, given more engineering power, our approach can scale up to the full language and its main libraries.
+The current implementation of \CoqR{}\footnote{\url{https://github.com/Mbodin/CoqR/releases/tag/DLS2018}} is not feature complete; R is a very large programming language and achieving 100\% coverage of the language and its main libraries is a huge implementation effort. The contribution of this work is to provide realistic foundations for a trustworthy R formalization in Coq.
+First, the interpreter covers the nucleus of the language and over 120 additional features. It is implemented in an extensible manner, following the architecture of GNU~R itself. Second, the testing infrastructure we provide is designed to help drive the development effort towards the most pressing missing features. At present, the \CoqR{} implementation passes a substantial number of tests from real-world R projects. This is realistic enough to support the claim that, given more engineering power, our approach can scale up to the full language and its main libraries.
 
 
 % Given the size of our formalization,
@@ -267,7 +268,7 @@ The current implementation of \CoqR{}\footnote{\url{https://github.com/Mbodin/Co
 % a formalization of the R programming language in the Coq proof assistant.
 % This is a continuation of a previous work~\parencite{CoqRCoqPL},
 % \mb{Political choice here: is it a good idea to cite this previous work?}\et{no, skip - this wasn't a technical result, just a progress report/position paper}
-% in which we formalised a small core of the R language.
+% in which we formalised a small nucleus of the R language.
 % The additional contribution of this paper is the additional
 % of a non-trivial quantity of R features,
 % which enabled us to import R libraries.
@@ -677,8 +678,8 @@ to mark any non-present element. Another important global variable is
 \mintinline{C}{R_FunTab}, which is the {\em symbol table} that maps operation and function names to C functions implementing them. (We exploit this structuring of the interpreter for building \CoqR{} in an incremental manner---see Section~\ref{sec:coq:structure}.)
 
 %
-The initialization of global variable is fairly subtle. Most initializations perform local computations, calling core functions.
-To avoid this circular dependency---which Coq would not accept---one could parametrize each core function by the value of the global variables it uses.
+The initialization of global variable is fairly subtle. Most initializations perform local computations, calling nucleus functions.
+To avoid this circular dependency---which Coq would not accept---one could parametrize each nucleus function by the value of the global variables it uses.
 This would however not scale, considering the size of the project and the number of global variables involved.
 %
 Instead, we parameterize each function of \CoqR{} by a single \mintinline{Coq}{globals} environment, which is a mapping from a definite set of global variables to \mintinline{Coq}{EXP_pointer}. This additional argument can be seen in the Coq code of Figure~\ref{fig:coq:do_attr}: it is passed along at each call site.
@@ -850,7 +851,9 @@ This is larger than the interpreter of JSCert, named JSRef~\parencite{popl14jsce
 % \mbi{For the statistics: \CoqR{} is 18,000 lines of Coq definitions + 1500 lines of Coq proofs.
 %     JSCert is 12,500 lines of Coq definitions + 5,000 lines of Coq proofs. Both according to \texttt{coqwc}.
 %     It is difficult to compare these figures, but I find the comparizon with JSCert impressive.}
-Therefore, for pragmatical reasons, it is important to be able to proceed {\em incrementally} in the development of \CoqR{}. We hence identify a minimal core of R to support initially, and then incrementally extend \CoqR{}. To this end, we exploit the fact that GNU~R is structured around a huge {\em symbol table} that contains all functions present in the initial environment of R, whose code is written natively in C.
+Therefore, for pragmatical reasons, it is important to be able to proceed {\em incrementally} in the development of \CoqR{}.
+We hence identify a minimal nucleus of R to support initially, and then incrementally extend \CoqR{}.
+To this end, we exploit the fact that GNU~R is structured around a huge {\em symbol table} that contains all functions present in the initial environment of R, whose code is written natively in C.
 
 \begin{figure}
 \begin{minted}{C}
@@ -894,15 +897,17 @@ if (TRUE) x <- 1 else return ()
 "if" (TRUE, "<-" (x, 1), "return" ())
 \end{minted}
 
-The symbol table provides us with an opportunity for incremental development, because this array clearly defines a set of functions that can be individually removed from GNU~R without breaking the overall interpreter---only the parts using them. We therefore consider the {\em core} of the R language to consist of the functions used to evaluate R expressions that are \emph{not} present in the symbol table. Core functions include the execution process for function calls, environments, closures, promises (delayed evaluation),
-as well as the parts initializing the symbol table. Constructs like \mintinline{R}{if} and \mintinline{R}{while} are not part of the core,
+The symbol table provides us with an opportunity for incremental development, because this array clearly defines a set of functions that can be individually removed from GNU~R without breaking the overall interpreter---only the parts using them.
+We therefore consider the {\em nucleus} of the R language to consist of the functions used to evaluate R expressions that are \emph{not} present in the symbol table.
+Nucleus functions include the execution process for function calls, environments, closures, promises (delayed evaluation),
+as well as the parts initializing the symbol table. Constructs like \mintinline{R}{if} and \mintinline{R}{while} are not part of the nucleus,
 but some assignment functions are, because they are used when calling functions.
 
-All functions in the symbol table are then considered {\em additional features}. The first version of the interpreter only supported the core of R, allowing us to focus the effort on a very restricted sub-language.
+All functions in the symbol table are then considered {\em additional features}. The first version of the interpreter only supported the nucleus of R, allowing us to focus the effort on a very restricted sub-language.
 We were then able to add additional features one at a time, by implementing
 the associated function and adding it to the symbol table.
 In the current \CoqR{} development, out of the 18,000 lines,
-around 5,000 lines are for the core of R,
+around 5,000 lines are for the nucleus of R,
 and 4,000 lines are for additional features.
 % \et{what about the other 9,000 lines?}
 % \mb{Miscellaneous, really.
@@ -1965,12 +1970,12 @@ do not break existing code.
 
 % FastR
 GNU~R is not the only R interpreter that exists.
-Many existing interpreters are based on the same C core code,
+Many existing interpreters are based on the same C nucleus code,
 but use different libraries for linear algebra,
 usually optimized for a specific usage.
 %
-The FastR project~\parencite{kalibera2014fast}  takes a different approach
-as it also reimplements the core of the R interpreter, using the Truffle self-optimizing framework~\parencite{wuerthingertruffle}.
+The FastR project~\parencite{kalibera2014fast} takes a different approach
+as it also reimplements the nucleus of the R interpreter, using the Truffle self-optimizing framework~\parencite{wuerthingertruffle}.
 FastR is faster than the reference interpreter not only in the linear-algebraic part, but also in the language interpretation layer.
 %
 FastR agrees with us that the GNU~R interpreter is the reference semantics: any behavioral difference between FastR and GNU~R is considered a FastR bug.
