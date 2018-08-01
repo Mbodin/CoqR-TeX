@@ -390,9 +390,9 @@ to end the execution when reaching the maximum number of executed instructions
 
 % \begin{figure}
 % \begin{minted}[escapeinside=@@]{C}
-% SEXP do_repeat (EXP* call, EXP* op,
-%                 EXP* args, EXP* rho){
-%   EXP* body;
+% SEXP do_repeat (SEXP call, SEXP op,
+%                 SEXP args, SEXP rho){
+%   SEXP body;
 %   RCNTXT cntxt;
 %   checkArity (op, args);
 %   body = CAR (args);
@@ -424,9 +424,10 @@ This obliviousness to global state, errors and non-termination is what enables a
     \centering{}
 \begin{subfigure}{.54\textwidth}
 \begin{minted}{C}
-EXP* do_attr (EXP* call, EXP* op,
-              EXP* args, EXP* env){
-  EXP* argList, car, ans;
+SEXP do_attr (SEXP call, SEXP op,
+              SEXP args, SEXP env){
+  SEXP argList, car, ans;
+  static SEXP do_attr_formals = NULL;
   /* ... */
   int nargs = R_length (args);
   argList = matchArgs (do_attr_formals, args, call);
@@ -445,7 +446,7 @@ EXP* do_attr (EXP* call, EXP* op,
 \begin{subfigure}{.45\textwidth}
 \begin{minted}{Coq}
 Definition do_attr globals runs S
-    (call op args env : EXP_pointer) :=
+    (call op args env : SEXP) :=
   let%success nargs :=
     R_length globals runs S args using S in
   let%success argList :=
@@ -480,11 +481,17 @@ Definition do_attr globals runs S
 % correspond to one or two lines of the reference interpreter.
 % %
 
-By developing \CoqR{} as a monadic interpreter using the result monad introduced above, we are able to achieve an eyeball correspondence between the C and Coq interpreters. This correspondence is extremely helpful during development:
-whenever a bug is encountered while testing, we localize the function responsible for the bug and then can directly and visually compare both interpreters. Such checks are quick and easy to perform, often leading to a quick fix of \CoqR{}.
+By developing \CoqR{} as a monadic interpreter using the result monad introduced above, we are able to achieve an eyeball correspondence between the C and Coq interpreters.
+This correspondence is extremely helpful during development:
+whenever a bug is encountered while testing, we localize the function responsible for the bug,
+then directly and visually compare both interpreters.
+Such checks are quick and easy to perform, often leading to a quick fix of \CoqR{}.
 %
 
-Figure~\ref{fig:do_attr} shows an example of the eyeball correspondence that can be achieved using the result monad. Figure~\ref{fig:c:do_attr} shows a C function, and Figure~\ref{fig:coq:do_attr} its Coq translation.
+Figure~\ref{fig:do_attr} shows an example of the eyeball correspondence that can be achieved using the result monad.
+Figure~\ref{fig:c:do_attr} shows a C function, and Figure~\ref{fig:coq:do_attr} its Coq translation.
+The \mintinline{C}{SEXP} type is an alias for \mintinline{C}{EXP*},
+that is, pointers to basic language elements.
 The binder \mintinline{Coq}{let%success} is used when calling a function.
 Thanks to the monadic encoding, the calls to \mintinline{Coq}{R_length}
 and \mintinline{Coq}{matchArgs} may return an unsuccessful result, but the code does not need to be explicit about that possibility; the code after a call is only executed if the result denotes success. Similarly, the \mintinline{C}{return} statement from C is translated to \mintinline{Coq}{result_success}, and raising an error is performed using \mintinline{Coq}{result_error}.
@@ -586,9 +593,9 @@ and not following it in memory as in C.
 \begin{figure}
 \begin{minted}{Coq}
 Record ListStruct := make_ListStruct {
-    list_carval : EXP_pointer ;
-    list_cdrval : EXP_pointer ;
-    list_tagval : EXP_pointer
+    list_carval : SEXP ;
+    list_cdrval : SEXP ;
+    list_tagval : SEXP
   }.
 
 Record Vector_EXP (A : Type) := make_Vector_EXP {
@@ -682,7 +689,7 @@ The initialization of global variable is fairly subtle. Most initializations per
 To avoid this circular dependency---which Coq would not accept---one could parametrize each nucleus function by the value of the global variables it uses.
 This would however not scale, considering the size of the project and the number of global variables involved.
 %
-Instead, we parameterize each function of \CoqR{} by a single \mintinline{Coq}{globals} environment, which is a mapping from a definite set of global variables to \mintinline{Coq}{EXP_pointer}. This additional argument can be seen in the Coq code of Figure~\ref{fig:coq:do_attr}: it is passed along at each call site.
+Instead, we parameterize each function of \CoqR{} by a single \mintinline{Coq}{globals} environment, which is a mapping from a definite set of global variables to \mintinline{Coq}{SEXP}. This additional argument can be seen in the Coq code of Figure~\ref{fig:coq:do_attr}: it is passed along at each call site.
 
 To make definitions more convenient, we use coercions to make Coq implicitly perform a lookup in the \mintinline{Coq}{globals} environment whenever a global variable is read. Therefore, accessing global variables is transparent, as illustrated by the use of \mintinline{C}{do_attr_formals} in Figure~\ref{fig:coq:do_attr}.
 
@@ -691,7 +698,6 @@ To make definitions more convenient, we use coercions to make Coq implicitly per
     \centering{}
 \begin{subfigure}{.5\textwidth}
 \begin{minted}{C}
-  static EXP* do_attr_formals = NULL;
   if (do_attr_formals == NULL)
     do_attr_formals =
       allocFormalsList2 (install ("x"),
