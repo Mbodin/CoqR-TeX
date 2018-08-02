@@ -1138,16 +1138,19 @@ The differences between the GNU~R and \CoqR{} processors thus lies in the regexe
 When creating result objects, processor include additional information that can be necessary for later comparison. For example, if the regex for numerical vector matches, the processor extracts the actual numerical value contained in the raw string and stores it in the \mintinline{Python}{NumericVectorResult} object. \\
 
 
-\begin{figure}
-    \includegraphics[width=.5\textwidth]{framework.png}
-\vspace{-1em}
-    \caption{Graphical interface of the testing framework}
-    \label{fig:testing:interface}
-\end{figure}
+% \begin{figure}
+%     \includegraphics[width=.5\textwidth]{framework.png}
+% \vspace{-1em}
+%     \caption{Graphical interface of the testing framework}
+%     \label{fig:testing:interface}
+% \end{figure}
+
 \noindent\textbf{Testing outcomes.}
 After processing, the testing framework obtains the result objects and uses their interface to compare them, returning the corresponding outcome of the comparison.
 The testing framework categorizes each step of computation
-in one of 7 categories (Figure~\ref{fig:testing:interface}), denoting different possible scenarios. The ``passed'' category corresponds to successfully executed test cases. All other categories are there to help the development of \CoqR{} by refining why a test has not passed. The ``not implemented'' category gathers tests whose execution has reached the Coq constructor \mintinline{Coq}{result_not_implemented} inside \CoqR{} (recall Figure~\ref{fig:result}), signaling that the test requires some unimplemented functionality. The ``not found'' category corresponds to failures due to the test requiring a function or object that is not defined in the \CoqR{} environment. The ``impossible'' category corresponds to the \mintinline{Coq}{result_impossible} constructor; as mentioned before, if \CoqR{} were bug free, an impossible result would correspond to a critical bug in GNU~R. In practice, all the impossible results we observed were due to bugs in \CoqR{}.
+in one of 7 categories, denoting different possible scenarios. The \textsf{passed} category corresponds to successfully executed test cases. The \textsf{failed} category is used when an actual mismatch in results is observed. 
+
+All other categories are there to help the development of \CoqR{} by refining failure cases. The \textsf{not implemented} category gathers tests whose execution has reached the Coq constructor \mintinline{Coq}{result_not_implemented} inside \CoqR{} (recall Figure~\ref{fig:result}), signaling that the test requires some unimplemented functionality. The \textsf{not found} category corresponds to failures due to the test requiring a function or object that is not defined in the \CoqR{} environment. The \textsf{impossible} category corresponds to the \mintinline{Coq}{result_impossible} constructor; as mentioned before, if \CoqR{} were bug free, an impossible result would correspond to a critical bug in GNU~R. All the observed \textsf{impossible} results were instead due to \CoqR{} bugs.
 
 % \noindent\textbf{Two-step comparison.\td{Not quite, there's the "processing"/"normalization" phase then the comparison}}
 % To compare each result, we adopt the general scheme shown in Figure~\ref{fig:methodology}.
@@ -1213,7 +1216,7 @@ in one of 7 categories (Figure~\ref{fig:testing:interface}), denoting different 
 % provide any normalizer.
 Sometimes processing a result string fails.
 For instance, there exist special attributes that affect
-the way vectors are printed, and our pretty-printer is not aware of all of these special attributes. In such cases, the processor fails, and returns an \mintinline{Python}{UnknownResult} object. Such tests are consequently marked as ``unknown''; they could be functionally correct or not, so classifying them apart is practical.
+the way vectors are printed, and our pretty-printer is not aware of all of these special attributes. In such cases, the processor fails, and returns an \mintinline{Python}{UnknownResult} object. Such tests are consequently marked as \textsf{unknown}; they could be functionally correct or not, so classifying them apart is practical.
 % it would not be correct to mark them as success,
 % but it would not be practical to mark them as a failure.
 %
@@ -1243,15 +1246,15 @@ Also, once a single step in a line-by-line test file fails, or leads to a not-im
 % (only marked as failing because of a previous failing result).
 %
 To categorize these tests,
-we use the ``potential pass/fail'' category; while it means nothing for correctness, this category helps in the development process by showing possible future results.\\
+we use the \textsf{potential pass/fail} category; while it means nothing for correctness, this category helps in the development process by showing possible future results.\\
 
 
-\begin{figure}
-    \includegraphics[width=.5\textwidth]{not_implemented_fastr.png}
-\vspace{-2em}
-    \caption{Chart displaying the most needed features to be implemented.}
-    \label{fig:library:not_implemented_fastr}
-\end{figure}
+% \begin{figure}
+%     \includegraphics[width=.5\textwidth]{not_implemented_fastr.png}
+% \vspace{-2em}
+%     \caption{Chart displaying the most needed features to be implemented.}
+%     \label{fig:library:not_implemented_fastr}
+% \end{figure}
 
 \noindent\textbf{Guiding the development process.}
 Having different categories of testing outcomes is crucial when facing a huge development, in order to apprehend the task at hand. In particular, we found extremely helpful to separate actual failures from internal uses of \mintinline{Coq}{result_not_implemented}, and from missing definitions (mostly functions).
@@ -1261,7 +1264,7 @@ Recall that a not-implemented feature generally corresponds to an entry of the s
 % and occasionally refer to missing import
 %  Sometimes they refer to things from libraries or the T id (for true). }.
 
-Therefore, in addition to counting the classified testing outcomes for the run of a test suite, our testing framework reports two charts reporting respectively the 10 most common not-implemented features (see for instance Figure~\ref{fig:library:not_implemented_fastr}), and, in a similar fashion, the 10 most common missing function definitions. Both reports are useful to identify ``low-hanging fruits'' to make progress in running the selected test suite. For instance, at the initial stages of the project, the base library of R showed up prominently in the list of missing functions, as discussed below.
+Therefore, in addition to counting the classified testing outcomes for the run of a test suite, our testing framework reports two charts reporting respectively the 10 most common not-implemented features and the 10 most common missing function definitions. Both reports are useful to identify low-hanging fruits to make progress in running the selected test suite. For instance, at the initial stages of the project, the base library of R showed up prominently in the list of missing functions, as discussed below.
 % ---especially some parts of it\et{Also useful for scalability: only import needed functions from base library (Coq is slow!)}
 Also, we used the report of most used not-implemented features iteratively in order to decide which features from the symbol table to implement first, leading us to the 128 features that are currently implemented.
 %
