@@ -1148,7 +1148,7 @@ When creating result objects, processor include additional information that can 
 \noindent\textbf{Testing outcomes.}
 After processing, the testing framework obtains the result objects and uses their interface to compare them, returning the corresponding outcome of the comparison.
 The testing framework categorizes each step of computation
-in one of 7 categories, denoting different possible scenarios. The \textsf{passed} category corresponds to successfully executed test cases. The \textsf{failed} category is used when an actual mismatch in results is observed. 
+in one of 8 categories, denoting different possible scenarios. The \textsf{passed} category corresponds to successfully executed test cases. The \textsf{failed} category is used when an actual mismatch in results is observed. 
 
 All other categories are there to help the development of \CoqR{} by refining failure cases. The \textsf{not implemented} category gathers tests whose execution has reached the Coq constructor \mintinline{Coq}{result_not_implemented} inside \CoqR{} (recall Figure~\ref{fig:result}), signaling that the test requires some unimplemented functionality. The \textsf{not found} category corresponds to failures due to the test requiring a function or object that is not defined in the \CoqR{} environment. The \textsf{impossible} category corresponds to the \mintinline{Coq}{result_impossible} constructor; as mentioned before, if \CoqR{} were bug free, an impossible result would correspond to a critical bug in GNU~R. All the observed \textsf{impossible} results were instead due to \CoqR{} bugs.
 
@@ -1246,7 +1246,7 @@ Also, once a single step in a line-by-line test file fails, or leads to a not-im
 % (only marked as failing because of a previous failing result).
 %
 To categorize these tests,
-we use the \textsf{potential pass/fail} category; while it means nothing for correctness, this category helps in the development process by showing possible future results.\\
+we use the \textsf{potential pass}/\textsf{potential fail} categories; while they mean nothing for correctness, they help in the development process by showing possible future results.\\
 
 
 % \begin{figure}
@@ -1475,7 +1475,7 @@ Figure~\ref{fig:results} presents the current status of executing the four test 
 
 Overall, \CoqR{} successfully covers 30\% of all the tests. The Corners test suite is almost completely covered, while FastR2, which we integrated more recently in our development process, is lagging behind compared to FastR1.
 
-Unsurprisingly, 50\% of the negative results are either ``not implemented'' or ``not found''. This was to be expected considering in particular that we have currently implemented only 128 out of the 700 features of the symbol table (Section~\ref{sec:coq:structure}).
+Unsurprisingly, 50\% of the negative results are either \textsf{not implemented} or \textsf{not found}. This was to be expected considering in particular that we have currently implemented only 128 out of the 700 features of the symbol table (Section~\ref{sec:coq:structure}).
 % , and that only part of libraries are loaded for running the test suites in order to keep execution times under control.
 % \et{this is weird: what would the results be if you would import everything you could?}
 % This means that new functions may be needed after implementing new features due to allowing new code to be executed. Following an iterative process, these definitions can be incorporated as per case.
@@ -1483,7 +1483,7 @@ Unsurprisingly, 50\% of the negative results are either ``not implemented'' or `
 We manually analyzed the reported failed results (5.7\%) and observed that about 40\% are due to mismatch of double numbers precision. We are currently looking for ways to eradicate such mismatch, and exploring the actual discrepancies.
 %\et{can you get a number here? how many are in fact precision/strings issues?}
 %
-10.7\% of test cases end up classified as ``unknown'', which subsequently lead to potential passes and fails (5\%).
+10.7\% of test cases end up classified as \textsf{unknown}, which subsequently lead to potential passes and fails (5\%).
 % \td{Actually, around 80-90\% (al ojo) of potential fails are due to missing objects, caused by failed assignments}. 
 Recall that these are due to mismatches with GNU~R's pretty printer. However, the relatively low percentage of these cases does not seriously question the validity of the implementation. Fixing these unknown results is tiresome, but not conceptually challenging.
 % , enhancements to the pretty printer of \CoqR{}.
@@ -1491,7 +1491,7 @@ Recall that these are due to mismatches with GNU~R's pretty printer. However, th
 % Our testing framework thus categorizes
 % many cases as  ``unknown'' . Including these unknown results can be a bit more difficult, due to the subtleties in printing and how we currently process them with regexes. We are currently in process of including results for matrices and lists\td{I don't know if it makes any sense to say this without showing an example or saying something else. Besides the names "list" or "matrix" are actually the ones I give them}. Another option to better handle these unknown results would be to directly interface with the R interpreter and obtain the values from there, but there is no work in this area for the moment\td{There is a Python library that does but it doesn't give outputs when there are side effects. And there is still the issue of parsing the CoqR results}.
 
-Finally, it is worth highlighting that only 1 ``impossible'' result remains in the current version.  This corresponds to an actual bug in \CoqR{}, which is currently under scrutiny.
+Finally, it is worth highlighting that only 1 \textsf{impossible} result remains in the current version.  This corresponds to an actual bug in \CoqR{}, which is currently under scrutiny.
 Overall, this report shows that \CoqR{} is a realistic implementation that, given more engineering power, can be grown to fully cover R and its libraries. The testing framework we developed provides important clues into where to direct implementation efforts.
 
 
