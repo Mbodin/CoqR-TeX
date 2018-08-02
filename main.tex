@@ -878,7 +878,7 @@ This is larger than the interpreter of JSCert, named JSRef~\parencite{popl14jsce
 %     It is difficult to compare these figures, but I find the comparizon with JSCert impressive.}
 Therefore, for pragmatical reasons, it is important to be able to proceed {\em incrementally} in the development of \CoqR{}.
 We hence identify a minimal nucleus of R to support initially, and then incrementally extend \CoqR{}.
-To this end, we exploit the fact that GNU~R is structured around a huge {\em symbol table} that contains all functions present in the initial environment of R, whose code is written natively in C.
+To this end, we exploit the fact that GNU~R is structured around a huge {\em symbol table} \newtext{with more than 700 entries}, corresponding to all functions present in the initial environment of R, whose code is written natively in C.
 
 \begin{figure}
 \begin{minted}{C}
@@ -905,7 +905,6 @@ FUNTAB R_FunTab[] = {
 
 Figure~\ref{fig:names} shows an excerpt of the symbol table.
 This C array associates the name of each function with the corresponding C function implementing it, along with its arity and some additional information.\footnote{Namely, whether the function is to be directly defined in the initial environment or available in the \mintinline{R}{.Internal} construct, and whether it evaluates lazily or eagerly.}
-The symbol table contains more than 700 entries.
 % \et{how much of the 700 entries of the symbol table do we currently support?}
 % \mb{112 out of 722. Some of these functions are only partially implemented, but most of the 112 are completely translated.}
 Interestingly, all syntactic constructs correspond to a C function. This includes constructs like \mintinline{R}{if}, \mintinline{R}{while}, \mintinline{R}{return}, and even assignments: although the parser accepts a seemingly imperative syntax, it is internally replaced by Lisp-style function calls!
@@ -1506,7 +1505,7 @@ Recall that these are due to mismatches with GNU~R's pretty printer. However, th
 % many cases as  ``unknown'' . Including these unknown results can be a bit more difficult, due to the subtleties in printing and how we currently process them with regexes. We are currently in process of including results for matrices and lists\td{I don't know if it makes any sense to say this without showing an example or saying something else. Besides the names "list" or "matrix" are actually the ones I give them}. Another option to better handle these unknown results would be to directly interface with the R interpreter and obtain the values from there, but there is no work in this area for the moment\td{There is a Python library that does but it doesn't give outputs when there are side effects. And there is still the issue of parsing the CoqR results}.
 
 Finally, it is worth highlighting that only 1 \textsf{impossible} result remains in the current version.  This corresponds to an actual bug in \CoqR{}, which is currently under scrutiny.
-Overall, this report shows that \CoqR{} is a realistic implementation that, given more engineering power, can be grown to fully cover R and its libraries. The testing framework we developed provides important clues into where to direct implementation efforts.
+Overall, this report shows that \CoqR{} is a realistic implementation \newtext{(coverage-wise, not performance-wise)} that, given more engineering power, can be grown to fully cover R and its libraries. The testing framework we developed provides important clues into where to direct implementation efforts.
 
 
 % Reducing this number could be a little tricky\et{what does this mean?}, given the different printing modes.
