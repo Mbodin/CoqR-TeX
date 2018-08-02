@@ -2021,7 +2021,9 @@ Work on formal specification of R is sparse.
 The language definition document~\parencite{team2000r}
 is unfit for verification due to its ambiguities and mismatches with the behavior of GNU~R.
 %
-In an effort to understand R features and their usage in the wild, Morandat \emph{et. al.} formalize a minimal core of R~\parencite{morandat2012evaluating}. This core models functions and some assignment forms, but no control-flow constructs (\mintinline{R}{if}, \mintinline{R}{return}) and implicit type conversions; neither do they attempt to capture the semantics of additional features from the symbol table.
+In an effort to understand R features and their usage in the wild, Morandat \emph{et. al.} formalize a minimal core of R~\parencite{morandat2012evaluating}.
+This core models functions and some assignment forms, but no control-flow constructs (such as \mintinline{R}{if} or \mintinline{R}{return}); % and implicit type conversions; % They do model the implicit type conversions that happens during assignments.
+neither do they attempt to capture the semantics of additional features from the symbol table.
 }
 %
 To the best of our knowledge, this work is the first mechanized specification of R.
