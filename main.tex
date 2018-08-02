@@ -80,7 +80,7 @@
 \newcommand\CoqR{CoqR}
 
 \newcommand\newtext[1]{{\color{blue} #1}}
-\newcommand\changed[1]{{\color{orange} #1}}
+\newcommand\changed[1]{{\color{cyan} #1}}
 
 \begin{document}
 
@@ -495,7 +495,7 @@ Such checks are quick and easy to perform, often leading to a quick fix of \CoqR
 Figure~\ref{fig:do_attr} shows an example of the eyeball correspondence that can be achieved using the result monad.
 Figure~\ref{fig:c:do_attr} shows a C function, and Figure~\ref{fig:coq:do_attr} its Coq translation.
 \newtext{The \mintinline{C}{SEXP} type is an alias for \mintinline{C}{SEXPREC*},
-that is, pointers to basic language elements (see below).}
+that is, pointers to basic language elements (see Section~\ref{sec:heap}).}
 The binder \mintinline{Coq}{let%success} is used when calling a function.
 Thanks to the monadic encoding, the calls to \mintinline{Coq}{R_length}
 and \mintinline{Coq}{matchArgs} may return an unsuccessful result, but the code does not need to be explicit about that possibility; the code after a call is only executed if the result denotes success. Similarly, the \mintinline{C}{return} statement from C is translated to \mintinline{Coq}{result_success}, and raising an error is performed using \mintinline{Coq}{result_error}.
@@ -602,7 +602,7 @@ Record ListStruct := make_ListStruct {
     list_tagval : SEXP
   }.
 
-Record Vector_SEXPREC (A : Type) := make_Vector_EXPREC {
+Record Vector_SEXPREC (A : Type) := {
     Vector_length : nat ;
     Vector_data :> list A
   }.
@@ -610,8 +610,10 @@ Record Vector_SEXPREC (A : Type) := make_Vector_EXPREC {
 Inductive SEXPRECData :=
   | listExp : ListStruct -> SEXPRECData
   | envExp : EnvStruct -> SEXPRECData
-  | SEXPREC_VectorInteger : Vector_SEXPREC int -> SEXPRECData
-  | SEXPREC_VectorComplex : Vector_SEXPREC complex -> SEXPRECData
+  | SEXPREC_VectorInteger :
+      Vector_SEXPREC int -> SEXPRECData
+  | SEXPREC_VectorComplex :
+      Vector_SEXPREC complex -> SEXPRECData
   (* ... *).
 Coercion listExp : ListStruct >-> SEXPRECData.
 Coercion envExp : EnvStruct >-> SEXPRECData.
@@ -1803,13 +1805,13 @@ all of which should be associated with a character vector in memory.
 \begin{minted}{Coq}
 Inductive safe_SExp S : SExp -> Prop :=
   | safe_ListStruct : forall car cdr tag,
-    may_have_types S [NilSxp ; ListSxp] cdr ->
-    may_have_types S [NilSxp ; CharSxp] tag ->
-    safe_SExp S (make_ListStruct car cdr tag)
+      may_have_types S [NilSxp ; ListSxp] cdr ->
+      may_have_types S [NilSxp ; CharSxp] tag ->
+      safe_SExp S (make_ListStruct car cdr tag)
   | safe_StrStruct : forall data,
-    (forall a, Mem a data ->
-      may_have_types S [CharSxp] a) ->
-    safe_SExp S (make_StrStruct data)
+      (forall a, Mem a data ->
+        may_have_types S [CharSxp] a) ->
+      safe_SExp S (make_StrStruct data)
   (* ... *).
 \end{minted}
 \vspace{-1em}
