@@ -78,7 +78,7 @@
 
 \newcommand\CoqR{CoqR}
 
-\newcommand\newtext[1]{#1}
+\newcommand\newtext[1]{{\color{blue} #1}}
 
 \begin{document}
 
@@ -1988,20 +1988,15 @@ FastR agrees with us that the GNU~R interpreter is the reference semantics: any 
 
 % Other works on R.
 \newtext{
-Previous works on formal specification of R are sparse.
+Work on formal specification of R is sparse.
 %
-We have seen in the introduction that the language definition document~\parencite{R}
-is unfit for verification due to its ambiguities,
-as well as several mismatches between the document and the behaviour of GNU~R.
+The language definition document~\parencite{R}
+is unfit for verification due to its ambiguities and mismatches with the behavior of GNU~R.
 %
-The only other work we found about formalising R~\parencite{morandat2012evaluating}
-only describes a small core of R
-containing functions and some assignments---%
-but no flow-control constructs like \mintinline{R}{if} or \mintinline{R}{return}
-and their associated implicit type conversions.
+In an effort to understand R features and their usage in the wild, Morandat \emph{et. al.} formalize a minimal core of R~\parencite{morandat2012evaluating}. This core models functions and some assignment forms, but no control-flow constructs (\mintinline{R}{if}, \mintinline{R}{return}) and implicit type conversions; neither do they attempt to capture the semantics of additional features from the symbol table.
 }
 %
-To the best of our knowledge, we are the first to provide a mechanized specification of R.
+To the best of our knowledge, this work is the first mechanized specification of R.
 
 % 4 paragraphs just for JavaScript… This is probably far too much for an R paper ☺
 
