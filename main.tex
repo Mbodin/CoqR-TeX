@@ -340,7 +340,7 @@ Modeling effectful computation in a purely functional language can be done throu
 
 Therefore, in order to achieve an effective eyeball correspondence between C code and Coq code, we introduce a {\em result monad}, which combines both the state, error, and fuel monads (Figure~\ref{fig:result}).%
 %
-The result monad constructors are:\footnote{The result monad is similar to the one used in the JSExplain project~\parencite{JSExplain}, which aims at defining a JavaScript interpreter in Coq, readable by non-specialists.
+The result monad constructors are:\footnote{A similar monad is used in JSExplain~\parencite{JSExplain}, which aims at defining a JavaScript interpreter in Coq, readable by non-specialists.
 }
 \begin{itemize}[leftmargin=0.5em]
 \item The main constructor is \mintinline{Coq}{result_success}, used when a computation is successful.
