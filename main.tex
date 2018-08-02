@@ -133,7 +133,7 @@
 \email{etanter@dcc.uchile.cl}
 
 \begin{abstract}
-The R programming language is very popular for developing statistical software and data analysis, thanks to rich libraries, concise and expressive syntax, and support for interactive programming. Yet, the semantics of R is fairly complex, contains many subtle corner cases, and is not formally specified. This makes it difficult to fully trust R programs. In this work, we develop a big-step operational semantics for R in the form of an interpreter written in the Coq proof assistant. We ensure the trustworthiness of the formalization by introducing a monadic encoding that allows the Coq interpreter, \CoqR, to be in direct visual correspondence with the reference R interpreter, GNU~R. Additionally, we provide a testing framework that supports systematic comparison of \CoqR{} and GNU~R. In its current state, \CoqR{} covers the nucleus of the R language as well as numerous additional features, making it pass a significant number of realistic test cases from the GNU~R and FastR projects. To exercise the formal specification, we prove in Coq the preservation of memory invariants in selected parts of the interpreter. This work is an important first step towards a robust environment for
+The R programming language is very popular for developing statistical software and data analysis, thanks to rich libraries, concise and expressive syntax, and support for interactive programming. Yet, the semantics of R is fairly complex, contains many subtle corner cases, and is not formally specified. This makes it difficult to reason about R programs. In this work, we develop a big-step operational semantics for R in the form of an interpreter written in the Coq proof assistant. We ensure the trustworthiness of the formalization by introducing a monadic encoding that allows the Coq interpreter, \CoqR, to be in direct visual correspondence with the reference R interpreter, GNU~R. Additionally, we provide a testing framework that supports systematic comparison of \CoqR{} and GNU~R. In its current state, \CoqR{} covers the nucleus of the R language as well as numerous additional features, making it pass a significant number of realistic test cases from the GNU~R and FastR projects. To exercise the formal specification, we prove in Coq the preservation of memory invariants in selected parts of the interpreter. This work is an important first step towards a robust environment for
 formal verification of R programs.
 \end{abstract}
 
@@ -216,25 +216,23 @@ f(a=3, 1, 2)         # error: several prefixes
 Such subtle behaviors are numerous in R~\parencite{RInferno}.
 Debugging tools exist~\parencite{mcpherson2014},
 but they cannot always compensate for the complex semantics of R.
-Consequently, surprising bugs occur in R programs
-and fully trusting such programs can be difficult.
+Consequently, surprising bugs occur in R programs, 
+and reasoning about such programs, even informally, can be difficult.
 %
 % We need a formalization of the language.
-Formal methods offer a solution to the trust issue:
-proof assistants such as Coq~\parencite{Coq} enable us
-to formally prove program properties with a high amount of trust.
+\newtext{Formal methods support reasoning about the behavior of programs. In particular, proof assistants such as Coq~\parencite{Coq} enable us
+to formally prove program properties.}
 But to formally prove that an R program meets its specification,
 we first need a formal semantics of R.
-While there exists a language definition document~\parencite{team2000r}, this document is unfit for serving as the basis of a verification effort; it is both a specification effort and a manual, written in plain English, with ambiguities and incomplete at times. Additionally, we found several mismatches between the text description and the behavior of the reference interpreter, GNU~R~\parencite{Rwebsite}.\footnote{For instance, according to the language definition, \mintinline{R}{if ("TRUE") 42} should raise an error, whilst the interpreter returns \mintinline{R}{42}.}
+While there exists a language definition document~\parencite{team2000r}, this document is unfit as the basis of a verification effort; it is both a specification effort and a manual, written in plain English, with ambiguities and incomplete at times. Additionally, we found several mismatches between the text description and the behavior of the reference interpreter, GNU~R~\parencite{Rwebsite}.\footnote{For instance, according to the language definition, \mintinline{R}{if ("TRUE") 42} should raise an error, whilst the interpreter returns \mintinline{R}{42}.}
 Crucially, the formal semantics should account for all the corner cases of the R semantics, such as function call conventions described above, implicit type conversions, and so on.
 This is necessary because these corner cases are indeed a typical place were bugs appear and are hard to track.
 A complete semantics for the full R language will inevitably be complex,
 because of the large amount of such corner cases.
 
 % This formalization is quite large, and we need to certify it.
-This complexity in turn raises a meta-trust issue:
-how can a large semantics (and consequently the proofs made from it)
-be trusted? Being able to relate a formalism to {\em trust sources} is a crucial aspect of the formalization process, and often requires a large amount of work to be done properly~\parencite{leroy2014pip}. This challenge has been faced repeatedly in attempts to provide formal foundations to JavaScript, for instance.
+\newtext{This complexity in turn raises a {\em trust} issue: 
+how do we know that a formal semantics properly models the real-world language it is supposed to describe? Such trustworthiness is crucial to justify the relevance of any formal reasoning based on such semantics, such as proofs of language properties or of properties of specific programs.} Being able to relate a formalism to {\em trust sources} is a crucial aspect of the formalization process, and often requires a large amount of work to be done properly~\parencite{leroy2014pip}. This challenge has been faced repeatedly in attempts to provide formal foundations to JavaScript, for instance.
 %
 Some formalization approaches like $\lambda_{JS}$~\cite{Guha2010} and KJS~\cite{kjs} augment trust through extensive testing and comparison with existing implementations. JSCert~\parencite{popl14jscert} also uses testing and further augments trust through the notion of a so-called {\em eyeball correspondence}, i.e.~a line-to-line syntactic connection, between the formalization (in Coq) and the ECMAScript specification (in English and pseudo-code).
 
@@ -943,7 +941,7 @@ At the time of writing, we support 128 entries from the symbol table.
 \subsection{Parsing R}
 \label{sec:parsing}
 
-Verified software, e.g. written in Coq, needs to interact with less trusted code, for instance for performing input/output. This additional code is called the \emph{shim}, and unfortunately, it usually concentrates most bugs in certified software~\parencite{Yang:2011:FUB:1993498.1993532}.
+Verified software, e.g. written in Coq, needs to interact with unverified code, for instance for performing input/output. This additional code is called the \emph{shim}, and unfortunately, it usually concentrates most bugs in certified software~\parencite{Yang:2011:FUB:1993498.1993532}.
 % Why the shim is important.
 % Bugs can still appear in verified softwares.
 % Indeed, such softwares are not entirely formalized in Coq:
