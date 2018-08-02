@@ -1052,7 +1052,7 @@ a testing framework that supports comparative execution of \CoqR{} and GNU~R. Th
 % Test suite sources.
 \noindent\textbf{Test suites.}
 To exercise \CoqR, we exploit different existing test suites:
-the test suite of GNU~R itself, and two test suites from the FastR project~\parencite{kalibera2014fast}, which we refer to as FastR1\footnote{https://github.com/h2oai/fastr} and FastR2\footnote{https://github.com/oracle/fastr}. These external test suites are first curated to eliminate expressions which rely on external effects and resources, such as internet connection, access files, and generate charts.
+the test suite of GNU~R itself~\parencite{Rwebsite}, and two test suites from the FastR project~\parencite{kalibera2014fast}, which we refer to as FastR1\footnote{https://github.com/h2oai/fastr} and FastR2\footnote{https://github.com/oracle/fastr}. These external test suites are first curated to eliminate expressions which rely on external effects and resources, such as internet connection, access files, and generate charts.
  Additionally, other excluded tests require specific packages (for example, the JIT package) or use particular templates in Java to generate cases. In total, these curated test suites include over 17,000 tested expressions.
  % Overall, as far as we can tell, all these test suites have very little overlap.\et{is that true?}
 
