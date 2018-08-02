@@ -385,7 +385,7 @@ Observing such a result either means \CoqR{} has a bug, or that an actual bug in
 %      we are in theory able to catch ``bugs'' that direct testing on GNU~R wouldn't be able to catch.}
 %
 \item Given the size and complexity of the R language, it is important to be able to execute the Coq interpreter without it being fully complete.
-The specific constructor \mintinline{Coq}{result_not_implemented} is thus important
+The \mintinline{Coq}{result_not_implemented} constructor is thus important
 for development; it is treated specifically in our testing framework, for instance to help identity which features one should focus on next.
 %
 \item Finally, \mintinline{Coq}{result_bottom} is returned
