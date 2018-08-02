@@ -1866,7 +1866,7 @@ of the \mintinline{Coq}{R_length_result} lemma.
 For instance, the hypothesis \mintinline{Coq}{safe_pointer S args}
 is replaced by \mintinline{Coq}{safe_pointer S' args}.
 This transition would not be particularly difficult to prove by hand
-given the right lemmae, but it would be cumbersome and repetitive.
+given the right lemma, but it would be cumbersome and repetitive.
 %
 The proof continues by applying the tactic \mintinline{Coq}{cutR} again
 with a lemma about \mintinline{Coq}{matchArgs},
@@ -1919,9 +1919,9 @@ from the newly-allocated objects and show that the invariants hold for each of t
 The proofs of our 20 simple functions spans over 440 lines of proofs.
 This is to be compared to the size of the definition of the automation:
 1900 lines of tactic definition,
-and more than a thousand lines for the lemmae used by these tactics.
+and more than a thousand lines for the lemmas used by these tactics.
 The compiled file for the proofs about our 20 simple functions
-is however larger than the one containing all the lemmae used by the tactics:
+is however larger than the one containing all the lemmas used by the tactics:
 automation enabled us to build large proofs through relatively small proof scripts.
 %
 % Given the size of the formalization,
