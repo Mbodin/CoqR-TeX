@@ -80,6 +80,7 @@
 \newcommand\CoqR{CoqR}
 
 \newcommand\newtext[1]{{\color{blue} #1}}
+\newcommand\changed[1]{{\color{orange} #1}}
 
 \begin{document}
 
@@ -225,7 +226,7 @@ to formally prove program properties with a high amount of trust.
 But to formally prove that an R program meets its specification,
 we first need a formal semantics of R.
 While there exists a language definition document~\parencite{team2000r}, this document is unfit for serving as the basis of a verification effort; it is both a specification effort and a manual, written in plain English, with ambiguities and incomplete at times. Additionally, we found several mismatches between the text description and the behavior of the reference interpreter, GNU~R~\parencite{Rwebsite}.\footnote{For instance, according to the language definition, \mintinline{R}{if ("TRUE") 42} should raise an error, whilst the interpreter returns \mintinline{R}{42}.}
-Crucially, the formal semantics should account for all the subtle cases of the R semantics, such as function call conventions described above, implicit type conversions, and so on.
+Crucially, the formal semantics should account for all the corner cases of the R semantics, such as function call conventions described above, implicit type conversions, and so on.
 This is necessary because these corner cases are indeed a typical place were bugs appear and are hard to track.
 A complete semantics for the full R language will inevitably be complex,
 because of the large amount of such corner cases.
