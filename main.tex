@@ -202,20 +202,10 @@ leading to no error thrown.
 \newtext{
 R also comprises a \mintinline{R}{...} feature
 to define functions accepting any number of arguments.
-The function \mintinline{R}{g} of Figure~\ref{fig:calls}
-shows such an example.
-Its first call is by position:
-\mintinline{R}{ab} is associated with \mintinline{R}{1},
-\mintinline{R}{...} with the list containing \mintinline{R}{2} and \mintinline{R}{3},
-and \mintinline{R}{ac} is missing.
-Missing arguments are accepted by R
-as soon as they are not used during the runtime execution.
-Arguments appearing after \mintinline{R}{...}
-can be given a value by name,
-but do not match by prefix:
-in the last call, only the argument \mintinline{R}{ab}
-matches \mintinline{R}{a} by prefix,
-and no error is thrown.}
+This feature adds an exception to the prefix rule:
+the variables declared after the \mintinline{R}{...} special argument
+are not considered during prefix matching,
+but only for exact matches.}
 
 \begin{figure}[t]
 \begin{minted}{R}
@@ -225,10 +215,6 @@ f(de=3, abc=1, ab=2) # By name
 f(1, d=3, 2)         # Mixed
 f(3, a=1, ab=2)      # a is associated to abc
 f(a=3, 1, 2)         # Error: several prefixes
-g <- function (ab, ..., ac) ab
-g(1, 2, 3)           # ac is missing
-g(ac=1, 2)           # ac gets 1
-g(a=1)               # No error
 \end{minted}
 \vspace{-1em}
 \caption{Exploring function calls in R.}
