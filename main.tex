@@ -791,8 +791,8 @@ with all the potentially looping functions.
 A \mintinline{C}{while}-loop is obviously part of these functions.
 We then define \mintinline{Coq}{while_loop} with an additional
 argument \mintinline{Coq}{runs} of type \mintinline{Coq}{Runs}.
-Line~\ref{line:runs_while:recursive:call} is the ``recursive'' call,
-but instead of a recursive call,
+Line~\ref{line:runs_while:recursive:call} corresponds to the recursive call,
+but instead of an actual recursive call,
 we call the \mintinline{Coq}{while_loop} function stored
 in the \mintinline{Coq}{runs} record.
 
