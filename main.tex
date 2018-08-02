@@ -222,7 +222,8 @@ Formal methods offer a solution to the trust issue:
 proof assistants such as Coq~\parencite{Coq} enable us
 to formally prove program properties with a high amount of trust.
 But to formally prove that an R program meets its specification,
-we first need a formal semantics of R. While there exists a language definition document~\parencite{R}, this document is unfit for serving as the basis of a verification effort; it is both a specification effort and a manual, written in plain English, with ambiguities and incomplete at times. Additionally, we found several mismatches between the text description and the behavior of the reference interpreter, GNU~R~\parencite{Rwebsite}.\footnote{For instance, according to the language definition, \mintinline{R}{if ("TRUE") 42} should raise an error, whilst the interpreter returns \mintinline{R}{42}.}
+we first need a formal semantics of R.
+While there exists a language definition document~\parencite{team2000r}, this document is unfit for serving as the basis of a verification effort; it is both a specification effort and a manual, written in plain English, with ambiguities and incomplete at times. Additionally, we found several mismatches between the text description and the behavior of the reference interpreter, GNU~R~\parencite{Rwebsite}.\footnote{For instance, according to the language definition, \mintinline{R}{if ("TRUE") 42} should raise an error, whilst the interpreter returns \mintinline{R}{42}.}
 Crucially, the formal semantics should account for all the subtle cases of the R semantics, such as function call conventions described above, implicit type conversions, and so on.
 This is necessary because these corner cases are indeed a typical place were bugs appear and are hard to track.
 A complete semantics for the full R language will inevitably be complex,
@@ -490,8 +491,8 @@ Such checks are quick and easy to perform, often leading to a quick fix of \CoqR
 
 Figure~\ref{fig:do_attr} shows an example of the eyeball correspondence that can be achieved using the result monad.
 Figure~\ref{fig:c:do_attr} shows a C function, and Figure~\ref{fig:coq:do_attr} its Coq translation.
-The \mintinline{C}{SEXP} type is an alias for \mintinline{C}{EXP*},
-that is, pointers to basic language elements.
+\newtext{The \mintinline{C}{SEXP} type is an alias for \mintinline{C}{EXP*},
+that is, pointers to basic language elements.}
 The binder \mintinline{Coq}{let%success} is used when calling a function.
 Thanks to the monadic encoding, the calls to \mintinline{Coq}{R_length}
 and \mintinline{Coq}{matchArgs} may return an unsuccessful result, but the code does not need to be explicit about that possibility; the code after a call is only executed if the result denotes success. Similarly, the \mintinline{C}{return} statement from C is translated to \mintinline{Coq}{result_success}, and raising an error is performed using \mintinline{Coq}{result_error}.
@@ -1033,7 +1034,7 @@ a testing framework that supports comparative execution of \CoqR{} and GNU~R. Th
 % Test suite sources.
 \noindent\textbf{Test suites.}
 To exercise \CoqR, we exploit different existing test suites:
-the test suite of GNU~R itself\footnote{https://github.com/wch/r-source/}, and two test suites from the FastR project~\parencite{kalibera2014fast}, which we refer to as FastR1\footnote{https://github.com/h2oai/fastr} and FastR2\footnote{https://github.com/oracle/fastr}. These external test suites are first curated to eliminate expressions which rely on external effects and resources, such as internet connection, access files, and generate charts.
+the test suite of GNU~R itself, and two test suites from the FastR project~\parencite{kalibera2014fast}, which we refer to as FastR1\footnote{https://github.com/h2oai/fastr} and FastR2\footnote{https://github.com/oracle/fastr}. These external test suites are first curated to eliminate expressions which rely on external effects and resources, such as internet connection, access files, and generate charts.
  Additionally, other excluded tests require specific packages (for example, the JIT package) or use particular templates in Java to generate cases. In total, these curated test suites include over 17,000 tested expressions.
  % Overall, as far as we can tell, all these test suites have very little overlap.\et{is that true?}
 
@@ -1990,7 +1991,7 @@ FastR agrees with us that the GNU~R interpreter is the reference semantics: any 
 \newtext{
 Work on formal specification of R is sparse.
 %
-The language definition document~\parencite{R}
+The language definition document~\parencite{team2000r}
 is unfit for verification due to its ambiguities and mismatches with the behavior of GNU~R.
 %
 In an effort to understand R features and their usage in the wild, Morandat \emph{et. al.} formalize a minimal core of R~\parencite{morandat2012evaluating}. This core models functions and some assignment forms, but no control-flow constructs (\mintinline{R}{if}, \mintinline{R}{return}) and implicit type conversions; neither do they attempt to capture the semantics of additional features from the symbol table.
