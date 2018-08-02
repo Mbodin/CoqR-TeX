@@ -24,6 +24,7 @@
 
 \usepackage{booktabs}
 \usepackage{subcaption}
+\usepackage{enumitem}
 
 \usepackage[
    backend=biber,
@@ -341,7 +342,7 @@ Therefore, in order to achieve an effective eyeball correspondence between C cod
 %
 The result monad constructors are:\footnote{The result monad is similar to the one used in the JSExplain project~\parencite{JSExplain}, which aims at defining a JavaScript interpreter in Coq, readable by non-specialists.
 }
-\begin{itemize}
+\begin{itemize}[leftmargin=0.5em]
 \item The main constructor is \mintinline{Coq}{result_success}, used when a computation is successful.
 In addition to the result (of type \mintinline{Coq}{A} in the definition),
 it carries the global state (of type \mintinline{Coq}{state}). We describe the representation of state later on in this section.
