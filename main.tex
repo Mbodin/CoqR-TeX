@@ -1486,10 +1486,7 @@ FastR2      & 2411 & 1128 & 6888  &   493   & 0   & 1914  &   297 & 343 \\ \hlin
 
 Figure~\ref{fig:results} presents the current status of executing the four test suites described earlier with \CoqR{}.
 On a 2-core Intel Xeon 2.20GHz with 4 GB of RAM, execution times range from 1.5~hrs for GNU~R's test suite to over 12~hrs for FastR2.
-\newtext{This is longer by several orders of magnitude than GNU~R's execution time.
-We do not consider this as an issue:
-we aim to provide a faithfull formalization of the behavior of the R language,
-and not to provide an alternative R interpreter.}
+\newtext{\CoqR{} is several orders of magnitude slower than GNU~R, but its aim is to provide a faithful formalization of R's semantics, not to be an alternative production-level interpreter.}
 
 Overall, \CoqR{} successfully covers 30\% of all the tests. The Corners test suite is almost completely covered, while FastR2, which we integrated more recently in our development process, is lagging behind compared to FastR1.
 
