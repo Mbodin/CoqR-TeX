@@ -1814,10 +1814,10 @@ whose type is in the list \mintinline{Coq}{l}. Hence, the hypothesis on \mintinl
 (\mintinline{Coq}{ListSxp}) or nil (\mintinline{Coq}{NilSxp}).\footnote{The type \mintinline{Coq}{NilSxp} is the type of the \mintinline{Coq}{R_NilValue} global variable (see Section~\ref{sec:globals}); it is used both to end lists and to indicate a missing information.}
 Similarly, the constructor states that the tag
 of a list is either a character vector or a \mintinline{Coq}{NilSxp} element.
-Note that no constraint is specified for the first element \mintinline{Coq}{car} of the list: lists in R are heterogeneous.
+Note that no constraint is given for the first element \mintinline{Coq}{car} of the list: lists in R are heterogeneous.
 %
 As another example, the constructor \mintinline{Coq}{safe_StrStruct} states that a string vector contains an array of C pointers,
-all of which should be associated with a character vector in memory.
+all of which associated with a character vector in memory.
 
 \begin{figure}[t]
 \begin{minted}{Coq}
@@ -1839,10 +1839,21 @@ Inductive safe_SExp S : SExp -> Prop :=
 
 
 Such invariants are relatively simple, but given the size of the formalization,
-they are quite long to establish. Proving that some step of the interpreter preserves the invariants quickly becomes very tedious. In order to address this, we developed various Coq tactics to ease the proof process.
-These tactics are mainly useful to propagate known information
+they are quite long to establish.
+Proving that some step of the interpreter preserves the invariants quickly becomes very tedious.
+In order to address this, we developed various Coq tactics to ease the proof process.
+\newtext{\emph{Tactics} are programs manipulating Coq proof terms.
+They are a key component in interactive theorem provers.}
+Our tactics are mainly useful to propagate known information
 through state changes.
  % such operations would have been long and cumbersome for the user, and it automates relatively easily.
+\newtext{To define them, we proved about an hundred simple lemmas.
+Our tactics then look in the context for patterns where these lemmas can be applied in a useful way:
+it would for instance not be productive to rewrite the same equality in both directions,
+leading to the same context we started with.
+Some lemmas require variables to be in a specific form:
+some of our tactics have been specifically designed to rewrite the context into a form fitting specific lemmas.
+We defined overall 80 tactics, most of which performing very simple operations on the proof context.}
 
 Figure~\ref{fig:do_attr_result} illustrates the use of these tactics, with a lemma that states that the \mintinline{Coq}{do_attr} function
 defined in Figure~\ref{fig:coq:do_attr} produces a result
@@ -1854,25 +1865,27 @@ for the global variables of \mintinline{Coq}{globals} with the predicate \mintin
 The arguments \mintinline{Coq}{call}, \mintinline{Coq}{op},
 \mintinline{Coq}{args}, and \mintinline{Coq}{env} of \mintinline{Coq}{do_attr}
 are also assumed to satisfy these invariants,
-in addition to being of the expected type.
+as well as being of the expected type.
 %
-In the conclusion of the lemma, the \mintinline{Coq}{result_prop} predicate enables us
-to specify what the resulting state of \mintinline{Coq}{do_attr} should satisfy,
-whilst ignoring non-interesting cases
-such as \mintinline{Coq}{result_not_implemented} or \mintinline{Coq}{result_bottom}.
-% Indeed, reaching one of these results means that the result is out of scope for the  interpreter.
+\changed{In the conclusion of the lemma, the \mintinline{Coq}{result_prop} predicate
+specifies what the resulting state of \mintinline{Coq}{do_attr} satisfies
+in the interesting cases
+(ignoring cases such as \mintinline{Coq}{result_bottom})}.
+% Indeed, reaching one of these results means that the result is out of scope for the interpreter.
 % \et{will turn into a forward ref if we move proof section earlier}
 % This is the reason why these are not considered harmful
 % during the testing process (see Section~\ref{sec:test:methodology}).
 % In the normal result, we state that the invariants are still satisfied.
 
-The proof closely follows the source code of \mintinline{Coq}{do_attr}.
+\changed{Thanks to our tactics,}
+the proof closely follows the source code of \mintinline{Coq}{do_attr}.
 After introducing the hypotheses, the function \mintinline{Coq}{do_attr} is unfolded,
 leaving its definition ready to be processed by further tactics.
 The function \mintinline{Coq}{do_attr}
 starts by calling \mintinline{Coq}{R_length}
 (see Figure~\ref{fig:coq:do_attr}).
-In the proof we use the \mintinline{Coq}{cutR} tactic with a lemma about \mintinline{Coq}{R_length}. This novel tactic discharges the premises of the lemma and introduces the resulting state:
+We here call the \mintinline{Coq}{cutR} tactic with a lemma about \mintinline{Coq}{R_length}.
+This novel tactic discharges the premises of the lemma and introduces the resulting state:
 only the success case is left, the other kinds of results being transparently propagated.
 % As for \mintinline{Coq}{do_attr}, the error case yields \mintinline{Coq}{False}
 % and is discharged by the tactic.
@@ -1899,7 +1912,6 @@ given the right lemma, but it would be cumbersome and repetitive.
 The proof continues by applying the tactic \mintinline{Coq}{cutR} again
 with a lemma about \mintinline{Coq}{matchArgs},
 then \mintinline{Coq}{computeR} to propagate the hypotheses. And so on.
-
 
 
 \begin{figure}[t]
@@ -1932,8 +1944,9 @@ Some of these significantly change the structures described by the invariants,
 but eventually preserve the invariants. 
 % For instance, when an element is added to a shared list,
 % a lot of things are updated in GNU~R's memory state.
-In Coq, this translates into a large number of different intermediate states being generated,
-and some invariants proofs are not automatically discharged by the \mintinline{Coq}{computeR} tactic.
+In Coq, this translates into a large number of intermediate states being generated,
+and some invariants proofs are not automatically discharged by the \mintinline{Coq}{computeR} tactic
+\newtext{(as some invariants do not hold in them)}.
 % ---%
 % typically when the invariants are temporarily broken during the execution of a function.
 % but that its final state actually puts the invariants back,
@@ -2085,7 +2098,10 @@ as well as mistakes in the ECMAScript specification.
 % However, this project involved 8 people for a year:
 % building both a specification and an interpreter,
 % as well as a correctness proof between them, involves a lot of resources.
-In \CoqR, we take a different approach by defining the big-step operational semantics as an interpreter: the same definition is both executable and syntactically close to its specification (the GNU~R interpreter).
+In \CoqR, we take a different approach by defining the big-step operational semantics as an interpreter:
+the same definition is both executable and syntactically close to its specification (the GNU~R interpreter).
+\newtext{\CoqR{} uses a similar monadic structure than JSExplain~\parencite{JSExplain},
+    making it possible to a build similar tool for R.}
 
 % CompCert.
 The Coq proof assistant has already been used
