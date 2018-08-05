@@ -695,23 +695,6 @@ actually represents a large portion of the source code.
 Even before importing any libraries, a lot of basic language elements
 are created and stored in global variables.
 
-For instance, the often-used variable \mintinline{C}{R_NilValue}
-is set to be a list whose \mintinline{C}{car}, \mintinline{C}{cdr},
-and \mintinline{C}{tag} fields point to \mintinline{C}{R_NilValue} itself.
-This element is used instead of the \mintinline{C}{NULL} pointer
-to mark any non-present element. Another important global variable is
-\mintinline{C}{R_FunTab}, which is the {\em symbol table} that maps operation and function names to C functions implementing them. (We exploit this structuring of the interpreter for building \CoqR{} in an incremental manner---see Section~\ref{sec:coq:structure}.)
-
-%
-\changed{The initialization of global variable performs local computations, calling nucleus functions.}
-To avoid this circular dependency---which Coq would not accept---one could parametrize each nucleus function by the value of the global variables it uses.
-This would however not scale, considering the size of the project and the number of global variables involved.
-%
-Instead, we parameterize each function of \CoqR{} by a single \mintinline{Coq}{globals} environment, which is a mapping from a definite set of global variables to \mintinline{Coq}{SEXP}. This additional argument can be seen in the Coq code of Figure~\ref{fig:coq:do_attr}: it is passed along at each call site.
-
-To make definitions more convenient, we use coercions to make Coq implicitly perform a lookup in the \mintinline{Coq}{globals} environment whenever a global variable is read. Therefore, accessing global variables is transparent, as illustrated by the use of \mintinline{C}{do_attr_formals} in Figure~\ref{fig:coq:do_attr}.
-
-
 \begin{figure*}
     \centering{}
 \begin{subfigure}{.5\textwidth}
@@ -740,6 +723,22 @@ Definition do_attr_init globals runs S :=
     \caption{Another snippet of \mintinline{C}{do_attr} and its Coq translation}
     \label{fig:do_attr:formals}
 \end{figure*}
+
+For instance, the often-used variable \mintinline{C}{R_NilValue}
+is set to be a list whose \mintinline{C}{car}, \mintinline{C}{cdr},
+and \mintinline{C}{tag} fields point to \mintinline{C}{R_NilValue} itself.
+This element is used instead of the \mintinline{C}{NULL} pointer
+to mark any non-present element. Another important global variable is
+\mintinline{C}{R_FunTab}, which is the {\em symbol table} that maps operation and function names to C functions implementing them. (We exploit this structuring of the interpreter for building \CoqR{} in an incremental manner---see Section~\ref{sec:coq:structure}.)
+
+%
+\changed{The initialization of global variable performs local computations, calling nucleus functions.}
+To avoid this circular dependency---which Coq would not accept---one could parametrize each nucleus function by the value of the global variables it uses.
+This would however not scale, considering the size of the project and the number of global variables involved.
+%
+Instead, we parameterize each function of \CoqR{} by a single \mintinline{Coq}{globals} environment, which is a mapping from a definite set of global variables to \mintinline{Coq}{SEXP}. This additional argument can be seen in the Coq code of Figure~\ref{fig:coq:do_attr}: it is passed along at each call site.
+
+To make definitions more convenient, we use coercions to make Coq implicitly perform a lookup in the \mintinline{Coq}{globals} environment whenever a global variable is read. Therefore, accessing global variables is transparent, as illustrated by the use of \mintinline{C}{do_attr_formals} in Figure~\ref{fig:coq:do_attr}.
 
 % Static global variables.
 \paragraph{Hidden global variables.} In fact \mintinline{C}{do_attr_formals} is a {\em hidden} global variable, introduced locally with the C \mintinline{C}{static} keyword inside the \mintinline{C}{do_attr} function. Such a variable is persistent across calls, just like a standard global variable.
