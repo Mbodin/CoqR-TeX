@@ -364,6 +364,9 @@ corresponds to a call to the \mintinline{C}{longjmp}
 C function in GNU~R source code.
 It only appears in constructs involving non-local jumps,
 such as \mintinline{R}{break} or \mintinline{R}{return}.
+\newtext{It behaves similarly to \mintinline{Coq}{result_error},
+    but is caugth by the \mintinline{C}{setjmp} monadic binder,
+    mimicking the C behavior.}
 % The \mintinline{C}{longjmp} jumps to the corresponding
 % \mintinline{C}{setjmp} function,
 % which typically appears in loops and function calls.
@@ -397,7 +400,10 @@ for development; it is treated specifically in our testing framework, for instan
 %
 \item Finally, \mintinline{Coq}{result_bottom} is returned
 to end the execution when reaching the maximum number of executed instructions
-(also called \emph{fuel}). This is meant to artificially make our interpreter terminate, despite the fact that the interpreted R program may not.
+(also called \emph{fuel}).
+This is meant to artificially make our interpreter terminate,
+despite the fact that the interpreted R program may not
+\newtext{(see Section~\ref{sec:fuel} for more details)}.
 \end{itemize}
 
 % \begin{figure}
@@ -565,7 +571,7 @@ Each of them are composed of a header and some data.
 %
 The header stores the type of the basic language element,
 a list of attributes,
-as well as several mostly-boolean informations
+as well as several boolean informations
 (for instance whether it can be safely updated in place).
 There are \(24\) different types of basic language elements in R,
 \(9\) of which being different kinds of vectors.
@@ -603,7 +609,7 @@ in Coq, the data of vector is stored directly in the \mintinline{Coq}{SEXPREC} s
 and not following it in memory as in C.
 
 \begin{figure}
-\begin{minted}{Coq}
+    \begin{minted}[escapeinside=@@]{Coq}
 Record ListStruct := make_ListStruct {
     list_carval : SEXP ;
     list_cdrval : SEXP ;
@@ -623,7 +629,7 @@ Inductive SEXPRECData :=
   | SEXPREC_VectorComplex :
       Vector_SEXPREC complex -> SEXPRECData
   (* ... *).
-Coercion listExp : ListStruct >-> SEXPRECData.
+Coercion listExp : ListStruct >-> SEXPRECData.@\label{line:SEXPREC:Coercion:listExp}@
 Coercion envExp : EnvStruct >-> SEXPRECData.
 (* ... *)
 
@@ -642,14 +648,12 @@ To ease readability, coercions have been used extensively.
 Coercion is a mechanism to mark some constructors as implicit.
 For instance, if Coq expects a \mintinline{Coq}{SEXPRECData}
 and is given a \mintinline{Coq}{ListStruct},
-then the constructor \mintinline{Coq}{listExp} will be implicitly called
-thanks to the corresponding line in Figure~\ref{fig:SEXPREC}.
+then the constructor \mintinline{Coq}{listExp} will be implicitly added
+thanks to Line~\ref{line:SEXPREC:Coercion:listExp} of Figure~\ref{fig:SEXPREC}.
 In the context of \CoqR{},
 this is more than a simple syntactic notation
 as it helps the eyeball correspondence
-by hiding what is not present in C:
-if one points to either a list or an environment,
-the C notation to access its list or its environment is the same.
+by hiding in the Coq code what is not present in C.
 %
 Of course, this implicit notation is only one-way:
 given a \mintinline{Coq}{ListStruct},
@@ -670,7 +674,7 @@ then \mintinline{Coq}{result_impossible} is returned:
 this corresponds to an undefined behavior in C
 (dereferencing an invalid pointer or accessing the wrong projection of a \mintinline{C}{union}).
 The accesses in Coq are thus guarded by monadic binders,
-whilst closely mimicking the unguarded accesses of C.
+closely mimicking the unguarded accesses of C.
 
 
 % Not modeling this part enabled us to focus on the computational part.
@@ -754,6 +758,7 @@ This code is executed after the standard global variables are initialized.
 
 \subsection{Dealing with Non-Termination}
 \label{sec:fuel}
+
 % Structuring the fuel.
 Another additional argument present in Figure~\ref{fig:coq:do_attr}
 is the \mintinline{Coq}{runs} argument.
