@@ -181,12 +181,12 @@ This sometimes comes at the cost of readability and predictability. Indeed,
 the semantics of R is subtle and contains numerous corner cases that can result in unexpected behavior.
 
 The reasons for these corner cases are numerous, ranging from backward compatibility to the desire to accommodate the use of R as both a traditional programming language and an interactive shell.
-Even a feature as basic as function calls can be the source of surprises in R.
-Indeed, there are many ways to call a function, and in particular there are two ways to provide an argument: either by position or by name.%\footnote{
+Even a feature as basic as function calls can be a source of surprise in R.
+Indeed, there are many ways to call a function, and in particular there are two ways to provide an argument: either by position or by name (including prefixes). %\footnote{
     %To simplify, we ignore the \mintinline{R}{...} construct
     %as well as default arguments, which both have non-trivial interactions with the other constructs.} While this per se is fairly common, the way R supports it is not; in particular it supports matching names {\em by prefix}.
 %
-To illustrate some subtleties that follow from this feature,
+\changed{To illustrate the consequences of this feature,}
 Figure~\ref{fig:calls} defines a function \mintinline{R}{f} that concatenates its three arguments. The first call associates arguments by position, and the second by name. The third call mixes both mechanisms, and exploits the prefix feature: \mintinline{R}{d} is associated to \mintinline{R}{de}
 because it is the only argument whose name starts with \mintinline{R}{d}.
 Now, if more than one argument matches by prefix,
@@ -224,7 +224,7 @@ f(a=3, 1, 2)         # Error: several prefixes
 Such subtle behaviors are numerous in R~\parencite{RInferno}.
 Debugging tools exist~\parencite{mcpherson2014},
 but they cannot always compensate for the complex semantics of R.
-Consequently, surprising bugs occur in R programs, 
+Consequently, unexpected bugs occur in R programs,
 and reasoning about such programs, even informally, can be difficult.
 %
 % We need a formalization of the language.
@@ -232,9 +232,11 @@ and reasoning about such programs, even informally, can be difficult.
 to formally prove program properties.}
 But to formally prove that an R program meets its specification,
 we first need a formal semantics of R.
-While there exists a language definition document~\parencite{team2000r}, this document is unfit as the basis of a verification effort; it is both a specification effort and a manual, written in plain English, with ambiguities and incomplete at times. Additionally, we found several mismatches between the text description and the behavior of the reference interpreter, GNU~R~\parencite{Rwebsite}.\footnote{For instance, according to the language definition, \mintinline{R}{if ("TRUE") 42} should raise an error, whilst the interpreter returns \mintinline{R}{42}.}
-Crucially, the formal semantics should account for all the corner cases of the R semantics, such as function call conventions described above, implicit type conversions, and so on.
-This is necessary because these corner cases are indeed a typical place were bugs appear and are hard to track.
+While there exists a language definition document~\parencite{team2000r}, this document is unfit as the basis of a verification effort:
+it is both a specification effort and a manual, written in plain English, with ambiguities and incomplete at times.
+Additionally, we found several mismatches between the text description and the behavior of the reference interpreter, GNU~R~\parencite{Rwebsite}.\footnote{For instance, according to the language definition, \mintinline{R}{if ("TRUE") 42} should raise an error, whilst the interpreter returns \mintinline{R}{42}.}
+Crucially, the formal semantics should account for all the corner cases of the R semantics, such as the function call conventions described above, implicit type conversions, and so on.
+This is necessary because these corner cases are a typical place were bugs appear and are hard to track.
 A complete semantics for the full R language will inevitably be complex,
 because of the large amount of such corner cases.
 
@@ -261,7 +263,9 @@ We also report on a proof effort to establish that memory invariants are preserv
 Section~\ref{sec:related:work} discusses related work and Section~\ref{sec:conclusion} concludes.
 
 
-The current implementation of \CoqR{}\footnote{\url{https://github.com/Mbodin/CoqR/releases/tag/DLS2018}} is not feature complete; R is a very large programming language and achieving 100\% coverage of the language and its main libraries is a huge implementation effort. The contribution of this work is to provide realistic foundations for a trustworthy R formalization in Coq.
+The current implementation of \CoqR{}\footnote{\url{https://github.com/Mbodin/CoqR/releases/tag/DLS2018}} is not feature-complete:
+R is a very large programming language and achieving 100\% coverage of the language and its main libraries is a huge implementation effort.
+The contribution of this work is to provide realistic foundations for a trustworthy R formalization in Coq.
 First, the interpreter covers the nucleus of the language and over 120 additional features. It is implemented in an extensible manner, following the architecture of GNU~R itself. Second, the testing infrastructure we provide is designed to help drive the development effort towards the most pressing missing features. At present, the \CoqR{} implementation passes a substantial number of tests from real-world R projects. This is realistic enough to support the claim that, given more engineering power, our approach can scale up to the full language and its main libraries.
 
 
