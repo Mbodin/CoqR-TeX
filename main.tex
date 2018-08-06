@@ -451,12 +451,12 @@ This obliviousness to global state, errors and non-termination is what enables a
 \begin{figure*}[t]
     \centering{}
 \begin{subfigure}{.54\textwidth}
-\begin{minted}{C}
+    \begin{minted}[escapeinside=@@]{C}
 SEXP do_attr (SEXP call, SEXP op,
               SEXP args, SEXP env){
   SEXP argList, car, ans;
   static SEXP do_attr_formals = NULL;
-  /* ... */
+  /* ... */@\label{line:c:do_attr:commented:part:do_attr_formals}@
   int nargs = R_length (args);
   argList = matchArgs (do_attr_formals, args, call);
   PROTECT (argList);
@@ -524,9 +524,9 @@ The binder \mintinline{Coq}{let%success} is used when calling a function.
 Thanks to the monadic encoding, the calls to \mintinline{Coq}{R_length}
 and \mintinline{Coq}{matchArgs} may return an unsuccessful result, but the code does not need to be explicit about that possibility; the code after a call is only executed if the result denotes success. Similarly, the \mintinline{C}{return} statement from C is translated to \mintinline{Coq}{result_success}, and raising an error is performed using \mintinline{Coq}{result_error}.
 
-The other differences that can be observed are several arguments systematically passed to each function (\mintinline{Coq}{globals}, \mintinline{Coq}{runs}, and \mintinline{Coq}{S}), as well as the use of
-\mintinline{Coq}{read%list}
-instead of \mintinline{C}{CAR} in the C version, and the fact that the use of the \mintinline{C}{PROTECT} macro is missing from the Coq version. We clarify each of these points in the following subsections.
+The other differences that can be observed are several arguments systematically passed to each function (\mintinline{Coq}{globals}, \mintinline{Coq}{runs}, and \mintinline{Coq}{S}),
+the use of \mintinline{Coq}{read%list}
+instead of \mintinline{C}{CAR} in the C version, as well as the fact that the use of the \mintinline{C}{PROTECT} macro is missing from the Coq version. We clarify each of these points in the following subsections.
 
 % The \mintinline{Coq}{S} argument and the use
 % are related to the modeling of the heap, discussed in Section~\ref{sec:coq:structure}.
@@ -730,16 +730,19 @@ Definition do_attr_init globals runs S :=
 % Initialization of R and global variables.
 The GNU~R interpreter features over \(80\) global variables that need initialization, and are subsequently unchanged.
 The initialization of these internal variables
-actually represents a large portion of the source code.
-Even before importing any libraries, a lot of basic language elements
-are created and stored in global variables.
+represents a large portion of the source code.
+These basic language elements
+are created and stored in global variables
+before even importing any libraries.
 
 For instance, the often-used variable \mintinline{C}{R_NilValue}
 is set to be a list whose \mintinline{C}{car}, \mintinline{C}{cdr},
 and \mintinline{C}{tag} fields point to \mintinline{C}{R_NilValue} itself.
 This element is used instead of the \mintinline{C}{NULL} pointer
-to mark any non-present element. Another important global variable is
-\mintinline{C}{R_FunTab}, which is the {\em symbol table} that maps operation and function names to C functions implementing them. (We exploit this structuring of the interpreter for building \CoqR{} in an incremental manner---see Section~\ref{sec:coq:structure}.)
+to mark absent elements. Another important global variable is
+\mintinline{C}{R_FunTab}, which is the {\em symbol table} that maps operation and function names to their C implementions.
+(We exploit this structuring of the interpreter for building \CoqR{} in an incremental manner
+\newtext{from a simple nucleus}---see Section~\ref{sec:coq:structure}.)
 
 %
 \changed{The initialization of global variable performs local computations, calling nucleus functions.}
@@ -751,9 +754,13 @@ Instead, we parameterize each function of \CoqR{} by a single \mintinline{Coq}{g
 To make definitions more convenient, we use coercions to make Coq implicitly perform a lookup in the \mintinline{Coq}{globals} environment whenever a global variable is read. Therefore, accessing global variables is transparent, as illustrated by the use of \mintinline{C}{do_attr_formals} in Figure~\ref{fig:coq:do_attr}.
 
 % Static global variables.
-\paragraph{Hidden global variables.} In fact \mintinline{C}{do_attr_formals} is a {\em hidden} global variable, introduced locally with the C \mintinline{C}{static} keyword inside the \mintinline{C}{do_attr} function. Such a variable is persistent across calls, just like a standard global variable.
+\paragraph{Hidden global variables.}
+In fact \mintinline{C}{do_attr_formals} is a {\em hidden} global variable, introduced locally with the C \mintinline{C}{static} keyword inside the \mintinline{C}{do_attr} function.
+Such a variable is persistent across calls, just like a standard global variable.
 
-In place of the first commented-out part in Figure~\ref{fig:c:do_attr}, the code initializes the \mintinline{C}{static} variable \mintinline{C}{do_attr_formals}, as shown in Figure~\ref{fig:c:do_attr:formals}.
+In place of the commented-out part Line~\ref{line:c:do_attr:commented:part:do_attr_formals} of Figure~\ref{fig:c:do_attr},
+the code initializes the \mintinline{C}{static} variable \mintinline{C}{do_attr_formals},
+as shown in Figure~\ref{fig:c:do_attr:formals}.
 Upon the first call of \mintinline{C}{do_attr}, this variable is initialized by a basic language element.
 The value is kept across calls to avoid a costly reallocation at each call.
 %
@@ -763,9 +770,6 @@ Consequently, we treat \mintinline{C}{static} variables just like global variabl
 We extracted out the part of \mintinline{C}{do_attr} that performs initialization, shown in Figure~\ref{fig:coq:do_attr:formals}.
 This code is executed after the standard global variables are initialized.
 % \et{what if the initialization of a static var uses some argument of the first call? does it ever happen?}\mb{I've never seen it. In such a case, I just add these variables in the state (this already happenned, but is rare).}
-
-\subsection{Dealing with Non-Termination}
-\label{sec:fuel}
 
 \begin{figure}
 \begin{minted}[escapeinside=@@]{Coq}
@@ -811,6 +815,9 @@ Fixpoint runs max_step globals : Runs :=
     \label{fig:runs}
 \end{figure}
 
+\subsection{Dealing with Non-Termination}
+\label{sec:fuel}
+
 % Structuring the fuel.
 Another additional argument present in Figure~\ref{fig:coq:do_attr}
 is the \mintinline{Coq}{runs} argument.
@@ -853,7 +860,7 @@ Figure~\ref{fig:runs} shows its Coq definition.
 % Note that the symbol table has to be one of the projections of \mintinline{Coq}{runs},
 % otherwise a strangely-written function could in theory fetches itself from the symbol table
 % and executes it, leading to an unwanted loop.
-% Addition: this is called the “Landin’s knot”, but we probably still don’t want to speak about it ☺
+% Addition: this is called the “Landin's knot”, but we probably still don't want to speak about it ☺
 % }
 % %
 % In addition to passing the extra \mintinline{Coq}{runs} argument,
@@ -883,7 +890,7 @@ Note that the eyeball correspondence between GNU~R and \CoqR{} would pay off in 
 \begin{figure}
 \begin{minted}{C}
 FUNTAB R_FunTab[] = {
-  {"if",        do_if,       2,  true,  false},
+  {"if",        do_if,       3,  true,  false},
   {"while",     do_while,    2,  true,  false},
   {"break",     do_break,    0,  true,  false},
   {"return",    do_return,   1,  true,  false},
@@ -919,10 +926,12 @@ We hence identify a minimal nucleus of R to support initially, and then incremen
 To this end, we exploit the fact that GNU~R is structured around a huge {\em symbol table} \newtext{with more than 700 entries}, corresponding to all functions present in the initial environment of R, whose code is written natively in C.
 
 Figure~\ref{fig:names} shows an excerpt of the symbol table.
-This C array associates the name of each function with the corresponding C function implementing it, along with its arity and some additional information.\footnote{Namely, whether the function is to be directly defined in the initial environment or available in the \mintinline{R}{.Internal} construct, and whether it evaluates lazily or eagerly.}
+This C array associates the name of each function with the corresponding C function implementing it, along with its arity and some additional information.\footnote{Namely, whether the function is to be directly defined in the initial environment or available in the \mintinline{R}{.Internal} construct, and whether it evaluates lazily or eagerly.
+Some information has been removed for simplicity.}
 % \et{how much of the 700 entries of the symbol table do we currently support?}
 % \mb{112 out of 722. Some of these functions are only partially implemented, but most of the 112 are completely translated.}
-Interestingly, all syntactic constructs correspond to a C function. This includes constructs like \mintinline{R}{if}, \mintinline{R}{while}, \mintinline{R}{return}, and even assignments: although the parser accepts a seemingly imperative syntax, it is internally replaced by Lisp-style function calls!
+Interestingly, all syntactic constructs correspond to a C function. This includes constructs like \mintinline{R}{if}, \mintinline{R}{while}, \mintinline{R}{return}, and even assignments:
+although the parser accepts a seemingly imperative syntax, it is internally replaced by Lisp-style function calls.
 For instance, the two abstract syntax trees generated
 by GNU~R's parser for the two lines below are identical.\footnote{
     R usually uses a lazy evaluation strategy:
@@ -936,7 +945,8 @@ if (TRUE) x <- 1 else return ()
 "if" (TRUE, "<-" (x, 1), "return" ())
 \end{minted}
 
-The symbol table provides us with an opportunity for incremental development, because this array clearly defines a set of functions that can be individually removed from GNU~R without breaking the overall interpreter---only the parts using them.
+The symbol table provides us with an opportunity for incremental development,
+as this array clearly defines a set of functions that can be individually removed from GNU~R without breaking the overall interpreter---only the parts using them.
 We therefore consider the {\em nucleus} of the R language to consist of the functions used to evaluate R expressions that are \emph{not} present in the symbol table.
 Nucleus functions include the execution process for function calls, environments, closures, promises (delayed evaluation),
 as well as the parts initializing the symbol table. Constructs like \mintinline{R}{if} and \mintinline{R}{while} are not part of the nucleus,
@@ -971,11 +981,13 @@ Verified software, e.g. written in Coq, needs to interact with unverified code, 
 % Indeed, such softwares are not entirely formalized in Coq:
 % some additional code is added to perform the program's inputs and outputs.
 In the case of \CoqR{}, a particularly important part of the shim is the R parser. Parsing real-world programming languages is known to be challenging, so in order to maximize trust, we first tried to develop the parser in Coq
-using the Menhir tool~\parencite{jourdan2012validating} in order to obtain a formally-verified parser. Unfortunately, the grammar of GNU~R (defined in Bison) does not respect the grammar constraints of Menhir's Coq front-end. We thus had to fall back on Menhir's OCaml front-end, making the parser part of the shim.
+using the Menhir tool~\parencite{jourdan2012validating} in order to obtain a formally-verified parser. Unfortunately, the grammar of GNU~R (defined in Bison) does not respect the grammar constraints of Menhir's Coq front-end.
+We had to fall back on Menhir's OCaml front-end, making the parser part of the shim.
 
 In order to achieve high confidence in the parser implementation, we nevertheless can follow the eyeball correspondence methodology.
 % Parsing in the shim.
-Consequently, we did not optimize or change GNU~R's grammar in any way. While doing so might have enabled us to use the Coq front-end of Menhir, it would have resulted in a very different grammar from GNU~R's, and spotting bugs and inconsistencies between both grammars would have been challenging.
+Consequently, we did not optimize or change GNU~R's grammar in any way.
+While doing so might have enabled us to use the Coq front-end of Menhir, it would have resulted in a grammar very different from GNU~R's, and spotting bugs and inconsistencies between both grammars would have been challenging.
 
 Sticking to the original grammar has its own downside, though. First, the Bison grammar of GNU~R is ambiguous, with 27 shift/reduce conflicts.
 % These conflicts typically appear in expressions such as
@@ -990,7 +1002,7 @@ Sticking to the original grammar has its own downside, though. First, the Bison 
 %     but I believe that the real issue is somewhere else.
 %     Is it an issue if we don't provide an example for this paragraph?}
 As a consequence, both Bison and Menhir make some arbitrary choices,
-which could in theory be different (we checked through testing that they do not).
+which could in theory be different (we checked through testing that they are not).
 % both choosing the second option above in practice.
 % Side effects in the grammar
 Another source of potential mismatch
@@ -1001,10 +1013,11 @@ For instance, in \mintinline{R}{{ function () break + 1 }},
 adding a new line after the \mintinline{R}{function} or \mintinline{R}{+} keywords does not change the final result,
 but adding a new line after the \mintinline{R}{break} keyword does.
 %
-In such situations, lexers usually produce the new line token
+In such situations, lexers usually produce the new-line token
 nevertheless, leaving to the parser the choice to ignore it or not.
-However, in GNU~R, the lexer reads a global boolean variable %\mintinline{C}{eatLines}
-whenever it encounters a new line, which indicates whether the lexer should ignore the new line.
+However in GNU~R, whenever the lexer encounters a new line,
+it reads a global boolean variable %\mintinline{C}{eatLines}
+which indicates whether the lexer should ignore the new line.
 This variable is controlled by the parser:
 the lexer and the parser thus communicate through side-effects.
 %
