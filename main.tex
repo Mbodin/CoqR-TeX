@@ -313,8 +313,11 @@ First, the interpreter covers the nucleus of the language and over 120 additiona
 We develop the formal semantics of R in the form of an interpreter defined in Coq; therefore, \CoqR{} is a big-step operational semantics.
 Operational semantics written as a Coq recursive function is usually not the best fit for Coq proofs---an inductive definition of the operational semantics is usually more convenient for reasoning---but our approach comes with a crucial advantage: it can be run, and thus tested.
 %
-We show how we define \CoqR{} in order to achieve the first of the two mechanisms in place for trust, 
+We show how we defined \CoqR{} in order to achieve the first of the two mechanisms in place for trust, 
 namely the eyeball correspondence with the GNU~R interpreter.
+%
+\newtext{GNU~R's structure is common among dynamic-language interpreters:
+we believe the principles exposed in this section to be reusable.}
 
 \subsection{Bridging the Gap between C and Coq}
 \label{sec:monad}
@@ -695,9 +698,6 @@ closely mimicking the unguarded accesses of C.
 % line by line.
 % The rest of \CoqR{} was similarly defined.
 
-\subsection{Dealing with Global Variables}
-\label{sec:globals}
-
 \begin{figure*}
     \centering{}
 \begin{subfigure}{.5\textwidth}
@@ -726,6 +726,9 @@ Definition do_attr_init globals runs S :=
     \caption{Another snippet of \mintinline{C}{do_attr} and its Coq translation}
     \label{fig:do_attr:formals}
 \end{figure*}
+
+\subsection{Dealing with Global Variables}
+\label{sec:globals}
 
 % Initialization of R and global variables.
 The GNU~R interpreter features over \(80\) global variables that need initialization, and are subsequently unchanged.
