@@ -432,7 +432,13 @@ This binder expects its argument to evaluate to a result of the form
 \mintinline{Coq}{result_success}. If so, it binds the carried result to a name, and transparently propagates the possibly-updated state.
 All other kinds of results are transparently propagated to the top-level.
 A similar monadic binder has been defined to handle
-the special semantics of \mintinline{C}{setjmp}.
+the special semantics of \mintinline{C}{setjmp}:
+\newtext{when calling \mintinline{C}{setjmp},
+a default value is provided to continue computations;
+when a result \mintinline{Coq}{result_longjump} reaches its corresponding \mintinline{C}{setjmp},
+the continuation of \mintinline{C}{setjmp} is runned again,
+the value carried by \mintinline{Coq}{result_longjump} replacing the default one.}
+%This binder was surprisingly easy to define in Coq.
 This obliviousness to global state, errors and non-termination is what enables a close correspondence between a program written in both languages.
 
 % We believe that this helps to find bugs in \CoqR{}
