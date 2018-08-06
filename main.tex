@@ -470,7 +470,7 @@ SEXP do_attr (SEXP call, SEXP op,
   return ans;
 }
 \end{minted}
-\vspace{-0.5em}
+\vspace{-1em}
     \caption{original C function}
     \label{fig:c:do_attr}
 \end{subfigure}
@@ -490,7 +490,7 @@ Definition do_attr globals runs S
     (* ... *)
     result_success S ans.
 \end{minted}
-\vspace{-0.5em}
+\vspace{-.6em}
     \caption{Coq translation}
     \label{fig:coq:do_attr}
 \end{subfigure}
@@ -498,46 +498,6 @@ Definition do_attr globals runs S
     \caption{Original C function and Coq translation of \mintinline{C}{do_attr}}
     \label{fig:do_attr}
 \end{figure*}
-
-\subsection{Eyeball Correspondence}
-\label{sec:eyeball:closeness}
-
-
-% % Definition of the line-to-line correspondence.
-% One key specificity of this interpreter is that it has been designed
-% to be similar to the original C source code of GNU~R.
-% More precisely, they are related by a line-to-line correspondence
-% (also called \emph{eyeball closeness})\et{is closeness a standard term here? (eyeball correspondence sounds better to me)}:
-% every one or two lines of our interpreter
-% correspond to one or two lines of the reference interpreter.
-% %
-
-By developing \CoqR{} as a monadic interpreter using the result monad introduced above, we are able to achieve an eyeball correspondence between the C and Coq interpreters.
-This correspondence is extremely helpful during development:
-whenever a bug is encountered while testing, we localize the function responsible for the bug,
-then directly and visually compare both interpreters.
-Such checks are quick and easy to perform, often leading to a quick fix of \CoqR{}.
-%
-
-Figure~\ref{fig:do_attr} shows an example of the eyeball correspondence that can be achieved using the result monad.
-Figure~\ref{fig:c:do_attr} shows a C function, and Figure~\ref{fig:coq:do_attr} its Coq translation.
-\newtext{The \mintinline{C}{SEXP} type is an alias for \mintinline{C}{SEXPREC*},
-that is, pointers to basic language elements (see Section~\ref{sec:heap}).}
-The binder \mintinline{Coq}{let%success} is used when calling a function.
-Thanks to the monadic encoding, the calls to \mintinline{Coq}{R_length}
-and \mintinline{Coq}{matchArgs} may return an unsuccessful result, but the code does not need to be explicit about that possibility; the code after a call is only executed if the result denotes success. Similarly, the \mintinline{C}{return} statement from C is translated to \mintinline{Coq}{result_success}, and raising an error is performed using \mintinline{Coq}{result_error}.
-
-The other differences that can be observed are several arguments systematically passed to each function (\mintinline{Coq}{globals}, \mintinline{Coq}{runs}, and \mintinline{Coq}{S}),
-the use of \mintinline{Coq}{read%list}
-instead of \mintinline{C}{CAR} in the C version, as well as the fact that the use of the \mintinline{C}{PROTECT} macro is missing from the Coq version. We clarify each of these points in the following subsections.
-
-% The \mintinline{Coq}{S} argument and the use
-% are related to the modeling of the heap, discussed in Section~\ref{sec:coq:structure}.
-
-% The \mintinline{Coq}{globals} argument is discussed in Section~\ref{sec:coq:structure}.
-
-% The \mintinline{Coq}{runs} argument is related to dealing with non-termination, and is discussed in Section~\ref{sec:fuel}.
-
 
 
 \begin{figure}
@@ -570,6 +530,49 @@ instead of \mintinline{C}{CAR} in the C version, as well as the fact that the us
     \label{fig:basic:language:elements}
 \end{figure}
 
+
+\subsection{Eyeball Correspondence}
+\label{sec:eyeball:closeness}
+
+
+% % Definition of the line-to-line correspondence.
+% One key specificity of this interpreter is that it has been designed
+% to be similar to the original C source code of GNU~R.
+% More precisely, they are related by a line-to-line correspondence
+% (also called \emph{eyeball closeness})\et{is closeness a standard term here? (eyeball correspondence sounds better to me)}:
+% every one or two lines of our interpreter
+% correspond to one or two lines of the reference interpreter.
+% %
+
+By developing \CoqR{} as a monadic interpreter using the result monad introduced above, we are able to achieve an eyeball correspondence between the C and Coq interpreters.
+This correspondence is extremely helpful during development:
+whenever a bug is encountered while testing, we localize the function responsible for the bug,
+then directly and visually compare both interpreters.
+Such checks are quick and easy to perform, often leading to a quick fix of \CoqR{}.
+%
+
+Figure~\ref{fig:do_attr} shows an example of the eyeball correspondence that can be achieved using the result monad.
+Figure~\ref{fig:c:do_attr} shows a C function, and Figure~\ref{fig:coq:do_attr} its Coq translation.
+\newtext{The \mintinline{C}{SEXP} type is an alias for \mintinline{C}{SEXPREC*},
+that is, pointers to basic language elements (see Section~\ref{sec:heap}).}
+The binder \mintinline{Coq}{let%success} is used when calling a function.
+Thanks to the monadic encoding, the calls to \mintinline{Coq}{R_length}
+and \mintinline{Coq}{matchArgs} may return an unsuccessful result, but the code does not need to be explicit about that possibility; the code after a call is only executed if the result denotes success. Similarly, the \mintinline{C}{return} statement from C is translated to \mintinline{Coq}{result_success}, and raising an error is performed using \mintinline{Coq}{result_error}.
+
+Other differences are that several arguments are systematically passed to each function (\mintinline{Coq}{globals}, \mintinline{Coq}{runs}, and \mintinline{Coq}{S}),
+the use of \mintinline{Coq}{read%list}
+instead of \mintinline{C}{CAR} in the C version,
+as well as the absence of the \mintinline{C}{PROTECT} macro in the Coq version.
+We clarify each of these points in the following subsections.
+
+% The \mintinline{Coq}{S} argument and the use
+% are related to the modeling of the heap, discussed in Section~\ref{sec:coq:structure}.
+
+% The \mintinline{Coq}{globals} argument is discussed in Section~\ref{sec:coq:structure}.
+
+% The \mintinline{Coq}{runs} argument is related to dealing with non-termination, and is discussed in Section~\ref{sec:fuel}.
+
+
 \subsection{Modeling the Heap}
 \label{sec:heap}
 
@@ -580,11 +583,12 @@ We now describe how we modeled GNU~R's heap.
     Indeed,}
 although the underlying language is C,
 GNU~R has been designed with a specific structure in mind~\parencite{R}.
-Almost all objects manipulated by the interpreter
+Almost all objects manipulated by GNU~R
 are \emph{basic language elements}
-(\mintinline{C}{SEXPREC} in C),
-\newtext{and CoqR's heap reflects this}.
-Each element is composed of a header and some data.
+(\mintinline{C}{SEXPREC} in C).
+\newtext{CoqR's heap is exactly this: a mapping from pointers to basic language elements}.
+
+Each basic language element is composed of a header and some data.
 %
 The header stores the type of the basic language element,
 a list of attributes,
@@ -655,7 +659,7 @@ Record SEXPREC := make_SEXPREC {
     SEXPREC_data :> SEXPRECData
   }.
 \end{minted}
-\vspace{-1em}
+\vspace{-.6em}
     \caption{Basic language elements (\mintinline{C}{SEXPREC}) in Coq}
     \label{fig:SEXPREC}
 \end{figure}
