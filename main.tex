@@ -936,7 +936,7 @@ Some information has been removed for simplicity.}
 Interestingly, all syntactic constructs correspond to a C function. This includes constructs like \mintinline{R}{if}, \mintinline{R}{while}, \mintinline{R}{return}, and even assignments:
 although the parser accepts a seemingly imperative syntax, it is internally replaced by Lisp-style function calls.
 For instance, the two abstract syntax trees generated
-by GNU~R's parser for the two lines below are identical.\footnote{
+by GNU~R's parser for the two lines below are identical.\footnote{%
     R usually uses a lazy evaluation strategy:
     the expression \mintinline{R}{x <- 1} is only evaluated
     when actually used.
