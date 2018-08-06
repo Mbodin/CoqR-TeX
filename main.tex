@@ -435,7 +435,7 @@ A similar monadic binder has been defined to handle
 the special semantics of \mintinline{C}{setjmp}:
 \newtext{when calling \mintinline{C}{setjmp},
 a default value is provided to continue computations;
-when a result \mintinline{Coq}{result_longjump} reaches its corresponding \mintinline{C}{setjmp},
+when a result of the form \mintinline{Coq}{result_longjump} reaches its corresponding \mintinline{C}{setjmp},
 the continuation of \mintinline{C}{setjmp} is runned again,
 the value carried by \mintinline{Coq}{result_longjump} replacing the default one.}
 %This binder was surprisingly easy to define in Coq.
@@ -694,13 +694,6 @@ closely mimicking the unguarded accesses of C.
 \subsection{Dealing with Global Variables}
 \label{sec:globals}
 
-% Initialization of R and global variables.
-The GNU~R interpreter features over \(80\) global variables that need initialization, and are subsequently unchanged.
-The initialization of these internal variables
-actually represents a large portion of the source code.
-Even before importing any libraries, a lot of basic language elements
-are created and stored in global variables.
-
 \begin{figure*}
     \centering{}
 \begin{subfigure}{.5\textwidth}
@@ -729,6 +722,13 @@ Definition do_attr_init globals runs S :=
     \caption{Another snippet of \mintinline{C}{do_attr} and its Coq translation}
     \label{fig:do_attr:formals}
 \end{figure*}
+
+% Initialization of R and global variables.
+The GNU~R interpreter features over \(80\) global variables that need initialization, and are subsequently unchanged.
+The initialization of these internal variables
+actually represents a large portion of the source code.
+Even before importing any libraries, a lot of basic language elements
+are created and stored in global variables.
 
 For instance, the often-used variable \mintinline{C}{R_NilValue}
 is set to be a list whose \mintinline{C}{car}, \mintinline{C}{cdr},
@@ -760,9 +760,52 @@ We extracted out the part of \mintinline{C}{do_attr} that performs initializatio
 This code is executed after the standard global variables are initialized.
 % \et{what if the initialization of a static var uses some argument of the first call? does it ever happen?}\mb{I've never seen it. In such a case, I just add these variables in the state (this already happenned, but is rare).}
 
-
 \subsection{Dealing with Non-Termination}
 \label{sec:fuel}
+
+\begin{figure}
+\begin{minted}[escapeinside=@@]{Coq}
+Record Runs : Type := Runs_intro {
+    runs_while_loop : forall A, state -> A ->
+      (state -> A -> result bool) ->
+      (state -> A -> result A) -> result A ;
+    runs_eval : state -> SEXP -> SEXP -> result SEXP ;
+    (* ... *)
+  }.
+
+Definition while_loop runs A S (a : A) expr stat :=
+  if%success expr S a using S then
+    let%success a := stat S a using S in
+    runs_while_loop runs S a expr stat@\label{line:runs_while:recursive:call}@
+  else result_success S a.
+\end{minted}
+\vspace{-1em}
+    \caption{Definition of loops as a fix-point combinator}
+    \label{fig:while_loop}
+\end{figure}
+
+\begin{figure}
+\begin{minted}{Coq}
+Fixpoint runs max_step globals : Runs :=
+  match max_step with
+  | O => {|
+      runs_while_loop := fun _ S _ _ _ =>
+        result_bottom S ;
+      runs_eval := fun S _ _ =>
+        result_bottom S ;
+      (* ... *) |}
+  | S n => {|
+      runs_while_loop := fun A S (a : A) expr stat =>
+        while_loop globals (runs n) A S a expr stat ;
+      runs_eval := fun S e rho =>
+        eval globals (runs n) S e rho ;
+      (* ... *) |}
+  end.
+\end{minted}
+\vspace{-1em}
+    \caption{Definition of \mintinline{Coq}{runs} in Coq}
+    \label{fig:runs}
+\end{figure}
 
 % Structuring the fuel.
 Another additional argument present in Figure~\ref{fig:coq:do_attr}
@@ -792,27 +835,6 @@ but instead of an actual recursive call,
 we call the \mintinline{Coq}{while_loop} function stored
 in the \mintinline{Coq}{runs} record.
 
-\begin{figure}
-\begin{minted}[escapeinside=@@]{Coq}
-Record Runs : Type := Runs_intro {
-    runs_while_loop : forall A, state -> A ->
-      (state -> A -> result bool) ->
-      (state -> A -> result A) -> result A ;
-    runs_eval : state -> SEXP -> SEXP -> result SEXP ;
-    (* ... *)
-  }.
-
-Definition while_loop runs A S (a : A) expr stat :=
-  if%success expr S a using S then
-    let%success a := stat S a using S in
-    runs_while_loop runs S a expr stat@\label{line:runs_while:recursive:call}@
-  else result_success S a.
-\end{minted}
-\vspace{-1em}
-    \caption{Definition of loops as a fix-point combinator}
-    \label{fig:while_loop}
-\end{figure}
-
 Once all functions have been defined,
 we define \mintinline{Coq}{runs} of type \mintinline{Coq}{Runs}
 by linking these functions to themselves.
@@ -834,29 +856,6 @@ Figure~\ref{fig:runs} shows its Coq definition.
 This idiom requires only one pattern-matching on fuel in the whole \CoqR{} interpreter;
 it is thus a lightweight way to enforce termination.
 
-\begin{figure}
-\begin{minted}{Coq}
-Fixpoint runs max_step globals : Runs :=
-  match max_step with
-  | O => {|
-      runs_while_loop := fun _ S _ _ _ =>
-        result_bottom S ;
-      runs_eval := fun S _ _ =>
-        result_bottom S ;
-      (* ... *) |}
-  | S n => {|
-      runs_while_loop := fun A S (a : A) expr stat =>
-        while_loop globals (runs n) A S a expr stat ;
-      runs_eval := fun S e rho =>
-        eval globals (runs n) S e rho ;
-      (* ... *) |}
-  end.
-\end{minted}
-\vspace{-1em}
-    \caption{Definition of \mintinline{Coq}{runs} in Coq}
-    \label{fig:runs}
-\end{figure}
-
 
 \subsection{Limitations}
 % About garbage collection.
@@ -874,23 +873,8 @@ stored the shell environment.
 
 % \mb{Are there other things we should mention?}
 
-Note that the eyeball correspondence between GNU~R and \CoqR{} would pay off in the future if one wants to extend \CoqR{} to account for some of these features, such as garbage collection.
+Note that the eyeball correspondence between GNU~R and \CoqR{} would pay off in the future if one wants to extend \CoqR{} to account for some of these features.
 
-
-
-\subsection{Incremental Development of \CoqR{}}
-\label{sec:coq:structure}
-
-R is by no means a small language.
-Currently, \CoqR{} spans over 18,000 lines of Coq definitions.
-This is larger than the interpreter of JSCert, named JSRef~\parencite{popl14jscert}, which consists of 12,500 lines of Coq definitions.
-% \et{ref + how large is JSCert?}\mb{We already quote it several times in the paper: isn't it too much?}
-% \mbi{For the statistics: \CoqR{} is 18,000 lines of Coq definitions + 1500 lines of Coq proofs.
-%     JSCert is 12,500 lines of Coq definitions + 5,000 lines of Coq proofs. Both according to \texttt{coqwc}.
-%     It is difficult to compare these figures, but I find the comparizon with JSCert impressive.}
-Therefore, for pragmatical reasons, it is important to be able to proceed {\em incrementally} in the development of \CoqR{}.
-We hence identify a minimal nucleus of R to support initially, and then incrementally extend \CoqR{}.
-To this end, we exploit the fact that GNU~R is structured around a huge {\em symbol table} \newtext{with more than 700 entries}, corresponding to all functions present in the initial environment of R, whose code is written natively in C.
 
 \begin{figure}
 \begin{minted}{C}
@@ -914,6 +898,21 @@ FUNTAB R_FunTab[] = {
     \caption{Symbol table of GNU~R}
     \label{fig:names}
 \end{figure}
+
+
+\subsection{Incremental Development of \CoqR{}}
+\label{sec:coq:structure}
+
+R is by no means a small language.
+Currently, \CoqR{} spans over 18,000 lines of Coq definitions.
+This is larger than the interpreter of JSCert, named JSRef~\parencite{popl14jscert}, which consists of 12,500 lines of Coq definitions.
+% \et{ref + how large is JSCert?}\mb{We already quote it several times in the paper: isn't it too much?}
+% \mbi{For the statistics: \CoqR{} is 18,000 lines of Coq definitions + 1500 lines of Coq proofs.
+%     JSCert is 12,500 lines of Coq definitions + 5,000 lines of Coq proofs. Both according to \texttt{coqwc}.
+%     It is difficult to compare these figures, but I find the comparizon with JSCert impressive.}
+Therefore, for pragmatical reasons, it is important to be able to proceed {\em incrementally} in the development of \CoqR{}.
+We hence identify a minimal nucleus of R to support initially, and then incrementally extend \CoqR{}.
+To this end, we exploit the fact that GNU~R is structured around a huge {\em symbol table} \newtext{with more than 700 entries}, corresponding to all functions present in the initial environment of R, whose code is written natively in C.
 
 Figure~\ref{fig:names} shows an excerpt of the symbol table.
 This C array associates the name of each function with the corresponding C function implementing it, along with its arity and some additional information.\footnote{Namely, whether the function is to be directly defined in the initial environment or available in the \mintinline{R}{.Internal} construct, and whether it evaluates lazily or eagerly.}
@@ -1171,7 +1170,7 @@ When creating result objects, processor include additional information that can 
 \noindent\textbf{Testing outcomes.}
 After processing, the testing framework obtains the result objects and uses their interface to compare them, returning the corresponding outcome of the comparison.
 The testing framework categorizes each step of computation
-in one of \newtext{8 categories}, denoting different possible scenarios. The \textsf{passed} category corresponds to successfully executed test cases. The \textsf{failed} category is used when an actual mismatch in results is observed. 
+in one of \changed{8 categories}, denoting different possible scenarios. The \textsf{passed} category corresponds to successfully executed test cases. The \textsf{failed} category is used when an actual mismatch in results is observed. 
 
 All other categories are there to help the development of \CoqR{} by refining failure cases. \newtext{The \textsf{not implemented} category gathers tests whose execution has reached the Coq constructor \mintinline{Coq}{result_not_implemented} inside \CoqR{} (recall Figure~\ref{fig:result}). This therefore corresponds to a test execution reaching some as-yet-unimplemented function (or case) in the Coq code of \CoqR{}. Additionally, 
 the \textsf{not found} category corresponds to failures due to a test requiring an R function or object that is not defined in the \CoqR{} environment.}
@@ -1290,7 +1289,7 @@ Recall that a not-implemented feature generally corresponds to an entry of the s
 % and occasionally refer to missing import
 %  Sometimes they refer to things from libraries or the T id (for true). }.
 
-Therefore, in addition to counting the classified testing outcomes for the run of a test suite, our testing framework reports two charts reporting respectively the 10 most common not-implemented features and the 10 most common missing function definitions. Both reports are useful to identify low-hanging fruits to make progress in running the selected test suite. For instance, at the initial stages of the project, the base library of R showed up prominently in the list of missing functions, as discussed below.
+Therefore, in addition to counting the classified testing outcomes for the run of a test suite, our testing framework reports the 10 most common not-implemented features and the 10 most common missing function definitions. Both reports are useful to identify low-hanging fruits to make progress in running the selected test suite. For instance, at the initial stages of the project, the base library of R showed up prominently in the list of missing functions, as discussed below.
 % ---especially some parts of it\et{Also useful for scalability: only import needed functions from base library (Coq is slow!)}
 Also, we used the report of most used not-implemented features iteratively in order to decide which features from the symbol table to implement first, leading us to the 128 features that are currently implemented.
 %
