@@ -575,12 +575,16 @@ instead of \mintinline{C}{CAR} in the C version, as well as the fact that the us
 
 % Basic language elements.
 We now describe how we modeled GNU~R's heap.
-Although the underlying language is C,
+\newtext{Various models of C's heap~\parencite{Leroy-Compcert-CACM, formalin} exist in Coq.
+    We did not follow this approach.
+    Indeed,}
+although the underlying language is C,
 GNU~R has been designed with a specific structure in mind~\parencite{R}.
 Almost all objects manipulated by the interpreter
-are called \emph{basic language elements},
-or \mintinline{C}{SEXPREC} in C.
-Each of them are composed of a header and some data.
+are \emph{basic language elements}
+(\mintinline{C}{SEXPREC} in C),
+\newtext{and CoqR's heap reflects this}.
+Each element is composed of a header and some data.
 %
 The header stores the type of the basic language element,
 a list of attributes,
