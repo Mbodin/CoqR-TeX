@@ -575,7 +575,7 @@ We clarify each of these points in the following subsections.
 
 % Basic language elements.
 We now describe how we modeled GNU~R's heap.
-\newtext{Various models of C's heap~\parencite{formalin,Leroy-Compcert-CACM} exist in Coq, but in \CoqR{} we exploit the specific structure around which GNU~R is built:} almost all objects manipulated by GNU~R
+\newtext{Various models of C's heap~\parencite{formalin,Leroy-Compcert-CACM} exist in Coq, but in \CoqR{} we exploit the specific structure around which GNU~R is built~\parencite{ihaka1996r}:} almost all objects manipulated by GNU~R
 are \emph{basic language elements}
 (\mintinline{C}{SEXPREC} in C).
 \newtext{Consequently, CoqR's heap is exactly a mapping from pointers to basic language elements}.
