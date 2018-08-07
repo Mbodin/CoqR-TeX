@@ -80,7 +80,7 @@
 \newcommand\CoqR{CoqR}
 
 \newcommand\newtext[1]{{\color{blue} #1}}
-\newcommand\changed[1]{{\color{cyan} #1}}
+\newcommand\changed[1]{{\color{blue} #1}}
 
 \begin{document}
 
@@ -1880,18 +1880,20 @@ Such invariants are relatively simple, but given the size of the formalization,
 they are quite long to establish.
 Proving that some step of the interpreter preserves the invariants quickly becomes very tedious.
 In order to address this, we developed various Coq tactics to ease the proof process.
-\newtext{\emph{Tactics} are programs manipulating Coq proof terms.
-They are an important component of interactive theorem provers.}
+\newtext{\emph{Tactics} are programs manipulating Coq proof terms. They
+ are an important component of interactive theorem provers, allowing a controlled form of automation.}
 Our tactics are mainly useful to propagate known information
 through state changes.
  % such operations would have been long and cumbersome for the user, and it automates relatively easily.
-\newtext{To define them, we proved about an hundred simple lemmas.
-Our tactics then look in the context for patterns where these lemmas can be applied in a useful way:
-it would for instance not be productive to rewrite the same equality in both directions,
-leading to the same context we started with.
-Some lemmas require variables to be in a specific form:
-some of our tactics have been specifically designed to rewrite the context into a form fitting specific lemmas.
-We defined overall 80 tactics, most of which performing very simple operations on the proof context.}
+\newtext{
+Overall, we defined 80 tactics, most of which perform simple operations on the proof context. 
+We first proved about 200 simple lemmas about monadic binders
+and heap invariants.
+Our tactics look in the proof context for patterns 
+where these lemmas can be fruitfully applied. Auxiliary tactics 
+% % it would for instance not be productive to rewrite the same equality in both directions,
+% leading to the same context we started with.
+try to rewrite the context into specific forms that allow these lemmas to be applied.}
 
 Figure~\ref{fig:do_attr_result} illustrates the use of these tactics, with a lemma that states that the \mintinline{Coq}{do_attr} function
 defined in Figure~\ref{fig:coq:do_attr} produces a result
