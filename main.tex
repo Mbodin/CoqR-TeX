@@ -316,8 +316,7 @@ Operational semantics written as a Coq recursive function is usually not the bes
 We show how we defined \CoqR{} in order to achieve the first of the two mechanisms in place for trust, 
 namely the eyeball correspondence with the GNU~R interpreter.
 %
-\newtext{GNU~R's structure is common among dynamic-language interpreters:
-we believe the principles exposed in this section to be reusable.}
+\newtext{GNU~R's overall structure is fairly standard for an interpreter, so the principles exposed here should be reusable in other contexts.}
 
 \subsection{Bridging the Gap between C and Coq}
 \label{sec:monad}
@@ -371,9 +370,7 @@ corresponds to a call to the \mintinline{C}{longjmp}
 C function in GNU~R source code.
 It only appears in constructs involving non-local jumps,
 such as \mintinline{R}{break} or \mintinline{R}{return}.
-\newtext{It behaves similarly to \mintinline{Coq}{result_error},
-    but is caugth by the \mintinline{C}{setjmp} monadic binder,
-    mimicking the C behavior.}
+\newtext{The C behavior is mimicked thanks to a special monadic binder, explained further below.}
 % The \mintinline{C}{longjmp} jumps to the corresponding
 % \mintinline{C}{setjmp} function,
 % which typically appears in loops and function calls.
@@ -443,10 +440,10 @@ the special semantics of \mintinline{C}{setjmp}:
 \newtext{when calling \mintinline{C}{setjmp},
 a default value is provided to continue computations;
 when a result of the form \mintinline{Coq}{result_longjump} reaches its corresponding \mintinline{C}{setjmp},
-the continuation of \mintinline{C}{setjmp} is runned again,
-the value carried by \mintinline{Coq}{result_longjump} replacing the default one.}
+the continuation of \mintinline{C}{setjmp} is run again, using 
+the value carried by \mintinline{Coq}{result_longjump} to replace the default one.}
 %This binder was surprisingly easy to define in Coq.
-This obliviousness to global state, errors and non-termination is what enables a close correspondence between a program written in both languages.
+This obliviousness to global state, errors, \newtext{jumps,} and non-termination is what enables a close correspondence between a program written in both languages.
 
 % We believe that this helps to find bugs in \CoqR{}
 % and to convey trust to the overall R semantics.
@@ -554,7 +551,7 @@ Such checks are quick and easy to perform, often leading to a quick fix of \CoqR
 Figure~\ref{fig:do_attr} shows an example of the eyeball correspondence that can be achieved using the result monad.
 Figure~\ref{fig:c:do_attr} shows a C function, and Figure~\ref{fig:coq:do_attr} its Coq translation.
 \newtext{The \mintinline{C}{SEXP} type is an alias for \mintinline{C}{SEXPREC*},
-that is, pointers to basic language elements (see Section~\ref{sec:heap}).}
+that is, pointers to {\em basic language elements} (see Section~\ref{sec:heap}).}
 The binder \mintinline{Coq}{let%success} is used when calling a function.
 Thanks to the monadic encoding, the calls to \mintinline{Coq}{R_length}
 and \mintinline{Coq}{matchArgs} may return an unsuccessful result, but the code does not need to be explicit about that possibility; the code after a call is only executed if the result denotes success. Similarly, the \mintinline{C}{return} statement from C is translated to \mintinline{Coq}{result_success}, and raising an error is performed using \mintinline{Coq}{result_error}.
@@ -578,15 +575,16 @@ We clarify each of these points in the following subsections.
 
 % Basic language elements.
 We now describe how we modeled GNU~R's heap.
-\newtext{Various models of C's heap~\parencite{Leroy-Compcert-CACM, formalin} exist in Coq.
-    We did not follow this approach.
-    Indeed,}
-although the underlying language is C,
-GNU~R has been designed with a specific structure in mind~\parencite{R}.
-Almost all objects manipulated by GNU~R
+\newtext{Various models of C's heap~\parencite{formalin,Leroy-Compcert-CACM} exist in Coq, but in \CoqR{} we exploit the specific structure around which GNU~R is built:} almost all objects manipulated by GNU~R
 are \emph{basic language elements}
 (\mintinline{C}{SEXPREC} in C).
-\newtext{CoqR's heap is exactly this: a mapping from pointers to basic language elements}.
+\newtext{Consequently, CoqR's heap is exactly a mapping from pointers to basic language elements}.
+% in mind~\parencite{R}.
+%     We did not follow this approach.
+%     Indeed,}
+% although the underlying language is C,
+%  has been designed with a 
+
 
 Each basic language element is composed of a header and some data.
 %
