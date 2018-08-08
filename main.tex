@@ -881,7 +881,7 @@ it is thus a lightweight way to enforce termination.
 % About garbage collection.
 The use of the \mintinline{C}{PROTECT} macro in Figure~\ref{fig:c:do_attr} is missing in the Coq translation. This macro use performs a garbage collecting action, namely it saves the object \mintinline{C}{argList} from garbage collection.
 We choose not to model the garbage collection aspect of GNU~R in \CoqR{}. 
-\newtext{A GC is an optimization of a language implementation, which is arguably irrelevant for the specification of the language itself (for instance, neither R6RS for Scheme nor ECMAScript for JavaScript even mention garbage collection).}
+\newtext{A garbage collector is an optimization of a language implementation, which is arguably irrelevant for the specification of the language itself (for instance, neither R6RS for Scheme nor ECMAScript for JavaScript even mention garbage collection).}
 % Indeed, garbage collection adds complexity to the interpreter, but is supposed to not affect the result of any computation. \newtext{
 % Consequently, the reasoning enabled by \CoqR{} is to be understood ``up to a correct GC'', which is a reasonable assumption. Verifying the GNU~R GC is a separate project.}
 
@@ -1988,8 +1988,8 @@ but eventually preserve the invariants.
 % For instance, when an element is added to a shared list,
 % a lot of things are updated in GNU~R's memory state.
 In Coq, this translates into a large number of intermediate states being generated,
-and some invariants proofs are not automatically discharged by the \mintinline{Coq}{computeR} tactic
-\newtext{, as some invariants do not hold in them}.
+and some invariants proofs are not automatically discharged by the \mintinline{Coq}{computeR} tactic,
+\newtext{as some invariants do not hold in them}.
 % ---%
 % typically when the invariants are temporarily broken during the execution of a function.
 % but that its final state actually puts the invariants back,
