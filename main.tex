@@ -880,13 +880,16 @@ it is thus a lightweight way to enforce termination.
 \subsection{Limitations}
 % About garbage collection.
 The use of the \mintinline{C}{PROTECT} macro in Figure~\ref{fig:c:do_attr} is missing in the Coq translation. This macro use performs a garbage collecting action, namely it saves the object \mintinline{C}{argList} from garbage collection.
-At this stage, we chose not to model the garbage collection aspect of GNU~R in \CoqR{}. Indeed, garbage collection adds complexity to the interpreter, but is not supposed to affect the result of any computation. For now, we focus on the computational part of GNU~R.
+We choose not to model the garbage collection aspect of GNU~R in \CoqR{}. 
+\newtext{A GC is an optimization of a language implementation, which is arguably irrelevant for the specification of the language itself (for instance, neither R6RS for Scheme nor ECMAScript for JavaScript even mention garbage collection).}
+% Indeed, garbage collection adds complexity to the interpreter, but is supposed to not affect the result of any computation. \newtext{
+% Consequently, the reasoning enabled by \CoqR{} is to be understood ``up to a correct GC'', which is a reasonable assumption. Verifying the GNU~R GC is a separate project.}
 
 % Ignored aspects.
 % As stated in Section~\ref{sec:eyeball:closeness},
 % we chose to ignore some aspects of the source code of GNU~R.
 % All garbage collection commands have been formalized out.
-Additionally, \CoqR{} only considers ASCII strings, and hence does not support various locales and character encodings supported by R.
+Currently, \CoqR{} only considers ASCII strings, and hence does not support various locales and character encodings supported by R.
 More generally, \CoqR{} ignores any possibility to dynamically
 parametrize the behavior of the interpreter using options
 stored the shell environment.
