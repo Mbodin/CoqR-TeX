@@ -2141,11 +2141,11 @@ as well as mistakes in the ECMAScript specification.
 In \CoqR, we take a different approach by defining the big-step operational semantics as an interpreter:
 the same definition is both executable and syntactically close to its specification (the GNU~R interpreter).
 \newtext{%
-\CoqR{} nevertheless shares several design ideas from JSCert.
+\CoqR{} nevertheless shares several design ideas with JSCert.
 JSCert served as a basis for the JSExplain tool~\parencite{JSExplain},
 aiming to explain JavaScript to non-specialists.
 As \CoqR{} uses a similar monadic structure than JSCert,
-a similar tool for R seems implementable.}
+a similar tool for R is an interesting future work.}
 
 % CompCert.
 The Coq proof assistant has already been used
@@ -2168,10 +2168,10 @@ It aims at precisely listing all the possible behaviors of C programs.
 \newtext{We could have reused these formalizations of C
 to build a deep-embedding semantics,
 by defining R to be the interpretation of GNU~R's source code by one of these semantics.
-Such a semantics would however be of little practical use:
-deep-embeddings are notorously hard to reason about in proof assistants.
+Such a semantics would however be of little practical use,
+as deep-embeddings are notorously hard to reason about in proof assistants.
 We instead defined \CoqR{} as a shallow-embedding,
-which we have shown in Section~\ref{sec:proofs} to be suitable to build proofs about R and R programs.}
+and we have shown in Section~\ref{sec:proofs} that it is suitable for building proofs about R and R programs.}
 %
 % This is to be mirrored with the fact that CompCert and Formalin did not reuse GCC's source code for C,
 % which would have been unusable.
