@@ -353,7 +353,7 @@ Modeling effectful computation in a purely functional language can be done throu
 
 Therefore, in order to achieve an effective eyeball correspondence between C code and Coq code, we introduce a {\em result monad}, which combines both the state, error, and fuel monads (Figure~\ref{fig:result}).
 %
-The result monad constructors are:\footnote{A similar monad is used in JSExplain~\parencite{JSExplain}, which aims at defining a JavaScript interpreter in Coq, readable by non-specialists.
+The result monad constructors are:\footnote{A similar monad is used in the JSCert~\parencite{popl14jscert} and JSExplain~\parencite{JSExplain} projects, which aim to define a JavaScript interpreter in Coq, readable by non-specialists.
 }
 \begin{itemize}[leftmargin=0.5em]
 \item The main constructor is \mintinline{Coq}{result_success}, used when a computation is successful.
@@ -2091,28 +2091,28 @@ as opposed to small subsets---is not new.
 JavaScript is a particularly relevant example.
 Empirical analyses
 have indeed confirmed that the language features
-that are usually ignored in the formalized subsets of JavaScript
+that are usually ignored in formalized subsets of JavaScript
 are actually important for actual web developers~\parencite{RichardsHBV11}.
 %
 In the case of JavaScript, there are several trust sources.
 First, the language is precisely specified by the ECMAScript specification~\parencite{es2019}.
 Second, there exist various test suites~\parencite{test262, mozillatests}
 as well as several widely used interpreters.
-As a consequence, various formal specifications of JavaScript exist,
-each related with some of its trust sources.
+Consequently, various formal specifications of JavaScript exist,
+each related to some of its trust sources.
 
 % Maffeis et al.
 The first full formal semantics of JavaScript~\parencite{aplas08}
 has been related to the ECMAScript specification.
 It had a major influence on the definitions of further JavaScript formal
 specifications~\parencite{usenix, popl14jscert, popl12-Towards, ses} and also served as the formal basis to prove the soundness of security-related
-JavaScript subsets~\parencite{mmt-esorics09, mmt-oakland10,MMT-CSF-TR09}.
+JavaScript subsets~\parencite{mmt-esorics09, mmt-oakland10}.
 This work was however not mechanized.
 %making it difficult to be used as a basis for other formalization work.
 
 % The Essence of JavaScript.
 In parallel, several formal semantics
-for JavaScript are based on a JavaScript interpreter~\parencite{Guha2010, js-ml,  kjs, Politz:S5}.
+for JavaScript are based on a JavaScript interpreter~\parencite{Guha2010,  kjs, Politz:S5}.
 These semantics are related to JavaScript test suites,
 either by comparing the results with the expected result,
 or by comparing results with widely-used JavaScript interpreters.
@@ -2130,8 +2130,8 @@ to be related with both the ECMAScript specification and the JavaScript test sui
 The formalization is composed of two parts: a mechanized specification and an interpreter. The JSCert specification is syntactically related with the ECMAScript specification through an eyeball correspondence, and the interpreter passes its test suites.
 The specification and the interpreter are related to each other by a Coq proof.
 This double-relation provides a large amount of trust to JSCert.
-In practice, both relations served to find issues in the JSCert specification,
-but also some implementation bugs in other interpreters,
+These relations served to find issues in both the JSCert specification
+and in other interpreters,
 as well as mistakes in the ECMAScript specification.
 % Furthermore, JSCert is mechanized:
 % this facilitates its reuse for other projects.
@@ -2140,8 +2140,10 @@ as well as mistakes in the ECMAScript specification.
 % as well as a correctness proof between them, involves a lot of resources.
 In \CoqR, we take a different approach by defining the big-step operational semantics as an interpreter:
 the same definition is both executable and syntactically close to its specification (the GNU~R interpreter).
-\newtext{\CoqR{} uses a similar monadic structure than JSExplain~\parencite{JSExplain},
-    making it possible to a build similar tool for R.}
+\newtext{JSCert served as the basis for the JSExplain tool~\parencite{JSExplain},
+aiming to explain JavaScript to non-specialists.
+As \CoqR{} uses a similar monadic structure,
+it is possible to build a similar tool for R.}
 
 % CompCert.
 The Coq proof assistant has already been used
