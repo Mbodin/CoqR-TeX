@@ -2151,14 +2151,26 @@ a verified optimizing compiler for C.
 This compiler is proven to be free of compilation bugs,
 leading to safer programs in critical software.
 This project comes with a formalization of the C programming language,
-as well as the formalizations of the intermediate compilation languages.
+as well as its intermediate compilation languages.
 %
 Due to the compilation nature of the CompCert project,
 it was acceptable to restrict the behaviors of the C programming language
 in their formalization,
 restricting it to the behaviors that will actually be compiled by CompCert.
 The Formalin project~\parencite{formalin} is another formalization
-of the C language, which aims at precisely listing all the possible behaviors of a C program.
+of the C language.
+It aims at precisely listing all the possible behaviors of C programs.
+%
+\newtext{We could have reused these formalizations of C
+to build a deep-embedding semantics,
+by defining R to be the interpretation of GNU~R's source code by one of these semantics.
+Such a semantics would however be of little practical use:
+deep-embeddings are notorously hard to reason about in proof assistants,
+making our shallow-embedding more suitable.}
+%
+% This is to be mirrored with the fact that CompCert and Formalin did not reuse GCC's source code for C,
+% which would have been unusable.
+
 
 \section{Conclusions}
 \label{sec:conclusion}
