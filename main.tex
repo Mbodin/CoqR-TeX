@@ -754,7 +754,7 @@ to mark absent elements. Another important global variable is
 \newtext{from a simple nucleus}---see Section~\ref{sec:coq:structure}.)
 
 %
-\changed{The initialization of global variable performs local computations, calling nucleus functions.}
+\changed{The initialization of global variables performs local computations, calling nucleus functions.}
 To avoid this circular dependency---which Coq would not accept---one could parametrize each nucleus function by the value of the global variables it uses.
 This would however not scale, considering the size of the project and the number of global variables involved.
 %
