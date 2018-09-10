@@ -5,7 +5,7 @@
 \documentclass[
     sigplan,
     10pt,
-    review, % Note: remove the [review] option for the final document.
+    % review, % Note: remove the [review] option for the final document.
     natbib=false % Note: This ishere to be able to use Biber.
  ]{acmart}
 %\let\citename\relax
@@ -73,7 +73,7 @@
 \newcommand\td[1]{\todo[color=green!20,size=\scriptsize]{#1}}
 \newcommand\tdi[1]{\todo[color=green!20,inline]{#1}}
 
-\setlength{\marginparwidth}{15mm} % Note: This is only temporary, to have notes more readable. It should be removed before submitting.
+% \setlength{\marginparwidth}{15mm} % Note: This is only temporary, to have notes more readable. It should be removed before submitting.
 
 \newcommand\ignore[1]{}
 
@@ -100,6 +100,10 @@
   % \state{State1}
   % \postcode{Post-Code1}
   % \country{Chile}
+}
+\affiliation{
+    \department{Department of Computing}
+    \institution{Imperial College London}
 }
 \email{mbodin@dim.uchile.cl}
 
