@@ -5,6 +5,7 @@
 \documentclass[
     sigplan,
     10pt,
+    screen,
     % review, % Note: remove the [review] option for the final document.
     natbib=false % Note: This ishere to be able to use Biber.
  ]{acmart}
@@ -12,11 +13,17 @@
 
 \settopmatter{printfolios=true,printccs=false,printacmref=false}
 
-\acmConference[DLS'18]{Dynamic Languages Symposium}{November~6, 2018}{Boston, MA, USA}
+% \setcopyright{ACMUNKNOWN}
+\acmPrice{15.00}
+\acmDOI{10.1145/3276945.3276946}
 \acmYear{2018}
-\acmISBN{} % \acmISBN{978-x-xxxx-xxxx-x/YY/MM}
-\acmDOI{} % \acmDOI{10.1145/nnnnnnn.nnnnnnn}
-\startPage{1}
+\copyrightyear{2018}
+\acmISBN{978-1-4503-6030-2/18/11}
+\acmConference[DLS '18]{Proceedings of the 14th ACM SIGPLAN International Symposium on Dynamic Languages}{November 6, 2018}{Boston, MA, USA}
+\acmBooktitle{Proceedings of the 14th ACM SIGPLAN International Symposium on Dynamic Languages (DLS '18), November 6, 2018, Boston, MA, USA}
+
+% \startPage{1}
+\pagestyle{empty} % We are not supposed to have any page number.
 
 \setcopyright{none}
 
@@ -39,6 +46,8 @@
    eprint=false
  ]{biblatex}
 \addbibresource{biblio.bib}
+
+\renewcommand*{\bibfont}{\small} % We are allowed to set the font size of the bibliography to anything between 8pt (\footnotesize) to 10pt (\normalsize).
 
 \usepackage{minted}
 \setminted{
@@ -134,7 +143,7 @@
   % \state{State2a}
   % \postcode{Post-Code2a}
   % \country{Chile}
-  \thanks{T. D{\'i}az and {\'E.} Tanter are partially funded by the Millenium Institute for Foundational Research on Data (IMFD Chile)}
+  \titlenote{T. D{\'i}az and {\'E.} Tanter are partially funded by the Millenium Institute for Foundational Research on Data (IMFD Chile)}
 }
 \email{etanter@dcc.uchile.cl}
 
@@ -143,34 +152,34 @@ The R programming language is very popular for developing statistical software a
 formal verification of R programs.
 \end{abstract}
 
-% % %% 2012 ACM Computing Classification System (CSS) concepts
-% % %% Generate at 'http://dl.acm.org/ccs/ccs.cfm'.
-% \begin{CCSXML}
-%   <ccs2012>
-%     <concept>
-%       <concept_id>10003752.10010124.10010131.10010133</concept_id>
-%       <concept_desc>Theory of computation~Denotational semantics</concept_desc>
-%       <concept_significance>500</concept_significance>
-%     </concept>
-%     <concept>
-%       <concept_id>10011007.10011006.10011066.10011070</concept_id>
-%       <concept_desc>Software and its engineering~Application specific development environments</concept_desc>
-%       <concept_significance>300</concept_significance>
-%     </concept>
-%     <concept>
-%       <concept_id>10011007.10011074.10011099.10011692</concept_id>
-%       <concept_desc>Software and its engineering~Formal software verification</concept_desc>
-%       <concept_significance>100</concept_significance>
-%     </concept>
-%   </ccs2012>
-% \end{CCSXML}
+% %% 2012 ACM Computing Classification System (CSS) concepts
+% %% Generate at 'http://dl.acm.org/ccs/ccs.cfm'.
+\begin{CCSXML}
+  <ccs2012>
+    <concept>
+      <concept_id>10003752.10010124.10010131.10010133</concept_id>
+      <concept_desc>Theory of computation~Denotational semantics</concept_desc>
+      <concept_significance>500</concept_significance>
+    </concept>
+    <concept>
+      <concept_id>10011007.10011006.10011066.10011070</concept_id>
+      <concept_desc>Software and its engineering~Application specific development environments</concept_desc>
+      <concept_significance>300</concept_significance>
+    </concept>
+    <concept>
+      <concept_id>10011007.10011074.10011099.10011692</concept_id>
+      <concept_desc>Software and its engineering~Formal software verification</concept_desc>
+      <concept_significance>100</concept_significance>
+    </concept>
+  </ccs2012>
+\end{CCSXML}
 
-% \ccsdesc[500]{Theory of computation~Denotational semantics}
-% \ccsdesc[300]{Software and its engineering~Application specific development environments}
-% \ccsdesc[100]{Software and its engineering~Formal software verification}
-% % %% End of generated code
+\ccsdesc[500]{Theory of computation~Denotational semantics}
+\ccsdesc[300]{Software and its engineering~Application specific development environments}
+\ccsdesc[100]{Software and its engineering~Formal software verification}
+% %% End of generated code
 
-% \keywords{R, Coq, Formalization, Testing}
+\keywords{R, Coq, Formalization, Testing}
 
 \maketitle
 
@@ -2193,7 +2202,7 @@ We present the first formal specification of R, written as an interpreter in Coq
 \CoqR{} should be the basis on top of which to develop an appropriate program logic, in order to more conveniently reason about R programs. As such, it is a necessary first step towards a robust environment for formal verification of R programs. 
 
 
-
 \printbibliography{}
 
 \end{document}
+
