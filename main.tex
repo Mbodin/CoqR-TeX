@@ -1522,8 +1522,13 @@ them in the \CoqR{} environment does not mean that these definitions are usable:
 % \eti{put all numbers in the table / complete (should match the 22,000 total that we mention in 3.1)}
 
 
-\begin{figure}[]
+\begin{table}
 \centering
+\caption{Current results of running the different test suites.
+    \protect\parbox{\linewidth}%
+    {\protect\centering\footnotesize (P = Pass, F = Fail, NI = Not Implemented, NF = Not Found, \newline I = Impossible, U = Unknown, PP = Potential Pass, PF = Potential Fail)}}
+\label{tab:results}
+    \hspace*{-3mm}
 \begin{tabular}{|l||r|r|r|r|r|r|r|r|}
 \hline
 {\bf Suite}  & {\bf P} & {\bf F} & {\bf NI} & {\bf NF} & {\bf I} & {\bf U} & {\bf PP} & {\bf PF} \\ \hline\hline
@@ -1534,14 +1539,12 @@ FastR2      & 2,411 & 1,128 & 6,888  &   493    & 0   & 1,914  &   297 & 343 \\ 
 {\bf Total} & 6,370 & 1,191 & 8,662  &   1,450  &  1  & 2,251  &   376 & 675 \\
 \hline
 \end{tabular}
+
 {\em total number of tests:} 20,976
-\caption{Current results of running the different test suites.
-{\footnotesize (P = Pass, F = Fail, NI = Not Implemented, NF = Not Found, \newline I = Impossible, U = Unknown, PP = Potential Pass, PF = Potential Fail)}}
-\label{fig:results}
-\end{figure}
+\end{table}
 
 
-Figure~\ref{fig:results} presents the current status of executing the four test suites described earlier with \CoqR{}.
+Table~\ref{tab:results} presents the current status of executing the four test suites described earlier with \CoqR{}.
 On a 2-core Intel Xeon 2.20GHz with 4 GB of RAM, execution times range from 1.5~hrs for GNU~R's test suite to over 12~hrs for FastR2.
 \newtext{\CoqR{} is several orders of magnitude slower than GNU~R, but its aim is to provide a faithful formalization of R's semantics, not to be an alternative production-level interpreter.}
 
