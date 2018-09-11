@@ -7,13 +7,13 @@
     10pt,
     screen,
     % review, % Note: remove the [review] option for the final document.
-    natbib=false % Note: This ishere to be able to use Biber.
+    natbib=false % Note: This is here to be able to use Biber.
  ]{acmart}
 %\let\citename\relax
 
 \settopmatter{printfolios=true,printccs=false,printacmref=false}
 
-% \setcopyright{ACMUNKNOWN}
+\setcopyright{acmlicensed}
 \acmPrice{15.00}
 \acmDOI{10.1145/3276945.3276946}
 \acmYear{2018}
@@ -25,10 +25,6 @@
 % \startPage{1}
 \pagestyle{empty} % We are not supposed to have any page number.
 
-\setcopyright{none}
-
-\bibliographystyle{ACM-Reference-Format}
-
 \usepackage{booktabs}
 \usepackage{subcaption}
 \usepackage{enumitem}
@@ -36,7 +32,7 @@
 \usepackage[
    backend=biber,
    bibencoding=utf8,
-   style=numeric,
+   style=ACM-Reference-Format,
    hyperref=true,
    % citestyle=authoryear-comp,
    backref=false,
@@ -47,7 +43,7 @@
  ]{biblatex}
 \addbibresource{biblio.bib}
 
-\renewcommand*{\bibfont}{\small} % We are allowed to set the font size of the bibliography to anything between 8pt (\footnotesize) to 10pt (\normalsize).
+\renewcommand*{\bibfont}{\footnotesize} % We are allowed to set the font size of the bibliography to anything between 8pt (\footnotesize) to 10pt (\normalsize), (9pt is \small).
 
 \usepackage{minted}
 \setminted{
@@ -116,7 +112,7 @@
 % }
 \email{mbodin@dim.uchile.cl}
 
-\author{Tom{\'a}s Diaz}
+\author{Tomás Diaz}
 % \authornote{with author2 note}
 % \orcid{nnnn-nnnn-nnnn-nnnn}
 \affiliation{
@@ -131,7 +127,7 @@
 }
 \email{tdiaz@dcc.uchile.cl}
 
-\author{{\'E}ric Tanter}
+\author{Éric Tanter}
 % \authornote{with author2 note}
 % \orcid{nnnn-nnnn-nnnn-nnnn}
 \affiliation{
@@ -143,7 +139,7 @@
   % \state{State2a}
   % \postcode{Post-Code2a}
   % \country{Chile}
-  \titlenote{T. D{\'i}az and {\'E.} Tanter are partially funded by the Millenium Institute for Foundational Research on Data (IMFD Chile)}
+  \titlenote{T. Diaz and É. Tanter are partially funded by the Millenium Institute for Foundational Research on Data (IMFD Chile)}
 }
 \email{etanter@dcc.uchile.cl}
 
@@ -1528,7 +1524,7 @@ them in the \CoqR{} environment does not mean that these definitions are usable:
     \protect\parbox{\linewidth}%
     {\protect\centering\footnotesize (P = Pass, F = Fail, NI = Not Implemented, NF = Not Found, \newline I = Impossible, U = Unknown, PP = Potential Pass, PF = Potential Fail)}}
 \label{tab:results}
-    \hspace*{-3mm}
+    %\hspace*{-3mm}
 \begin{tabular}{|l||r|r|r|r|r|r|r|r|}
 \hline
 {\bf Suite}  & {\bf P} & {\bf F} & {\bf NI} & {\bf NF} & {\bf I} & {\bf U} & {\bf PP} & {\bf PF} \\ \hline\hline
@@ -2149,7 +2145,7 @@ and its behavior varied from interpreters to interpreters.
 The JSCert formalization~\parencite{popl14jscert}
 is an interesting step forward as it was designed
 to be related with both the ECMAScript specification and the JavaScript test suites.
-The formalization is composed of two parts: a mechanized specification and an interpreter. The JSCert specification is syntactically related with the ECMAScript specification through an eyeball correspondence, and the interpreter passes its test suites.
+The formalization is composed of two parts: a mechanized specification and an interpreter. The JSCert specification is syntactically related with the ECMAScript specification through an eyeball correspondence, and the interpreter passes its test suite.
 The specification and the interpreter are related to each other by a Coq proof.
 This double-relation provides a large amount of trust to JSCert.
 These relations served to find issues in both the JSCert specification
@@ -2167,7 +2163,7 @@ the same definition is both executable and syntactically close to its specificat
 JSCert served as a basis for the JSExplain tool~\parencite{JSExplain},
 aiming to explain JavaScript to non-specialists.
 As \CoqR{} uses a similar monadic structure than JSCert,
-a similar tool for R would be an interesting future work.}
+a similar tool for R is an interesting future work.}
 
 % CompCert.
 The Coq proof assistant has already been used
@@ -2201,9 +2197,9 @@ We instead define \CoqR{} as a shallow embedding, suitable for building proofs a
 \section{Conclusions}
 \label{sec:conclusion}
 
-We present the first formal specification of R, written as an interpreter in Coq. We present the monadic encoding that allows \CoqR{} to be in eyeball correspondence with the GNU~R reference interpreter, provide a testing infrastructure useful to incrementally enrich \CoqR, and show that \CoqR{} can be used to formally reason about R. Considering the number of realistic test cases that \CoqR{} currently passes, and its extensible architecture, we believe that \CoqR{} can be grown \CoqR{} to fully cover R and its main libraries. 
-\newtext{Among the different venues for future work, it would be particularly interesting to reduce the shim further, by moving the parser and the pretty-printer to \CoqR{}.} On the formal reasoning side, 
-\CoqR{} should be the basis on top of which to develop an appropriate program logic, in order to more conveniently reason about R programs. As such, it is a necessary first step towards a robust environment for formal verification of R programs. 
+We present the first formal specification of R, written as an interpreter in Coq. We present the monadic encoding that allows \CoqR{} to be in eyeball correspondence with the GNU~R reference interpreter, provide a testing infrastructure useful to incrementally enrich \CoqR, and show that \CoqR{} can be used to formally reason about R. Considering the number of realistic test cases that \CoqR{} currently passes, and its extensible architecture, we believe that \CoqR{} can be grown to fully cover R and its main libraries. 
+\newtext{Among the different venues for future work, it would be particularly interesting to reduce the shim further, by moving the parser and the pretty-printer to Coq.} On the formal reasoning side, 
+\CoqR{} should be the basis on top of which to develop an appropriate program logic, to more conveniently reason about R programs. As such, it is a necessary first step towards a robust environment for formal verification of R programs. 
 
 
 \printbibliography{}
