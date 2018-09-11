@@ -89,6 +89,9 @@
 \newcommand\newtext[1]{#1}
 \newcommand\changed[1]{#1}
 
+\usepackage{balance}
+
+
 \begin{document}
 
 \title{A Trustworthy Mechanized Formalization of R}
@@ -148,6 +151,7 @@ The R programming language is very popular for developing statistical software a
 formal verification of R programs.
 \end{abstract}
 
+% Note: Due to a bug of the ACM package, this section does not appear.
 % %% 2012 ACM Computing Classification System (CSS) concepts
 % %% Generate at 'http://dl.acm.org/ccs/ccs.cfm'.
 \begin{CCSXML}
@@ -2201,7 +2205,7 @@ We present the first formal specification of R, written as an interpreter in Coq
 \newtext{Among the different venues for future work, it would be particularly interesting to reduce the shim further, by moving the parser and the pretty-printer to Coq.} On the formal reasoning side, 
 \CoqR{} should be the basis on top of which to develop an appropriate program logic, to more conveniently reason about R programs. As such, it is a necessary first step towards a robust environment for formal verification of R programs. 
 
-
+% \balance % Enter in conflict with the ACM package, making the second part of the bibliography not appearing at all!
 \printbibliography{}
 
 \end{document}
