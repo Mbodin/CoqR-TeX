@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof
@@ -228,3 +229,19 @@ TSWLatexianTemp*
 main.pdf
 acmart.pdf
 
+*.swp
+*~
+_minted-*/
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.listing
+*.log
+*.nav
+*.out
+*.pdf
+*.run.xml
+*.snm
+*.toc
+*.vrb
