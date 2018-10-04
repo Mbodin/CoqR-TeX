@@ -104,7 +104,6 @@
     \field{urldate}
 }
 
-
 \begin{document}
 
 \title{A Trustworthy Mechanized Formalization of R}
@@ -218,7 +217,7 @@ f(1, d=3, 2)         # Mixed
 f(3, a=1, ab=2)      # a is associated to abc
 f(a=3, 1, 2)         # Error: several prefixes
 \end{minted}
-\vspace{-1em}
+% \vspace{-1em}
 \caption{Exploring function calls in R.}
 \label{fig:calls}
 \end{figure}
@@ -371,7 +370,7 @@ Inductive result (A : Type) :=
   | result_not_implemented : string -> result A
   | result_bottom : state -> result A.
 \end{minted}
-\vspace{-1em}
+% \vspace{-1em}
 \caption{The result monad.}
 \label{fig:result}
 \end{figure}
@@ -496,7 +495,7 @@ SEXP do_attr (SEXP call, SEXP op,
   return ans;
 }
 \end{minted}
-\vspace{-1em}
+\vspace{-1em} % The last line of the code is mostly white.
     \caption{original C function}
     \label{fig:c:do_attr}
 \end{subfigure}
@@ -516,11 +515,11 @@ Definition do_attr globals runs S
     (* ... *)
     result_success S ans.
 \end{minted}
-\vspace{-.6em}
+% \vspace{-.6em} % For alignment.
     \caption{Coq translation}
     \label{fig:coq:do_attr}
 \end{subfigure}
-\vspace{-1em}
+% \vspace{-1em}
     \caption{Original C function and Coq translation of \mintinline{C}{do_attr}}
     \label{fig:do_attr}
 \end{figure*}
@@ -551,7 +550,7 @@ Definition do_attr globals runs S
         \node [draw = black, rectangle, minimum height = 6mm, minimum width = 1cm, anchor = base, right = 0pt of c3] (cn) {\(c_n\)} ;
         \node [left = 2mm of hvector2] (nvector2) {Complex vector:} ;
     \end{tikzpicture}
-\vspace{-1em}
+% \vspace{-1em}
     \caption{Basic language elements in memory}
     \label{fig:basic:language:elements}
 \end{figure}
@@ -659,15 +658,13 @@ and not following it in memory as in C.
 \begin{figure}
     \begin{minted}[escapeinside=@@]{Coq}
 Record ListStruct := make_ListStruct {
-    list_carval : SEXP ;
-    list_cdrval : SEXP ;
-    list_tagval : SEXP
-  }.
+  list_carval : SEXP ;
+  list_cdrval : SEXP ;
+  list_tagval : SEXP }.
 
 Record Vector_SEXPREC (A : Type) := {
-    Vector_length : nat ;
-    Vector_data :> list A
-  }.
+  Vector_length : nat ;
+  Vector_data :> list A }.
 
 Inductive SEXPRECData :=
   | listExp : ListStruct -> SEXPRECData
@@ -682,11 +679,10 @@ Coercion envExp : EnvStruct >-> SEXPRECData.
 (* ... *)
 
 Record SEXPREC := make_SEXPREC {
-    SEXPREC_header :> SEXPRECHeader ;
-    SEXPREC_data :> SEXPRECData
-  }.
+  SEXPREC_header :> SEXPRECHeader ;
+  SEXPREC_data :> SEXPRECData }.
 \end{minted}
-\vspace{-.6em}
+% \vspace{-.6em}
     \caption{Basic language elements (\mintinline{C}{SEXPREC}) in Coq}
     \label{fig:SEXPREC}
 \end{figure}
@@ -757,7 +753,7 @@ Definition do_attr_init globals runs S :=
     \caption{Coq translation}
     \label{fig:coq:do_attr:formals}
 \end{subfigure}
-\vspace{-1em}
+% \vspace{-1em}
     \caption{Another snippet of \mintinline{C}{do_attr} and its Coq translation}
     \label{fig:do_attr:formals}
 \end{figure*}
@@ -812,12 +808,11 @@ This code is executed after the standard global variables are initialized.
 \begin{figure}
 \begin{minted}[escapeinside=@@]{Coq}
 Record Runs : Type := Runs_intro {
-    runs_while_loop : forall A, state -> A ->
-      (state -> A -> result bool) ->
-      (state -> A -> result A) -> result A ;
-    runs_eval : state -> SEXP -> SEXP -> result SEXP ;
-    (* ... *)
-  }.
+  runs_while_loop : forall A, state -> A ->
+    (state -> A -> result bool) ->
+    (state -> A -> result A) -> result A ;
+  runs_eval : state -> SEXP -> SEXP -> result SEXP ;
+  (* ... *) }.
 
 Definition while_loop runs A S (a : A) expr stat :=
   if%success expr S a using S then
@@ -825,13 +820,13 @@ Definition while_loop runs A S (a : A) expr stat :=
     runs_while_loop runs S a expr stat@\label{line:runs_while:recursive:call}@
   else result_success S a.
 \end{minted}
-\vspace{-1em}
+% \vspace{-1em}
     \caption{Definition of loops as a fix-point combinator}
     \label{fig:while_loop}
 \end{figure}
 
 \begin{figure}
-\begin{minted}{Coq}
+\begin{minted}[breaklines=false]{Coq}
 Fixpoint runs max_step globals : Runs :=
   match max_step with
   | O => {|
@@ -848,7 +843,7 @@ Fixpoint runs max_step globals : Runs :=
       (* ... *) |}
   end.
 \end{minted}
-\vspace{-1em}
+\vspace{-1em} % The last line of the code is mostly white.
     \caption{Definition of \mintinline{Coq}{runs} in Coq}
     \label{fig:runs}
 \end{figure}
@@ -946,7 +941,7 @@ FUNTAB R_FunTab[] = {
   {"sin",       do_math21,   1,  true,  true},
   /* ... */ }
 \end{minted}
-\vspace{-1em}
+\vspace{-1em} % The last line of the code is mostly white.
     \caption{Symbol table of GNU~R}
     \label{fig:names}
 \end{figure}
@@ -1359,6 +1354,29 @@ Also, we used the report of most used not-implemented features iteratively in or
 % \label{sec:driving:development}
 
 
+% \eti{put all numbers in the table / complete (should match the 22,000 total that we mention in 3.1)}
+\begin{table}
+\centering
+\caption{Current results of running the different test suites.
+    \protect\parbox{\linewidth}%
+    {\protect\centering\footnotesize (P = Pass, F = Fail, NI = Not Implemented, NF = Not Found, \newline I = Impossible, U = Unknown, PP = Potential Pass, PF = Potential Fail)}}
+\label{tab:results}
+    %\hspace*{-3mm}
+\begin{tabular}{|l||r|r|r|r|r|r|r|r|}
+\hline
+{\bf Suite}  & {\bf P} & {\bf F} & {\bf NI} & {\bf NF} & {\bf I} & {\bf U} & {\bf PP} & {\bf PF} \\ \hline\hline
+Corners     & 2,613 & 7     & 48     &   119    & 0   & 149    &   20  & 6 \\ \hline
+GNU~R       & 243   & 31    & 739    &   723    & 1   & 27     &   0   & 0 \\ \hline
+FastR1      & 1,103 & 25    & 987    &   115    & 0   & 161    &   59  & 326 \\ \hline
+FastR2      & 2,411 & 1,128 & 6,888  &   493    & 0   & 1,914  &   297 & 343 \\ \hline\hline
+{\bf Total} & 6,370 & 1,191 & 8,662  &   1,450  &  1  & 2,251  &   376 & 675 \\
+\hline
+\end{tabular}
+
+{\em total number of tests:} 20,976
+\end{table}
+
+
 \subsection{Base Library}
 \label{sec:library}
 
@@ -1380,7 +1398,7 @@ expression. This base library includes the definition of several
 functions and objects, such as \mintinline{R}{mean}, \mintinline{R}{matrix} or \mintinline{R}{pi}.
 Several of these functions are just wrappers over internal functions, adding  argument checking or default arguments.
 For example, the \mintinline{R}{eval} function sets default values for the arguments of the internal \mintinline{R}{eval} function:
-\begin{minted}{R}
+\begin{minted}[breaklines=false]{R}
 eval <- function(expr, envir = parent.frame(),
     enclos = if(is.list(envir) || is.pairlist(envir))
              parent.frame() else baseenv())
@@ -1531,31 +1549,6 @@ them in the \CoqR{} environment does not mean that these definitions are usable:
 
 \subsection{Current Status}
 \label{sec:testing-results}
-
-% \eti{put all numbers in the table / complete (should match the 22,000 total that we mention in 3.1)}
-
-
-\begin{table}
-\centering
-\caption{Current results of running the different test suites.
-    \protect\parbox{\linewidth}%
-    {\protect\centering\footnotesize (P = Pass, F = Fail, NI = Not Implemented, NF = Not Found, \newline I = Impossible, U = Unknown, PP = Potential Pass, PF = Potential Fail)}}
-\label{tab:results}
-    %\hspace*{-3mm}
-\begin{tabular}{|l||r|r|r|r|r|r|r|r|}
-\hline
-{\bf Suite}  & {\bf P} & {\bf F} & {\bf NI} & {\bf NF} & {\bf I} & {\bf U} & {\bf PP} & {\bf PF} \\ \hline\hline
-Corners     & 2,613 & 7     & 48     &   119    & 0   & 149    &   20  & 6 \\ \hline
-GNU~R       & 243   & 31    & 739    &   723    & 1   & 27     &   0   & 0 \\ \hline
-FastR1      & 1,103 & 25    & 987    &   115    & 0   & 161    &   59  & 326 \\ \hline
-FastR2      & 2,411 & 1,128 & 6,888  &   493    & 0   & 1,914  &   297 & 343 \\ \hline\hline
-{\bf Total} & 6,370 & 1,191 & 8,662  &   1,450  &  1  & 2,251  &   376 & 675 \\
-\hline
-\end{tabular}
-
-{\em total number of tests:} 20,976
-\end{table}
-
 
 Table~\ref{tab:results} presents the current status of executing the four test suites described earlier with \CoqR{}.
 On a 2-core Intel Xeon 2.20GHz with 4 GB of RAM, execution times range from 1.5~hrs for GNU~R's test suite to over 12~hrs for FastR2.
@@ -1905,7 +1898,7 @@ Inductive safe_SExp S : SExp -> Prop :=
       safe_SExp S (make_StrStruct data)
   (* ... *).
 \end{minted}
-\vspace{-1em}
+\vspace{-1em} % The last line of the code is mostly white.
     \caption{Typing invariants for memory} % during R execution
     \label{fig:invariants:definition}
 \end{figure}
@@ -1990,7 +1983,7 @@ then \mintinline{Coq}{computeR} to propagate the hypotheses. And so on.
 
 
 \begin{figure}[t]
-\begin{minted}{Coq}
+\begin{minted}[breaklines=false]{Coq}
 Lemma do_attr_result :
   forall S globals call op args env,
   safe_state S ->
@@ -2009,7 +2002,7 @@ Proof.
   (* ... *)
 Qed.
 \end{minted}
-\vspace{-1em}
+\vspace{-1em} % The last line of the code is mostly white.
     \caption{Example of specification and tactic usage.}
     \label{fig:do_attr_result}
 \end{figure}
