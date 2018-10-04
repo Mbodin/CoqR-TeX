@@ -20,8 +20,9 @@
 \acmYear{2018}
 \copyrightyear{2018}
 \acmISBN{978-1-4503-6030-2/18/11}
-\acmConference[DLS'18]{Proceedings of the 14th ACM SIGPLAN International Symposium on Dynamic Languages}{November 6, 2018}{Boston, MA, USA}
-\acmBooktitle{DLS'18, November 6, 2018, Boston, MA, USA}
+\acmConference[DLS '18]{Proceedings of the 14th ACM SIGPLAN International Symposium on Dynamic Languages}{November 6, 2018}{Boston, MA, USA}
+\acmBooktitle{Proceedings of the 14th ACM SIGPLAN International Symposium on Dynamic Languages (DLS '18), November 6, 2018, Boston, MA, USA}
+% \acmBooktitle{DLS'18, November 6, 2018, Boston, MA, USA}
 
 % \startPage{1}
 % \pagestyle{empty} % We are not supposed to have any page number.
@@ -291,10 +292,10 @@ We also report on a proof effort to establish that memory invariants are preserv
 Section~\ref{sec:related:work} discusses related work and Section~\ref{sec:conclusion} concludes.
 
 
-The current implementation of \CoqR{}\footnote{\url{https://github.com/Mbodin/CoqR/releases/tag/DLS2018}} is not feature-complete:
+The current implementation of \CoqR{}\footnote{\url{https://github.com/Mbodin/CoqR/releases/tag/DLS2018}} is not feature-com\-plete:
 R is a very large programming language and achieving 100\% coverage of the language and its main libraries is a huge implementation effort.
 The contribution of this work is to provide realistic foundations for a trustworthy R formalization in Coq.
-First, the interpreter covers the nucleus of the language and over 120 additional features. It is implemented in an extensible manner, following the architecture of GNU~R itself. Second, the testing infrastructure we provide is designed to help drive the development effort towards the most pressing missing features. At present, the \CoqR{} implementation passes a substantial number of tests from real-world R projects. This is realistic enough to support the claim that, given more engineering power, our approach can scale up to the full language and its main libraries.
+First, the interpreter covers the nucleus of the language and over 120 additional features. It is implemented in an extensible manner, following the architecture of GNU~R itself. Second, the testing infrastructure we provide is designed to help drive the development effort towards the most pressing missing features. At present, the \CoqR{} implementation passes a substantial number of tests from real-world R projects. This is realistic enough to support the claim that, given more engineering power, our approach scales up to the full language and its main libraries.
 
 
 % Given the size of our formalization,
@@ -1338,13 +1339,13 @@ we use the \textsf{potential pass}/\textsf{potential fail} categories; while the
 Having different categories of testing outcomes is crucial when facing a huge development, in order to apprehend the task at hand. In particular, we found extremely helpful to separate actual failures from internal uses of \mintinline{Coq}{result_not_implemented}, and from missing definitions (mostly functions).
 % \td{Missing objects as well, but not as useful as functions (mostly facilitates reading results)}.
 
-Recall that a not-implemented feature generally corresponds to an entry of the symbol table that has not been translated into \CoqR{}. It can also correspond to some branch in a large \mintinline{C}{switch} statement that we decided to postpone for some reason. On the other hand, a missing function definition corresponds to the use of an undefined R function in the test; this is typically because the function was not imported in the \CoqR{} test code base. (Missing objects are often failed assignments due to previous errors.)
+Recall that a not-implemented result generally corresponds to an entry of the symbol table that has not been translated into \CoqR{}. It can also corre\-spond to some branch in a large \mintinline{C}{switch} statement that we decided to postpone for some reason. On the other hand, a missing function definition corresponds to the use of an undefined R function in the test; this is typically because the function was not imported in the \CoqR{} test code base. (Missing objects are often failed assignments due to previous errors.)
 % and occasionally refer to missing import
 %  Sometimes they refer to things from libraries or the T id (for true). }.
 
-Therefore, in addition to counting the classified testing outcomes for the run of a test suite, our testing framework reports the 10 most common not-implemented features and the 10 most common missing function definitions. Both reports are useful to identify low-hanging fruits to make progress in running the selected test suite. For instance, at the initial stages of the project, the base library of R showed up prominently in the list of missing functions, as discussed below.
+Therefore, in addition to counting the classified testing outcomes for the run of a test suite, our testing framework reports the 10 most common not-implemented features and the 10 most common missing function definitions. Both of these reports are useful to identify low-hanging fruits to make progress in running the selected test suite. For instance, at the initial stages of the project, the base library of R showed up prominently in the list of missing functions, as discussed below.
 % ---especially some parts of it\et{Also useful for scalability: only import needed functions from base library (Coq is slow!)}
-Also, we used the report of most used not-implemented features iteratively in order to decide which features from the symbol table to implement first, leading us to the 128 features that are currently implemented.
+We also used the report of most used not-implemented features iteratively in order to decide which features from the symbol table to implement first, leading us to the 128 features that are currently implemented.
 %
 
 
