@@ -6,12 +6,13 @@
     sigplan,
     10pt,
     screen,
+    printccs=true,
     % review, % Note: remove the [review] option for the final document.
     natbib=false % Note: This is here to be able to use Biber.
  ]{acmart}
 %\let\citename\relax
 
-\settopmatter{printfolios=true,printccs=false,printacmref=false}
+\settopmatter{printfolios=true} % ,printacmref=false}
 
 \setcopyright{acmlicensed}
 \acmPrice{15.00}
@@ -19,11 +20,12 @@
 \acmYear{2018}
 \copyrightyear{2018}
 \acmISBN{978-1-4503-6030-2/18/11}
-\acmConference[DLS '18]{Proceedings of the 14th ACM SIGPLAN International Symposium on Dynamic Languages}{November 6, 2018}{Boston, MA, USA}
-\acmBooktitle{Proceedings of the 14th ACM SIGPLAN International Symposium on Dynamic Languages (DLS '18), November 6, 2018, Boston, MA, USA}
+\acmConference[DLS'18]{Proceedings of the 14th ACM SIGPLAN International Symposium on Dynamic Languages}{November 6, 2018}{Boston, MA, USA}
+\acmBooktitle{DLS'18, November 6, 2018, Boston, MA, USA}
 
 % \startPage{1}
-\pagestyle{empty} % We are not supposed to have any page number.
+% \pagestyle{empty} % We are not supposed to have any page number.
+\pagenumbering{gobble}
 
 \usepackage{booktabs}
 \usepackage{subcaption}
@@ -52,7 +54,8 @@
     breaklines,
     linenos,
     numbersep=.6em,
-    autogobble
+    autogobble,
+    xleftmargin=1em
   }
 
 \usepackage{tikz}
@@ -90,6 +93,16 @@
 \newcommand\changed[1]{#1}
 
 \usepackage{balance}
+
+% See https://tex.stackexchange.com/questions/336041/remove-n-d-no-date-from-online-entries-without-dates-in-biblatex
+% There is no need for a “nodate” in online websites.
+\DeclareLabeldate[online]{%
+    \field{date}
+    \field{year}
+    \field{eventdate}
+    \field{origdate}
+    \field{urldate}
+}
 
 
 \begin{document}
@@ -166,23 +179,23 @@ formal verification of R programs.
       <concept_desc>Software and its engineering~Application specific development environments</concept_desc>
       <concept_significance>300</concept_significance>
     </concept>
-    <concept>
-      <concept_id>10011007.10011074.10011099.10011692</concept_id>
-      <concept_desc>Software and its engineering~Formal software verification</concept_desc>
-      <concept_significance>100</concept_significance>
-    </concept>
+%    <concept>
+%      <concept_id>10011007.10011074.10011099.10011692</concept_id>
+%      <concept_desc>Software and its engineering~Formal software verification</concept_desc>
+%      <concept_significance>100</concept_significance>
+%    </concept>
   </ccs2012>
 \end{CCSXML}
 
 \ccsdesc[500]{Theory of computation~Denotational semantics}
 \ccsdesc[300]{Software and its engineering~Application specific development environments}
-\ccsdesc[100]{Software and its engineering~Formal software verification}
+% \ccsdesc[100]{Software and its engineering~Formal software verification}
 % %% End of generated code
 
-\keywords{R, Coq, Language formalization, Testing infrastructure}
+\keywords{R, Coq, Testing infrastructure}
 
 \maketitle
-\thispagestyle{empty} % To compensate the \thispagestyle{plain} of \maketitle to get unnumberred pages as requested.
+% \thispagestyle{empty} % To compensate the \thispagestyle{plain} of \maketitle to get unnumberred pages as requested.
 
 \section{Introduction}
 \label{sec:intro}
@@ -195,6 +208,20 @@ The R programming language is meant to be both expressive and powerful,
 able to express complex notions in few keystrokes.
 This sometimes comes at the cost of readability and predictability. Indeed,
 the semantics of R is subtle and contains numerous corner cases that can result in unexpected behavior.
+
+\begin{figure}[t]
+\begin{minted}{R}
+f <- function (abc, ab, de) { c (abc, ab, de) }
+f(1, 2, 3)           # By position
+f(de=3, abc=1, ab=2) # By name
+f(1, d=3, 2)         # Mixed
+f(3, a=1, ab=2)      # a is associated to abc
+f(a=3, 1, 2)         # Error: several prefixes
+\end{minted}
+\vspace{-1em}
+\caption{Exploring function calls in R.}
+\label{fig:calls}
+\end{figure}
 
 The reasons for these corner cases are numerous, ranging from backward compatibility to the desire to accommodate the use of R as both a traditional programming language and an interactive shell.
 Even a feature as basic as function calls can be a source of surprise in R.
@@ -222,20 +249,6 @@ This feature adds an exception to the prefix rule:
 the variables declared after the \mintinline{R}{...} special argument
 are not considered during prefix matching,
 but only for exact matches.}
-
-\begin{figure}[t]
-\begin{minted}{R}
-f <- function (abc, ab, de) { c (abc, ab, de) }
-f(1, 2, 3)           # By position
-f(de=3, abc=1, ab=2) # By name
-f(1, d=3, 2)         # Mixed
-f(3, a=1, ab=2)      # a is associated to abc
-f(a=3, 1, 2)         # Error: several prefixes
-\end{minted}
-\vspace{-1em}
-\caption{Exploring function calls in R.}
-\label{fig:calls}
-\end{figure}
 
 Such subtle behaviors are numerous in R~\parencite{RInferno}.
 Debugging tools exist~\parencite{mcpherson2014},
