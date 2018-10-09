@@ -209,7 +209,7 @@ able to express complex notions in few keystrokes.
 This sometimes comes at the cost of readability and predictability. Indeed,
 the semantics of R is subtle and contains numerous corner cases that can result in unexpected behavior.
 
-\begin{figure}[t]
+\begin{figure}[b]
 \begin{minted}{R}
 f <- function (abc, ab, de) { c (abc, ab, de) }
 f(1, 2, 3)           # By position
@@ -283,19 +283,22 @@ We say that this interpreter is {\em trustworthy} because we have followed two c
 
 First, the Coq interpreter has been written using a monadic encoding that allows for a direct eyeball correspondence with the C source code of GNU~R~\parencite{Rwebsite}. In the absence of a standardized formal semantics, GNU~R is the reference point that defines what R really is. Note that other alternative implementations of R, such as FastR~\parencite{kalibera2014fast}, also treat GNU~R as the ground truth.
 
-Second, we have developed a testing framework that streamlines the process of running both the Coq interpreter and GNU~R on a set of test cases and report on mismatches and errors, among others (Section~\ref{sec:testing:architecture}). We use several test suites to measure the advancement of the \CoqR{} implementation.
+\begin{sloppypar}
+Second, we have developed a testing framework that streamlines the process of running both \CoqR{} and GNU~R on a set of test cases and report on mismatches and errors, among others (Section~\ref{sec:testing:architecture}). We use several test suites to measure the advancement of the \CoqR{} implementation.
 % the test suite of GNU~R itself ($\sim$3,600 loc), a test suite of the FastR implementation ($\sim$1,300 loc)~\parencite{kalibera2014fast}, and a test suite that we developed to exercise corner cases ($\sim$1,100 loc).
 % Additionally,\et{update once finished} we report on the process of scaling up our interpreter in order to be able to load existing R libraries (Section~\ref{sec:library}), in particular the R base library.
+\end{sloppypar}
 
 We also report on a proof effort to establish that memory invariants are preserved during execution, including some specific proof automation (Section~\ref{sec:proofs}).
 %
 Section~\ref{sec:related:work} discusses related work and Section~\ref{sec:conclusion} concludes.
 
-
-The current implementation of \CoqR{}\footnote{\url{https://github.com/Mbodin/CoqR/releases/tag/DLS2018}} is not feature-com\-plete:
+\begin{sloppypar}
+The current implementation of \CoqR{}\footnote{\url{https://github.com/Mbodin/CoqR/releases/tag/DLS2018}} is not feature-complete:
 R is a very large programming language and achieving 100\% coverage of the language and its main libraries is a huge implementation effort.
 The contribution of this work is to provide realistic foundations for a trustworthy R formalization in Coq.
 First, the interpreter covers the nucleus of the language and over 120 additional features. It is implemented in an extensible manner, following the architecture of GNU~R itself. Second, the testing infrastructure we provide is designed to help drive the development effort towards the most pressing missing features. At present, the \CoqR{} implementation passes a substantial number of tests from real-world R projects. This is realistic enough to support the claim that, given more engineering power, our approach scales up to the full language and its main libraries.
+\end{sloppypar}
 
 
 % Given the size of our formalization,
@@ -376,9 +379,12 @@ Inductive result (A : Type) :=
 \label{fig:result}
 \end{figure}
 
+\begin{sloppypar}
 \newtext{
-Modeling effectful computation in a purely functional language can be done through the use of {\em monads}~\parencite{wadler:mscs1992}. A monad is essentially a data structure that denotes computation augmented with information that is threaded throughout evaluation using a {\em binder}. For instance, the {\em state} monad threads values through a functional computation, accessible via monadic operations like \mintinline{Coq}{put} and \mintinline{Coq}{get}, thereby simulating a mutable global store. Other typical monads includes the {\em option} monad to represent potentially-failing computation (with constructors such as \mintinline{Coq}{Some} and \mintinline{Coq}{None}), and the {\em fuel} monad to give a finite evaluation budget to potentially diverging computation. Adequate notation, as provided for instance in Haskell, allows monadic programs to look like imperative programs, hiding the additional monadic information.
+Modeling effectful computation in a purely functional language can be done through the use of {\em monads}~\parencite{wadler:mscs1992}. A monad is essentially a data structure that denotes computation augmented with information that is threaded throughout evaluation using a {\em binder}. For instance, the {\em state} monad threads values through a functional computation, accessible via monadic operations like \mintinline{Coq}{put} and \mintinline{Coq}{get}, thereby simulating a mutable global store. Other typical monads includes the {\em option} monad to represent potentially-failing computation (with constructors such as \mintinline{Coq}{Some} and \mintinline{Coq}{None}), and the {\em fuel} monad to give a finite evaluation budget to potentially diverging computation. Adequate notation %, as provided for instance in Haskell,
+allows monadic programs to look like imperative programs, hiding the additional monadic information.
 }
+\end{sloppypar}
 
 Therefore, in order to achieve an effective eyeball correspondence between C code and Coq code, we introduce a {\em result monad}, which combines both the state, error, and fuel monads (Figure~\ref{fig:result}).
 %
@@ -389,10 +395,13 @@ The result monad constructors are:\footnote{A similar monad is used in the JSCer
 In addition to the result (of type \mintinline{Coq}{A} in the definition),
 it carries the global state (of type \mintinline{Coq}{state}). We describe the representation of state later on in this section.
 %
-\item The constructor \mintinline{Coq}{result_error} is meant to catch
+\item
+    \begin{sloppypar}
+The constructor \mintinline{Coq}{result_error} is meant to catch
 errors thrown by GNU~R, for instance an R runtime typing error:
 these errors are not catchable and immediately end the execution.
-A \mintinline{Coq}{string} is provided to help the debugging process.
+A \mintinline{Coq}{string} is provided to help debugging.
+    \end{sloppypar}
 %
 \item The constructor \mintinline{Coq}{result_longjump}
 corresponds to a call to the \mintinline{C}{longjmp}
@@ -1339,14 +1348,18 @@ we use the \textsf{potential pass}/\textsf{potential fail} categories; while the
 Having different categories of testing outcomes is crucial when facing a huge development, in order to apprehend the task at hand. In particular, we found extremely helpful to separate actual failures from internal uses of \mintinline{Coq}{result_not_implemented}, and from missing definitions (mostly functions).
 % \td{Missing objects as well, but not as useful as functions (mostly facilitates reading results)}.
 
-Recall that a not-implemented result generally corresponds to an entry of the symbol table that has not been translated into \CoqR{}. It can also corre\-spond to some branch in a large \mintinline{C}{switch} statement that we decided to postpone for some reason. On the other hand, a missing function definition corresponds to the use of an undefined R function in the test; this is typically because the function was not imported in the \CoqR{} test code base. (Missing objects are often failed assignments due to previous errors.)
+\begin{sloppypar}
+Recall that a not-implemented result generally corresponds to an entry of the symbol table that has not been translated into \CoqR{}. It can also correspond to some branch in a large \mintinline{C}{switch} statement that we decided to postpone for some reason. On the other hand, a missing function definition corresponds to the use of an undefined R function in the test; this is typically because the function was not imported in the \CoqR{} test code base. (Missing objects are often failed assignments due to previous errors.)
 % and occasionally refer to missing import
 %  Sometimes they refer to things from libraries or the T id (for true). }.
+\end{sloppypar}
 
+\begin{sloppypar}
 Therefore, in addition to counting the classified testing outcomes for the run of a test suite, our testing framework reports the 10 most common not-implemented features and the 10 most common missing function definitions. Both of these reports are useful to identify low-hanging fruits to make progress in running the selected test suite. For instance, at the initial stages of the project, the base library of R showed up prominently in the list of missing functions, as discussed below.
 % ---especially some parts of it\et{Also useful for scalability: only import needed functions from base library (Coq is slow!)}
 We also used the report of most used not-implemented features iteratively in order to decide which features from the symbol table to implement first, leading us to the 128 features that are currently implemented.
 %
+\end{sloppypar}
 
 
 % How the other results (Potential fail, Not implemented) helped the Coq development.
@@ -1388,11 +1401,13 @@ FastR2      & 2,411 & 1,128 & 6,888  &   493    & 0   & 1,914  &   297 & 343 \\ 
 
 % The need to execute the base library.
 
+\begin{sloppypar}
 Unsurprisingly, our initial experiments running the test suites of GNU~R and FastR raised a huge number of missing function errors, whose consolidated report allowed us to locate in the base library of R. As anecdote, having implemented 105 features from the symbol table, around 1,000 of 1,200 failures
 for the GNU~R test suite were due to missing definitions.
 % 80\% of the failures \td{64\% of all results as well}.
 After extending \CoqR{} to be able to load the base library, the total number of failures fell to 700, with only 300 due to missing definitions, corresponding to other basic libraries, most importantly the statistics library.
 % that percentage fell down to about 40\% \td{I feel percentages do not show the change... At first it was 1000/1200 and it fell to 300/700},
+\end{sloppypar}
 
 The base library consists of about 160 R source files, totalizing 19,000 lines of code, which are executed by GNU~R prior to any other
 expression. This base library includes the definition of several
@@ -1868,6 +1883,7 @@ We now address one of the objective stated in the introduction:
 our operational semantics should be usable to build proofs about the R language. This section describes one use case:
 proving that invariants about the state of the memory are preserved during execution. We also discuss the associated need for proof automation.
 
+\begin{sloppypar}
 As described in Section~\ref{sec:heap},
 each basic language element in R is associated one of 24 types,
 and each of these types are differently stored in memory.
@@ -1885,6 +1901,7 @@ Note that no constraint is given for the first element \mintinline{Coq}{car} of 
 %
 As another example, the constructor \mintinline{Coq}{safe_StrStruct} states that a string vector contains an array of C pointers,
 all of which associated with a character vector in memory.
+\end{sloppypar}
 
 \begin{figure}[t]
 \begin{minted}{Coq}
@@ -2113,6 +2130,7 @@ To the best of our knowledge, our work is also the first mechanized specificatio
 
 % 4 paragraphs just for JavaScript… This is probably far too much for an R paper ☺
 
+\begin{sloppypar}
 % JavaScript semantics and their trust sources.
 However, the general goal of formalizing full real-world languages---%
 as opposed to small subsets---is not new.
@@ -2129,6 +2147,7 @@ Second, there exist various test suites~\parencite{test262, mozillatests}
 as well as several widely used interpreters.
 Consequently, various formal specifications of JavaScript exist,
 each related to some of its trust sources.
+\end{sloppypar}
 
 % Maffeis et al.
 The first full formal semantics of JavaScript~\parencite{aplas08}
