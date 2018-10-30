@@ -245,3 +245,8 @@ _minted-*/
 *.snm
 *.toc
 *.vrb
+
+acmart.bib
+acmart.dtx
+acmart.ins
+
