@@ -1,19 +1,19 @@
 \documentclass{beamer}
 
-% Note to the reader: if you find the word “WTF” in this TeX source,
-% this means that some part of TeX is absolutely not behaving as
-% specified in its documentation. It is usually followed by the name
-% of the guilty person. Any presence of such a word in this document
-% would be a perfectly valid excuse to throw out all of TeX into the
-% bin and start over with people who actually know how to program.
-
-\input{macros}
 \input{beamer-macros}
 
-\title{A Coq Formalisation of a Core of \R{}}
-\author{Martin \textsc{Bodin}}
-\institute{Center for Mathematical Modeling, Universidad de Chile}
-\date{13\(^{th}\) of January}
+\newcommand\ifempty[3]{\expandafter\ifstrempty{#1}{#2}{#3}}
+\newcommand\ifnempty[2]{\expandafter\ifstrempty{#1}{}{#2}}
+\newcommand\defaultempty[2]{\expandafter\ifstrempty{#1}{#2}{#1}}
+\newcommand\ignore[1]{}
+
+\input{mintedSettings}
+
+
+\title{A Trustworthy Mechanized Formalization of R}
+\author{\textbf{Martin Bodin} \and Tomás Diaz \and Éric Tanter}
+\institute{University of Chile}
+\date{\(6^{th}\) of November}
 
 \begin{document}
 
@@ -21,7 +21,7 @@
     \titlepage
 \end{frame}
 
-\section{\R{}}
+\section{R}
 
 \begin{frame}
     \begin{center}
@@ -33,15 +33,21 @@
     \begin{itemize}
         % http://blog.revolutionanalytics.com/2014/04/seven-quick-facts-about-r.html
         %\item Trending programming language;
-        \item More than 10,000 packages;
         \item More than 2~million users worldwide;
+        \item More than 13,000 packages;
+            \begin{itemize}
+                \item \texttt{ggplot2}: elegant data visualisations
+                \item …
+                \item \texttt{lawstat}: tools for public policy, and law;
+                \item \texttt{ptstem}: Stemming algorithms for the Portuguese language;
+                \item …
+            \end{itemize}
         \item Used by 70\% of data miners (24\% as primary language).
     \end{itemize}
 \end{frame}
 
-
 \begin{frame}[fragile]
-    \frametitle{\R{}: A Programming Language About Vectors}
+    \frametitle{R: A Programming Language About Vectors}
 
 \begin{Rcode}
 v <- c(10, 12, 14, 11, 13)
@@ -55,6 +61,17 @@ f <- function (i, offset)
        v[i + offset]          # ??
 \end{Rcode}
 
+\end{frame}
+
+\end{document}
+
+\begin{frame}[fragile]
+    \frametitle{Corner Cases}
+
+\begin{Rcode}
+if ("TRUE") 42                # Returns 42
+"TRUE" || FALSE               # Type error
+\end{Rcode}
 \end{frame}
 
 \begin{frame}[fragile]
