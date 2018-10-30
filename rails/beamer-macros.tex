@@ -1,0 +1,109 @@
+
+\usepackage{tikz}
+
+\usetikzlibrary{trees, arrows, shapes, automata, petri}
+\usetikzlibrary{fit, calc, decorations}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{decorations.pathmorphing}
+\usetikzlibrary{positioning}
+\usetikzlibrary{shadings, fadings, patterns}
+%\usepackage{pgfbaselayers}
+\pgfdeclarelayer{background}
+\pgfdeclarelayer{foreground}
+\pgfsetlayers{background,main,foreground}
+
+\input{colors}
+
+\usepackage{beamerthemesplit}
+\usepackage{wasysym}
+
+\usetheme{Copenhagen}
+%\usecolortheme{crane}
+%\useoutertheme{infolines}
+\input{colors}
+
+\setbeamertemplate{headline}{}
+\setbeamertemplate{footline}{}
+
+\setbeamertemplate{navigation symbols}{%
+    %\insertdocnavigationsymbol
+    \ifnum\theframenumber=0\relax\else%
+        \normalsize\textcolor{DarkPlum}{\insertframenumber}%/\inserttotalframenumber}
+    \fi%
+    %\quad
+}
+
+\makeatletter
+%\sectionframe[]{}
+% no star: section name (facultative, if not specified, it is the second argument), the huge text written on the slide.
+% one star: no section defined, the argument is the huge text.
+% two stars: no section defined, the arguments are the huge text and some text to be written afterwards.
+% I guess {\sectionframe}*: a if no stars, but with an additional argument, with is the text written afterwards.
+\newcommand\sectionframe@star@add[2]{
+    \begin{frame}
+        \begin{center}
+            \Huge \textcolor{Plum}{#1}
+        \end{center}
+        #2
+    \end{frame}
+}
+\newcommand\sectionframe@unstar@add[3][]{
+    \ifempty{#1}{\section{#2}}{\section{#1}}
+    \sectionframe@star@add{#2}{#3}
+}
+\newcommand\sectionframe@star@base[1]{\sectionframe@star@add{#1}{}}
+\newcommand\sectionframe@unstar@base[2][]{\sectionframe@unstar@add[#1]{#2}{}}
+\newcommand\sectionframe@star{\@ifstar\sectionframe@star@add\sectionframe@star@base}
+\newcommand\sectionframe@unstar{\@ifstar\sectionframe@unstar@add\sectionframe@unstar@base}
+\newcommand\sectionframe{\@ifstar\sectionframe@star\sectionframe@unstar}
+\makeatother
+
+\newcommand<>\Alt[2]{{%
+        \sbox0{$\displaystyle #1$}%
+        \sbox1{$\displaystyle #2$}%
+        \alt#3%
+        {\rlap{\usebox0}\vphantom{\usebox1}\hphantom{\ifnum\wd0>\wd1 \usebox0\else\usebox1\fi}}%
+        {\rlap{\usebox1}\vphantom{\usebox0}\hphantom{\ifnum\wd0>\wd1 \usebox0\else\usebox1\fi}}%
+}}
+
+\makeatletter
+\newcommand\bsphere[2][-.65ex]{%
+    \raisebox{#1}{%
+    \begin{pgfpicture}[-1ex]{-.65ex}{1ex}{1ex}%
+       \usebeamercolor[fg]{item projected}%
+       {\pgftransformscale{1.75}\pgftext{\normalsize\pgfuseshading{bigsphere}}}%
+       {\pgftransformshift{\pgfpoint{0pt}{.5pt}}%
+           \pgftext{\usebeamerfont*{item projected}%
+               \usebeamercolor[fg]{item projected}%
+               #2%
+           }%
+       }%
+    \end{pgfpicture}%
+   }%
+}
+\makeatother
+
+\newcommand\provedincoq[1]{%
+    \vspace{-6.5mm}%
+    \hfill%
+    \parbox[b][0pt][b]{2cm}{%
+        \hfill%
+        \ifempty{#1}{%
+            \includegraphics[height = 8mm]{images/logo_tampon_3d.png}%
+        }{%
+            ~\vspace{-2mm}%
+            \anchor{#1}{%
+                \includegraphics[height = 8mm]{images/logo_tampon_3d.png}%
+            }%
+            \hspace{-4mm}%
+        }%
+        \hspace{1mm}~%
+    }%
+    \vspace{4mm}%
+}
+
+\newenvironment{variableblock}[3]{%
+    \setbeamercolor{block body}{#2}
+    \setbeamercolor{block title}{#3}
+          \begin{block}{#1}}{\end{block}}
+

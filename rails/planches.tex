@@ -1,0 +1,1225 @@
+\documentclass{beamer}
+
+\input{beamer-macros}
+
+\newcommand\ifempty[3]{\expandafter\ifstrempty{#1}{#2}{#3}}
+\newcommand\ifnempty[2]{\expandafter\ifstrempty{#1}{}{#2}}
+\newcommand\defaultempty[2]{\expandafter\ifstrempty{#1}{#2}{#1}}
+\newcommand\ignore[1]{}
+
+\input{mintedSettings}
+
+
+\title{A Trustworthy Mechanized Formalization of R}
+\author{\textbf{Martin Bodin} \and Tomás Diaz \and Éric Tanter}
+\institute{University of Chile}
+\date{\(6^{th}\) of November}
+
+\begin{document}
+
+\begin{frame}
+    \titlepage
+\end{frame}
+
+\section{R}
+
+\begin{frame}
+    \begin{center}
+        \includegraphics[width=3cm]{images/Rlogo.png}
+    \end{center}
+
+    \vfill
+
+    \begin{itemize}
+        % http://blog.revolutionanalytics.com/2014/04/seven-quick-facts-about-r.html
+        %\item Trending programming language;
+        \item More than 2~million users worldwide;
+        \item More than 13,000 packages;
+            \begin{itemize}
+                \item \texttt{ggplot2}: elegant data visualisations
+                \item …
+                \item \texttt{lawstat}: tools for public policy, and law;
+                \item \texttt{ptstem}: Stemming algorithms for the Portuguese language;
+                \item …
+            \end{itemize}
+        \item Used by 70\% of data miners (24\% as primary language).
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{R: A Programming Language About Vectors}
+
+\begin{Rcode}
+v <- c(10, 12, 14, 11, 13)
+v[1]                          # Returns 10@\pause@
+indices <- c(3, 5, 1)
+v[indices]                    # Returns c(14, 13, 10)@\pause@
+v[-2]                         # Returns c(10, 14, 11, 13)@\pause@
+v[-indices]                   # Returns c(12, 11)@\pause@
+v[c(FALSE, TRUE, FALSE)]      # Returns c(12, 13)@\pause@
+f <- function (i, offset)
+       v[i + offset]          # ??
+\end{Rcode}
+
+\end{frame}
+
+\end{document}
+
+\begin{frame}[fragile]
+    \frametitle{Corner Cases}
+
+\begin{Rcode}
+if ("TRUE") 42                # Returns 42
+"TRUE" || FALSE               # Type error
+\end{Rcode}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{\R{}: A Lazy Programming Language}
+
+\begin{Rcode}
+f <- function (x, y = x) {
+    x <- 1
+    y
+    x <- 2
+    y
+}
+f (3)                               @\pause@# Returns 1
+\end{Rcode}
+
+\begin{overlayarea}{\textwidth}{3cm}
+\begin{onlyenv}<3->
+\begin{Rcode}
+f <- function (x, y) if (x == 1) y
+f (1, a <- 1)
+a                                   # Returns 1
+f (0, b <- 1)
+b                                   # Raises an error
+\end{Rcode}
+\end{onlyenv}
+\end{overlayarea}
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{\R{}: A Dynamic Programming Language}
+
+\begin{Rcode}
+f <- function (x, y) missing (y)
+f (1, 2)                            # Returns FALSE
+f (1)                               # Returns TRUE
+f ()                                # Returns TRUE
+\end{Rcode}
+
+\pause
+
+\begin{Rcode}
+f <- function (expr) {
+    x <- 2
+    y <- 3
+    eval (substitute (expr))        # Evaluates the body “expr”
+                                    # in the local environment
+  }
+f (x + y)                           # Returns 5
+x + y                               # Raises an error
+\end{Rcode}
+
+\pause
+
+\begin{Rcode}
+"(" <- function (x) 2 * x
+((9))                               # Returns 36
+\end{Rcode}
+\ignore) % For syntax coloration.
+
+\end{frame}
+
+\sectionframe*{Formalising \R{}}
+
+\section{\R{} Trust Sources}
+
+\begin{frame}
+    \frametitle{\R{} Trust Sources}
+
+% No specification (yet).
+% A reference interpreter.
+
+    \begin{itemize}
+        \item Specification \hfill \xmark
+        \item Reference interpreter \hfill \cmark
+           \begin{itemize}
+               % \item Related by code similarity.
+               \item GNU R.
+           \end{itemize}
+        \item Test suites \hfill \cmark
+           \begin{itemize}
+               %\item Related by testing and comparing the results with the reference interpreter.
+               \item TestR, Genthat, etc.
+           \end{itemize}
+        % \item Books and tutoriels (= programmers’s intuition) \hfill \cmark
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{\jscert{} Overview
+        \hfill\hfill\hfill
+        \raisebox{-10mm}[0pt][0pt]{
+            \includegraphics[width = 15mm]{images/jscert.png} ;
+        }}
+
+\begin{centertikz}[node distance = 1.5cm]
+
+    \node (realworldleft) {};
+    \node [right of = realworldleft, node distance = 11.5cm] (realworldright) {} ;
+
+    \node [right of = realworldleft, node distance = 1.5cm] (semlim) {} ;
+    \node [left of = realworldright, node distance = 4cm] (testlim) {} ;
+
+    \draw [dashed] (realworldleft) to node [above, pos = 0.9] {\coqn{} definitions} node [below, pos = 0.9] {Industrial world} (realworldright) ;
+
+    % \node<2-> [below of = testlim, locnode] (ocaml) {\parbox{1.5cm}{\centering\camln{}\\extraction}} ;
+    % \node<2-> [right of = ocaml, node distance = 2cm, locnode] (parser) {Parser} ;
+
+\begin{pgfonlayer}{background}
+    % \node<2-> [fit = (ocaml) (parser), locnode yellow] (interp) {} ;
+\end{pgfonlayer}
+
+    \node [above of = testlim, locnode brown] (jsref) {\jsref} ;
+
+    \node [locnode blue, below of = jsref, node distance = 45mm] (tests) {\includegraphics[width = 4cm]{images/test262_small.png}} ;
+    \node [below = 0pt of tests] {Test suites} ;
+
+    % \draw<2-> [->, thick] (tests) to node (testing) {} (interp) ;
+
+    % \node<3> [locnode plum, left of = testing] (bisect) {\textsc{Bisect}} ;
+
+    % \draw<3> [->, thick, DarkPlum] (bisect) -- (testing) ;
+
+    % \draw<2-> [<->, thick] (ocaml) -- (jsref) ;
+
+    \draw [<->, thick, Plum] (tests) --
+        node [sloped, above, fill = white] {Running tests}
+        (jsref) ;
+
+    \node<1> [above of = semlim, locnode brown] (jscert) {\jscert} ;
+    \node<2> [dashed, above of = semlim, locnode brown] (jscert) {\jscert} ;
+
+    \draw<1> [->, thick, DarkPlum] (jsref) -- node [above] {Correctness} (jscert) ;
+    \draw<2> [->, dashed, thick, DarkPlum] (jsref) -- node [above] {Correctness} (jscert) ;
+
+%   \node [above of = jscert, node distance = 1cm] (next) {} ;
+%   \draw [dashed, ->] (jscert) -- (next) ;
+%   \node [above of = jscert, left = 3mm, node distance = 1cm] (nextl) {} ;
+%   \draw [dashed, ->] (jscert) -- (nextl) ;
+%   \node [above of = jscert, right = 3mm, node distance = 1cm] (nextr) {} ;
+%   \draw [dashed, ->] (jscert) -- (nextr) ;
+
+    \node [locnode orange, below of = semlim, node distance = 32mm] (ecma) {\includegraphics[width = 15mm]{images/ecmastandard.png}} ;
+
+    \draw<1> [<->, thick, Plum] (ecma) --
+        node [sloped, above, fill = white] {Step / rule}
+        node [sloped, below, fill = white] {correspondence} (jscert) ;
+    \draw<2> [<->, dashed, thick, Plum] (ecma) --
+        node [sloped, above, fill = white] {Step / rule}
+        node [sloped, below, fill = white] {correspondence} (jscert) ;
+
+    \draw<2> [<->, thick, Plum] (ecma) --
+        node [sloped, above, fill = white] {Step}
+        node [sloped, below, fill = white] {correspondence} (jsref) ;
+
+%    \node [right of = ecma, below, node distance = 3cm] {\texttt{jscert.org}} ;
+
+\end{centertikz}
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{A Stratified Approach}
+
+    \begin{widemargin}
+    \begin{centertikz}
+        \node [locnode] (GNUR) {\R{} reference interpreter} ;
+        \node [right = 1cm of GNUR] {Lots of code for memory handling} ;
+
+        \node [above = 1cm of GNUR, xshift = -3cm] (linel) {} ;
+        \node [above = 1cm of GNUR, xshift = 8cm] (liner) {} ;
+        \draw [dashed] (linel) -- (liner) ;
+        \node [below = 0mm of liner, xshift = -1cm] {\Cn{}} ;
+        \node [above = 0mm of liner, xshift = -1cm] {\Coq{}} ;
+
+        \node [locnode, above = 2cm of GNUR] (proveR) {\Coq{} monadic interpreter} ;
+        \node [right = 1cm of proveR] {Close to the \Cn{}} ;
+
+        \node [locnode, dashed, above = 2cm of proveR] (semantics) {Rule-based semantics} ;
+        \node [right = 1cm of semantics] {As usable as possible} ;
+
+        \draw<2> [<->, dashed, DarkPlum, thick] (proveR) -- node [right] {\Coq{} proof} (semantics) ;
+        \draw<2> [<->, DarkPlum, thick] (GNUR) to [bend right] node [right, pos = .3] {Eyeball closeness} (proveR) ;
+        \draw<2> [<->, DarkPlum, thick] (GNUR) to [bend left] node [left, pos = .7] {Testing} (proveR) ;
+    \end{centertikz}
+    \end{widemargin}
+
+\end{frame}
+
+
+\section{Eyeball Closeness}
+
+\sectionframe**{Eyeball Closeness}{
+    \begin{itemize}
+        \item \Cn{} is imperative, pointer-based;
+        \item \Coq{} is purely functional, value-based;
+        \item The translation is based on a monad \(\mathrm{state}+\mathrm{error}\).
+    \end{itemize}
+}
+
+\begin{frame}[fragile]
+    \frametitle{Eyeball Closeness: Enumeration}
+
+    \begin{minipage}{.45\textwidth}
+        \Cn{} code
+
+\begin{ccode}
+typedef enum {
+    NILSXP  = 0,
+    SYMSXP  = 1,
+    LISTSXP = 2,
+    CLOSXP  = 3,
+    ENVSXP  = 4,
+    PROMSXP = 5,
+    /* ... */
+} SEXPTYPE;
+\end{ccode}
+
+    \end{minipage}
+    \qquad
+    \begin{minipage}{.45\textwidth}
+        \Coq{} code
+
+\begin{coqcode}
+Inductive SExpType :=
+  | NilSxp
+  | SymSxp
+  | ListSxp
+  | CloSxp
+  | EnvSxp
+  | PromSxp
+  (* ... *)
+  .
+\end{coqcode}
+
+    \end{minipage}
+
+    %\begin{itemize}
+    %    \item Enumerations are actually more natural in \Coq{} than in \Cn{}.
+    %\end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Eyeball Closeness: Records}
+
+    \begin{minipage}{.45\textwidth}
+        \Cn{} code
+
+\begin{ccode}
+struct sxpinfo_struct {
+  SEXPTYPE type      :  5;
+  unsigned int obj   :  1;
+  unsigned int named :  2;
+  unsigned int gp    : 16;
+  unsigned int mark  :  1;
+  unsigned int debug :  1;
+  unsigned int trace :  1;
+  unsigned int spare :  1;
+  unsigned int gcgen :  1;
+  unsigned int gccls :  3;
+};
+/* Total: 32 bits */
+\end{ccode}
+
+    \end{minipage}
+    \qquad
+    \begin{minipage}{.45\textwidth}
+        \Coq{} code
+
+\begin{coqcode}
+Inductive named_field :=
+  | named_temporary
+  | named_unique
+  | named_plural
+  .
+
+Record SxpInfo :=
+  make_SxpInfo {
+    type : SExpType ;
+    obj : bool ;
+    named : named_field ;
+    gp : nbits 16
+  }.
+\end{coqcode}
+
+    \end{minipage}
+
+    %\begin{itemize}
+    %    \item We recognise some formalisation choices,
+    %        but still close enough.
+    %\end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Eyeball Closeness: Unions}
+
+    \begin{changemargin}{-5mm}{-5mm}
+\begin{minipage}{.75\textwidth}
+\begin{ccode}
+union {
+    struct primsxp_struct primsxp;
+    struct symsxp_struct symsxp;
+    struct listsxp_struct listsxp;
+    /* ... */
+};
+\end{ccode}
+\end{minipage}
+    \begin{minipage}{.3\textwidth}
+    {\Cn{} code}
+
+    \begin{itemize}
+        \item Accesses are unsafe.
+    \end{itemize}
+    \end{minipage}
+
+\begin{minipage}{.75\textwidth}
+\begin{coqcode}
+Inductive SExpRec_union :=
+  | primSxp : PrimSxp_struct -> SExpRec_union
+  | symSxp : SymSxp_struct -> SExpRec_union
+  | listSxp : ListSxp_struct -> SExpRec_union
+  (* ... *)
+  .
+\end{coqcode}
+\end{minipage}
+    \begin{minipage}{.3\textwidth}
+    {\Coq{} code}
+
+    \begin{itemize}
+        \item Accesses must be guarded.
+    \end{itemize}
+    \end{minipage}
+\end{changemargin}
+
+    %\begin{itemize}
+    %    \item Large conceptual differences,
+    %        but still an eyeball closeness in the definitions.
+    %\end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Eyeball Closeness: Reading Pointers}
+
+    \vspace{-1mm}
+    \begin{changemargin}{-5mm}{-5mm}
+\begin{minipage}{.53\textwidth}
+    {\Cn{} code}
+\begin{ccode}
+symsxp_struct p_sym = p->symsxp;
+/* ... */
+\end{ccode}
+\end{minipage}\hspace{6mm}%
+\begin{minipage}{.50\textwidth}
+    {\Coq{} code}
+\begin{coqcode}
+read%sym p_sym := p using S in
+(* ... *)
+\end{coqcode}
+\end{minipage}
+    \vspace{-1mm}
+
+\begin{coqcode}
+Inductive result (T : Type) :=
+  | result_success : state -> T -> result T
+  | result_error : result T.
+\end{coqcode}
+
+\begin{coqcode}
+Notation "'read%sym' p_sym ':=' p 'using' S 'in' cont" :=
+  (match read S p with
+   | Some p_ =>
+     match p_ with
+     | symSxp p_sym => cont
+     | _ => result_error
+     end
+   | None => result_error
+   end).
+\end{coqcode}
+    \end{changemargin}
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Eyeball Closeness: \Cn{} Code}
+
+\begin{changemargin}{-5mm}{-5mm}
+\begin{ccode}
+EXP* applyClosure (EXP* op, EXP* arglist, EXP* rho){
+
+  EXP* formals, actuals, savedrho, newrho, res;
+
+  if (rho->type != ENVSXP)
+    error ("'rho' must be an environment.");
+
+  formals = op->clo.formals;
+  savedrho = op->clo.env;
+
+  PROTECT (actuals = matchArgs (formals, arglist));
+
+  /* ... */
+
+  return res;
+}
+\end{ccode}
+\end{changemargin}
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Eyeball Closeness: \Coq{} Code}
+
+\begin{changemargin}{-5mm}{-5mm}
+\begin{coqcode}
+Definition applyClosure (S : state) (op arglist rho : EXP_pointer)
+    : result EXP_pointer :=
+
+  read%defined rho_ := rho using S in
+  ifb type rho_ <> EnvSxp then
+    result_error S "'rho' must be an environment."
+  else
+    read%clo op_clo := op using S in
+    let formals := clo_formals op_clo in
+    let savedrho := clo_env op_clo in
+
+    let%success actuals := matchArgs S formals arglist using S in
+
+    (* ... *)
+
+    result_success S res.
+\end{coqcode}
+\end{changemargin}
+
+\end{frame}
+
+\sectionframe{\R{} Features}
+
+\begin{frame}[fragile]
+    \frametitle{\R{} Core}
+
+\begin{ccode}
+FUNTAB R_FunTab[] = {
+  {"if",        do_if,        2},
+  {"while",     do_while,     2},
+  {"break",     do_break,     0},
+  {"return",    do_return,    1},
+  {"function",  do_function,  -1},
+  {"<-",        do_set,       2},
+  {"(",         do_paren,     1},
+  /* ... */
+  {"+",         do_arith1,    2},
+  {"-",         do_arith2,    2},
+  {"*",         do_arith3,    2},
+  {"/",         do_arith4,    2},
+  /* ... */
+  {"cos",       do_math20,    1},
+  {"sin",       do_math21,    1},
+  {"tan",       do_math22,    1},
+  /* ... */ }
+\end{ccode}
+
+    \begin{overlayarea}{\textwidth}{0cm}
+        \only<2>{
+            \vspace{-8cm}
+            \parbox[t]{0pt}{
+                \centering{}~\hspace{-1cm}%
+                \tikz \fill[white] (0, 0) rectangle (12, 6) ;
+            }%
+            \vspace{-6cm} % WTF KNUTH
+            \begin{block}{The core is what is needed to call these functions.}
+                \begin{itemize}
+                    \item The core is small;
+                    \item The formalisation is easily extendable.
+                \end{itemize}
+            \end{block}
+            \begin{block}{Content of the core}
+                \begin{itemize}
+                    \item Expression evaluation;
+                    \item Function calls;
+                    \item Environments, delayed evaluation (promises);
+                    \item Initialisation of the global state.
+                \end{itemize}
+            \end{block}
+        }
+    \end{overlayarea}
+
+% C.
+% Separation between core and non-core.
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Future}
+
+    \begin{block}{The current formalisation is modular}
+        \begin{itemize}
+            \item It is easy to add features.
+            \item We can implement specific features and certify their implementations.
+        \end{itemize}
+    \end{block}
+
+    \pause
+
+    \begin{block}{Providing trust}
+        \begin{itemize}
+            \item Test the formalisation…
+            \item …or certify it (CompCert’s semantics, Formalin, etc.).
+        \end{itemize}
+    \end{block}
+
+    \pause
+
+    \begin{block}{Building proofs}
+        \vspace{-4mm}
+        \[
+            \left.
+                \mbox{\begin{minipage}{5cm}
+                    \begin{itemize}
+                        \item Building a rule-based formalisation;
+                        \item A more functional interpreter.
+                    \end{itemize}
+                \end{minipage}}
+            \right\} \mbox{\parbox{5cm}{What is the best to build large proofs of programs?}}
+        \]
+    \end{block}
+
+    % To be useful for Coq users
+    % To be useful for the R community (RExplain?).
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Proof that \(1 + 1\) reduces to \(2\) in \jscert{}}
+
+\begin{coqcode}[fontsize = \tiny]
+Lemma one_plus_one_exec : forall S C,
+  red_expr S C one_plus_one (out_ter S (prim_number two)).
+Proof.
+  intros. unfold one_plus_one.
+  eapply red_expr_binary_op.
+   constructor.
+   eapply red_spec_expr_get_value.
+    eapply red_expr_literal. reflexivity.
+   eapply red_spec_expr_get_value_1.
+   eapply red_spec_ref_get_value_value.
+  eapply red_expr_binary_op_1.
+   eapply red_spec_expr_get_value.
+    eapply red_expr_literal. reflexivity.
+   eapply red_spec_expr_get_value_1.
+   eapply red_spec_ref_get_value_value.
+  eapply red_expr_binary_op_2.
+  eapply red_expr_binary_op_add.
+   eapply red_spec_convert_twice.
+    eapply red_spec_to_primitive_pref_prim.
+   eapply red_spec_convert_twice_1.
+    eapply red_spec_to_primitive_pref_prim.
+   eapply red_spec_convert_twice_2.
+  eapply red_expr_binary_op_add_1_number.
+   simpl. intros [A|A]; inversion A.
+   eapply red_spec_convert_twice.
+    eapply red_spec_to_number_prim. reflexivity.
+   eapply red_spec_convert_twice_1.
+    eapply red_spec_to_number_prim. reflexivity.
+   eapply red_spec_convert_twice_2.
+  eapply red_expr_puremath_op_1. reflexivity.
+Qed.
+\end{coqcode}
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{RExplain}
+
+   %\begin{block}{In practise, JavaScript people read JSRef, not \jscert{}}
+   %    \begin{itemize}
+   %        \item An executable \R{} interpreter would be easier to read than a rule-based semantics;
+   %        \item Some want to specify \R{}, we may propose a solution.
+   %    \end{itemize}
+   %\end{block}
+
+    \begin{widemargin}
+    \begin{centertikz}
+        \node [locnode] (imp) {\begin{minipage}{52mm}
+            Imperative interpreter
+\begin{camlcode}[linenos = false]
+let%success res = f args in
+read%clo res_clo = res in
+\end{camlcode}
+            \end{minipage}} ;
+        \node [locnode, right = 5mm of imp] (func) {\begin{minipage}{65mm}
+            Functionnal interpreter
+\begin{camlcode}[linenos = false]
+let%success res = f S args using S in
+read%clo res_clo = res using S in
+\end{camlcode}
+            \end{minipage}} ;
+        \node [locnode, below = 5mm of imp, xshift = 4cm] (spec) {\begin{minipage}{10cm}
+            ECMA-style specification
+            \begin{enumerate}
+                \item Let \mintedinlinespacebug\camlinline{res} be the result
+                    of calling \mintedinlinespacebug\camlinline{f} with argument
+                    \mintedinlinespacebug\camlinline{args};
+                \item At this stage, \mintedinlinespacebug\camlinline{res} should
+                    be a closure.
+            \end{enumerate}
+            \end{minipage}} ;
+        \node [locnode, below = 5mm of spec] (rbs) {\begin{minipage}{10cm}
+            Rule-based semantics
+\begin{coqcode}[linenos = false, fontsize = \tiny]
+| run_1 : forall S args o1 o2,
+  run S (f args) o1 -> run S (term_1 o1) o2 -> run S (term o1) o2
+| run_2 : forall S res_clo o,
+  is_closure S res res_clo -> run S (term_2 res_clo) o -> run S (term_1 (out S res)) o
+\end{coqcode}
+            \end{minipage}} ;
+        \draw [->, thick] (imp) to (func) ;
+        \draw [->, thick] (imp.-150) to [bend right = 25] (rbs) ;
+        \draw [->, thick] (imp) to (spec) ;
+    \end{centertikz}
+    \end{widemargin}
+
+    \url{https://github.com/jscert/jsexplain}
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Thank you for listening!}
+
+    \vspace{-1mm}
+    \begin{block}{The current formalisation is modular}
+        \begin{itemize}
+            \item It is easy to add features.
+            \item We can implement specific features and certify their implementations.
+        \end{itemize}
+    \end{block}
+
+    \begin{block}{Providing trust}
+        \begin{itemize}
+            \item Test the formalisation…
+            \item …or certify it (CompCert’s semantics, Formalin, etc.).
+        \end{itemize}
+    \end{block}
+
+    \begin{block}{Building proofs}
+        \vspace{-4mm}
+        \[
+            \left.
+                \mbox{\begin{minipage}{5cm}
+                    \begin{itemize}
+                        \item Building a rule-based formalisation;
+                        \item A more functional interpreter.
+                    \end{itemize}
+                \end{minipage}}
+            \right\} \mbox{\parbox{5cm}{What is the best to build large proofs of programs?}}
+        \]
+    \end{block}
+
+    \url{https://github.com/Mbodin/proveR}
+
+\end{frame}
+
+\frame{\tableofcontents}
+
+\sectionframe*{Bonuses}
+
+\newcommand\questiontoc{
+    %\begin{multicols}{2}
+    \begin{enumerate}
+        \item \hyperlink{frame:jscert}{\jscert{}};
+        \item \hyperlink{frame:imperative:functional}{Representing imperativity in a functional setting};
+        \item \hyperlink{frame:semantics:coq}{Semantics in \coqn{}};
+        \item \hyperlink{frame:semantic:sizes}{Semantic sizes};
+        \item \hyperlink{frame:other:subtleties}{Other Subtleties of \R{}};
+        \item \hyperlink{frame:reading:pointers}{Reading pointers};
+        \item \hyperlink{frame:parser}{Parsing \R{}};
+        \item \hyperlink{frame:full:monad}{The full state+error monad};
+        \item \hyperlink{frame:input:output}{Inputs and outputs}.
+    \end{enumerate}
+    %\end{multicols}
+}
+
+\frame{\questiontoc}
+
+\begin{frame}
+    \label{frame:jscert}
+    \frametitle{The \jscert{} Project
+        \hfill\hfill\hfill
+        \raisebox{-10mm}[0pt][0pt]{
+            \includegraphics[width = 15mm]{images/jscert.png} ;
+        }}
+
+\begin{centertikz}[node distance = 1.5cm]
+
+    \node (realworldleft) {};
+    \node [right of = realworldleft, node distance = 11.5cm] (realworldright) {} ;
+
+    \node [right of = realworldleft, node distance = 1.5cm] (semlim) {} ;
+    \node [left of = realworldright, node distance = 4cm] (testlim) {} ;
+
+    \draw [dashed] (realworldleft) to node[above, pos = 0.9] {\coqn{} definitions} node [below, pos = 0.9] {Industrial world} (realworldright) ;
+
+    % \node<2-> [below of = testlim, locnode] (ocaml) {\parbox{1.5cm}{\centering\camln{}\\extraction}} ;
+    % \node<2-> [right of = ocaml, node distance = 2cm, locnode] (parser) {Parser} ;
+
+\begin{pgfonlayer}{background}
+    % \node<2-> [fit = (ocaml) (parser), locnode yellow] (interp) {} ;
+\end{pgfonlayer}
+
+    \node [above of = testlim, locnode brown] (jsref) {\jsref} ;
+    \node [above = 0pt of jsref] {\(\sim{}3,000\)~lines of code} ;
+
+    \node [locnode blue, below of = jsref, node distance = 45mm] (tests) {\includegraphics[width = 4cm]{images/test262_small.png}} ;
+    \node [below = 0pt of tests] {\(5,126\)~tests passed} ; % out of~\(11,725\)} ;
+
+    % \draw<2-> [->, thick] (tests) to node (testing) {} (interp) ;
+
+    % \node<3> [locnode plum, left of = testing] (bisect) {\textsc{Bisect}} ;
+
+    % \draw<3> [->, thick, DarkPlum] (bisect) -- (testing) ;
+
+    % \draw<2-> [<->, thick] (ocaml) -- (jsref) ;
+
+    \draw [<->, thick, Plum] (tests) --
+        node [sloped, above, fill = white] {Running tests}
+        (jsref) ;
+
+    \node [above of = semlim, locnode brown] (jscert) {\jscert} ;
+    \node [above = 0pt of jscert] {\(\sim{}900\)~rules} ;
+
+    \draw [->, thick, DarkPlum] (jsref) -- node [above] {Correctness}
+            node [below, Aluminium6] {\(\sim{}6,000\)~lines of proof} (jscert) ;
+
+%   \node [above of = jscert, node distance = 1cm] (next) {} ;
+%   \draw [dashed, ->] (jscert) -- (next) ;
+%   \node [above of = jscert, left = 3mm, node distance = 1cm] (nextl) {} ;
+%   \draw [dashed, ->] (jscert) -- (nextl) ;
+%   \node [above of = jscert, right = 3mm, node distance = 1cm] (nextr) {} ;
+%   \draw [dashed, ->] (jscert) -- (nextr) ;
+
+    \node [locnode orange, below of = semlim, node distance = 32mm] (ecma) {\includegraphics[width = 15mm]{images/ecmastandard.png}} ;
+    \node [below = 0pt of ecma] {\(\sim{}900\)~steps} ;
+
+    \draw [<->, thick, Plum] (ecma) --
+        node [sloped, above, fill = white] {Step / rule}
+        node [sloped, below, fill = white] {correspondence} (jscert) ;
+
+
+%    \node [right of = ecma, below, node distance = 3cm] {\texttt{jscert.org}} ;
+
+\end{centertikz}
+
+\end{frame}
+
+\frame{\questiontoc}
+
+\begin{frame}[fragile]
+    \label{frame:imperative:functional}
+    \frametitle{How to Represent Imperative Features in a Functional Setting}
+
+    \begin{itemize}
+        \item Structures like maps are easy to implement;
+        \item We can represent every element of the state of a program \\
+            (memory, outputs, etc.) in a data-structure;
+        \item We have to pass this structure along the program.
+    \end{itemize}
+
+    \begin{block}{Enter the monad}
+\begin{camlcode}
+if_success (run s1 p) (fun s2 =>
+  let s3 = write s2 x v in
+  if_success (run s3 p') (fun s4 =>
+    return_success s4))
+\end{camlcode}
+    \end{block}
+
+\end{frame}
+
+\frame{\questiontoc}
+
+\begin{frame}[fragile]
+    \label{frame:semantics:coq}
+    \frametitle{Formalisation of Semantics in \coqn{}}
+
+\begin{coqcode}
+Inductive semantics : state -> prog -> state -> Prop ->
+
+  | semantics_skip : forall s p, semantics s p s
+
+  | semantics_seq : forall s1 s2 s3 p1 p2,
+    semantics s1 p1 s2 ->
+    semantics s2 p2 s3 ->
+    semantics s1 (seq p1 p2) s3
+
+  | semantics_asgn : forall s x v,
+    semantics s (asgn x v) (write s x v)
+  .
+\end{coqcode}
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Sequence in \jscert{} (Paper Version)}
+
+    \begin{overlayarea}{\textwidth}{3cm}
+    \begin{block}{“\mintedinlinespacebug\jsinline|s1 ; s2|” is evaluated as follows.}
+\begin{enumerate}
+    \item Let~\(o_1\) be the result of evaluating~\mintedinlinespacebug\jsinline|s1|.
+    \item If~\(o_1\) is an exception, return~\(o_1\).
+    \item Let~\(o_2\) be the result of evaluating~\mintedinlinespacebug\jsinline|s2|.
+    \only<1>{
+        \item If an exception~\(\mathit{V}\) was thrown, return \(\mpar{\jstthrow{}, \mathit{V}, \mathit{empty}}\). % where \(\mathit{V}\)~is the exception.
+            % (Execution now proceeds as if no exception were thrown.)
+        \item If~\(\mathit{o_2}.\mathit{value}\) is empty, let~\(\mathit{V} = \mathit{o_1}.\mathit{value}\),
+            otherwise let~\(\mathit{V} = \mathit{o_2}.\mathit{value}\).
+        \item Return \(\mpar{\mathit{o_2}.\mathit{type}, \mathit{V}, \mathit{o_2}.\mathit{target}}\).
+    }
+\end{enumerate}
+    \end{block}
+    \end{overlayarea}
+
+    \visible<3>{
+\begin{mathpar}
+    \inferrule[seq-1\(\fund{s_1}{s_2}\)]
+    { S, C, s_1 \evalr o_1 \\ o_1, \seqx{s_2} \evalr o }
+    { S, C, \seq{s_1}{s_2} \evalr o }
+    \and
+    \inferrule[seq-2\(\funu{s_2}\)]
+    { }
+    { o_1, \seqx{s_2} \evalr o_1 }
+    \quad { \abort{o_1} }
+    \and
+    \inferrule[seq-3\(\funu{s_2}\)]
+    { o_1, s_2 \evalr o_2 \\ o_1, o_2, \seqxx{} \evalr o }
+    { o_1, \seqx{s_2} \evalr o }
+    \quad { \neg\abort{o_1} }
+    \and
+    \ldots
+\end{mathpar}
+}
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \label{frame:seq:jscert}
+    \frametitle{Sequence in \jscert{}}
+
+%  | red_stat_abort : forall S C extt o,
+%    out_of_ext_stat extt = Some o →
+%    abort o ->
+%    ~ abort_intercepted_stat extt →
+%    red_stat S C extt o
+
+\begin{changemargin}{-5.5mm}{-9mm}
+\begin{coqcode}
+Inductive red_stat : state → scope → stat → out → Prop :=
+
+| red_stat_seq_1 : forall S C s1 s2 o1 o,
+  red_stat S C s1 o1 →
+  red_stat S C (seq_1 s2 o1) o →@\anchor{seq1}{}@
+  red_stat S C (seq s1 s2) o
+
+| red_stat_seq_2 : forall S C s2 o1,
+  abort o1 →@\anchor{seq2}{}@
+  red_stat S C (seq_1 s2 o1) o1
+
+| red_stat_seq_3 : forall S0 S C s2 o2 o,
+  red_stat S C s2 o2 →@\anchor{seq3}{}@
+  red_stat S C (seq_2 o2) o →
+  red_stat S0 C (seq_1 s2 (out_ter S)) o
+
+(* ... *).
+\end{coqcode}
+\end{changemargin}
+\begin{innertikz}[overlay, remember picture]
+    \def\distshift{35mm} % WTF: This looks like a TikZ bug: nodes appear this distance below their supposed location…
+    \node [right = 25mm of seq1, yshift = \distshift, scale = .8] {\(
+        \inferrule[seq-\raisebox{.6ex}{\bsphere{1}}\(\fund{s_1}{s_2}\)]
+        { S, C, s_1 \evalr o_1 \\ o_1, \seqx{s_2} \evalr o }
+        { S, C, \seq{s_1}{s_2} \evalr o }
+    \)} ;
+    \node [right = 64mm of seq2, yshift = \distshift, scale = .8] {\(
+        \inferrule[seq-\raisebox{.6ex}{\bsphere{2}}\(\funu{s_2}\)]
+        { }
+        { o_1, \seqx{s_2} \evalr o_1 }
+        \quad { \abort{o_1} }
+    \)} ;
+    \node [right = 34mm of seq3, yshift = \distshift, scale = .7] {\(
+        \inferrule[seq-\raisebox{.55ex}{\bsphere{3}}\(\funu{s_2}\)]
+        { o_1, s_2 \evalr o_2 \\ o_1, o_2, \seqxx{} \evalr o }
+        { o_1, \seqx{s_2} \evalr o }
+        \quad { \neg\abort{o_1} }
+    \)} ;
+\end{innertikz}
+
+\end{frame}
+
+\frame{\questiontoc}
+
+\begin{frame}
+    \label{frame:semantic:sizes}
+    \frametitle{Semantic Sizes}
+
+    \begin{centertikz}
+        \node (lambda) {\(\lambda\)-calculus} ;
+        \node [right = 5mm of lambda] (ml) {CoreML} ;
+        \node [right = 5mm of ml] (compcert) {\CompCert{} \Cn{}} ;
+        \node [right = 5mm of compcert] (jscert) {\jscert{}} ;
+
+        \draw [DarkPlum, fill = LightPlum] ($(lambda.north) + (-.5, .1)$) rectangle ++ (1, .003) ;
+        \node [above = 1mm of lambda] {\(3\)~rules} ; % 5 in pretty-big-step.
+
+        \draw [DarkPlum, fill = LightPlum] ($(ml.north) + (-.5, .1)$) rectangle ++ (1, .25) ;
+        \node [above = 3mm of ml] {\(\sim{}50\)~rules} ; % 61 in pretty-big-step.
+
+        \draw [DarkPlum, fill = LightPlum] ($(compcert.north) + (-.5, .1)$) rectangle ++ (1, 1) ;
+        \node [above = 11mm of compcert] {\(\sim{}200\)~rules} ; % 110 in big step + 77 in denotational.
+        % Source: http://compcert.inria.fr/doc/html/Csem.html and http://compcert.inria.fr/doc/html/Cop.html
+
+        \draw [DarkPlum, fill = LightPlum] ($(jscert.north) + (-.5, .1)$) rectangle ++ (1, 4.5) ;
+        \node [above = 46mm of jscert] {\(\sim{}900\)~rules} ; % ~900 in pretty-big-step.
+
+%        \draw [thick, dashed, ->] (compcert) to [bend right] ($(compcert) + (-1, -1)$) ;
+
+    \end{centertikz}
+%    \vspace{-5mm}
+
+%   \begin{refsection}
+%       \nocite{Verasco}
+%       \printbibliography{}
+%   \end{refsection}
+
+\end{frame}
+
+\frame{\questiontoc}
+
+\begin{frame}[fragile]
+    \label{frame:other:subtleties}
+    \frametitle{Other Subtleties}
+
+%\begin{onlyenv}<1>
+\begin{Rcode}
+f <- function (x, y, option, longArgumentName) ...
+
+# All the following calls are equivalent.
+f (1, 2, "something", 42)
+f (option = "something", 1, 2, 42)
+f (opt = "something", long = 42, 1, 2)
+\end{Rcode}
+%\end{onlyenv}
+
+\begin{overlayarea}{\textwidth}{5cm}
+\begin{onlyenv}<2>
+\begin{Rcode}
+f <- function (abc, ab, de) c (abc, ab, de)
+
+# All the following calls are equivalent.
+f (1, 2, 3)
+f (de = 3, 1, 2)
+f (d = 3, 1, 2)
+f (ab = 2, 1, 2)
+f (ab = 2, a = 1, 3)
+
+f (a = 3, 1, 2) # Returns an error.
+\end{Rcode}
+\end{onlyenv}
+\end{overlayarea}
+
+\end{frame}
+
+\frame{\questiontoc}
+
+\begin{frame}[fragile]
+    \label{frame:reading:pointers}
+    \frametitle{Eyeball Closeness: Reading Pointers}
+
+    \begin{changemargin}{-5mm}{-5mm}
+
+\begin{minipage}{.6\textwidth}
+    {\Cn{} code}
+\begin{ccode}
+symsxp_struct p_sym = p->symsxp;
+/* ... */
+\end{ccode}
+\end{minipage}
+    \begin{minipage}{.45\textwidth}
+    \begin{itemize}
+        \item May fail because the pointer \mintedinlinespacebug\cinline|p| is unbound;
+        \item May fail because the union \mintedinlinespacebug\cinline|*p| is not a \mintedinlinespacebug\cinline|symsxp|.
+    \end{itemize}
+    \end{minipage}
+
+\vfill
+
+\parbox{\textwidth}{\onslide<2->{\Coq{} code, \only<2>{first}\only<3>{second}\only<4>{third}\only<5>{fourth} try}}
+\begin{minipage}{.5\textwidth}
+\begin{overlayarea}{\textwidth}{5cm}
+    \begin{onlyenv}<2>
+\begin{coqcode}
+match read p with
+  (* ... *)
+end
+\end{coqcode}
+    \end{onlyenv}
+    \begin{onlyenv}<3>
+\begin{coqcode}
+match read S p with
+| Some p_ =>
+  match p_ with
+  | symSxp p_sym =>
+    (* ... *)
+  | _ => (* ??? *)
+  end
+| None => (* ??? *)
+end
+\end{coqcode}
+    \end{onlyenv}
+    \begin{onlyenv}<4>
+\begin{coqcode}
+match read S p with
+| Some p_ =>
+  match p_ with
+  | symSxp p_sym =>
+    (* ... *)
+  | _ => error
+  end
+| None => error
+end
+\end{coqcode}
+    \end{onlyenv}
+    \begin{onlyenv}<5>
+\begin{coqcode}
+read%sym p_sym := p using S in
+(* ... *)
+\end{coqcode}
+    \end{onlyenv}
+\end{overlayarea}
+\end{minipage}\quad
+\begin{minipage}{.5\textwidth}
+\begin{minipage}{1.2\textwidth}
+\begin{overlayarea}{\textwidth}{5cm}
+    \begin{onlyenv}<4->
+\begin{coqcode}
+Inductive result (T : Type) :=
+  | success : state -> T -> result T
+  | error : result T
+  .
+\end{coqcode}
+    \end{onlyenv}
+    \begin{onlyenv}<5->
+\begin{coqcode}
+Notation "'read%sym' p_sym ':=' p
+    'using' S 'in' cont" :=
+  (* ... *).
+\end{coqcode}
+    \end{onlyenv}
+\end{overlayarea}
+\end{minipage}
+\end{minipage}
+
+\end{changemargin}
+
+\end{frame}
+
+\frame{\questiontoc}
+
+\begin{frame}[fragile]
+    \label{frame:parser}
+
+\begin{ccodenoescape}
+expr:
+  | NUM_CONST                   { $$ = $1;  setId( $$, @$); }
+  | STR_CONST                   { $$ = $1;  setId( $$, @$); }
+  | NULL_CONST                  { $$ = $1;  setId( $$, @$); }          
+  | SYMBOL                      { $$ = $1;  setId( $$, @$); }
+  | LBRACE exprlist RBRACE
+    { $$ = xxexprlist($1,&@1,$2); setId( $$, @$); }
+  | LPAR expr_or_assign RPAR
+    { $$ = xxparen($1,$2);  setId( $$, @$); }
+\end{ccodenoescape}
+
+\begin{camlcode}
+expr:
+  | c = NUM_CONST                       { c }
+  | c = STR_CONST                       { c }
+  | c = NULL_CONST                      { c }
+  | c = SYMBOL                          { c }
+  | b = LBRACE; e = exprlist; RBRACE
+    { eatLines := false ; lift2 (only_state xxexprlist) b e }
+  | p = LPAR; e = expr_or_assign; RPAR
+    { lift2 (no_runs xxparen) p e }
+\end{camlcode}
+
+\end{frame}
+
+\frame{\questiontoc}
+
+\begin{frame}[fragile]
+    \label{frame:full:monad}
+    \frametitle{The Full State+Error Monad}
+
+\begin{coqcode}
+Inductive result (A : Type) :=
+  | result_success : state -> A -> result A
+  | result_error : state -> string -> result A
+  | result_longjump : state -> nat -> context_type -> result A
+  | result_impossible : state -> string -> result A
+  | result_not_implemented : string -> result A
+  | result_bottom : state -> result A
+  .
+\end{coqcode}
+
+\end{frame}
+
+\frame{\questiontoc}
+
+\begin{frame}[fragile]
+    \label{frame:input:output}
+
+\begin{coqcode}
+Record input := make_input {
+    prompt_string : stream string ;
+    random_boolean : stream bool
+  }.
+\end{coqcode}
+
+\begin{coqcode}
+Record output := make_output {
+    output_string : list string
+  }.
+\end{coqcode}
+
+\begin{coqcode}
+Record state := make_state {
+    inputs :> input ;
+    outputs :> output ;
+    state_memory :> memory ;
+    state_context : context
+  }.
+\end{coqcode}
+
+\end{frame}
+
+\frame{\questiontoc}
+
+\frame{\tableofcontents}
+
+\end{document}
+
