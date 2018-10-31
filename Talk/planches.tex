@@ -1,5 +1,8 @@
 \documentclass{beamer}
 
+\usepackage{fontspec}
+\setmainfont[Ligatures=TeX]{Linux Libertine O}
+
 \input{beamer-macros}
 
 \newcommand\ifempty[3]{\expandafter\ifstrempty{#1}{#2}{#3}}
@@ -9,11 +12,60 @@
 
 \input{mintedSettings}
 
+\usepackage{pifont}
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+
+\makeatletter
+\newcommand\mpar@math[3]{\ensuremath{\left(#1\right)\ifnempty{#2}{_{#2}}\ifnempty{#3}{^{#3}}}}
+\newcommand\mpar@text[3]{\ensuremath{(#1)\ifnempty{#2}{_{#2}}\ifnempty{#3}{^{#3}}}}
+\newcommand\mpar@belowabove[3]{\mathchoice{\mpar@math{#1}{#2}{#3}}{\mpar@text{#1}{#2}{#3}}{\mpar@text{#1}{#2}{#3}}{\mpar@text{#1}{#2}{#3}}}
+
+\def\mpar@grabbelow#1#2#3_#4{%
+  \mpar@grab{\ifnempty{#1}{#1, }#4}{#2}{#3}%
+}
+\def\mpar@grabbove#1#2#3^#4{%
+  \mpar@grab{#1}{\ifnempty{#2}{#2, }#4}{#3}%
+}
+\newcommand\mpar@grab[3]{%
+  \@ifnextchar_{\mpar@grabbelow{#1}{#2}{#3}}%
+  {\@ifnextchar^{\mpar@grababove{#1}{#2}{#3}}%
+  {\mpar@belowabove{#3}{#1}{#2}}}%
+}
+
+\newcommand\mpar{\mpar@grab{}{}}
+\makeatother
+
+\newcommand\funp{\mpar}
+\newcommand\funu[1]{\ifnempty{#1}{\funp{#1}}}
+\newcommand\fund[2]{\ifnempty{#1#2}{\funp{\sep{#1}{#2}}}}
+\newcommand\funt[3]{\ifnempty{#1#2#3}{\funp{\sept{#1}{#2}{#3}}}}
+\newcommand\funq[4]{\ifnempty{#1#2#3#4}{\funp{\sepq{#1}{#2}{#3}{#4}}}}
+
+\newcommand\sep[2]{#1\ifnempty{#1}{\ifnempty{#2}{,}}#2}
+\newcommand\sept[3]{\sep{#1}{#2}\ifnempty{#1#2}{\ifnempty{#3}{,}}#3}
+\newcommand\sepq[4]{\sept{#1}{#2}{#3}\ifnempty{#1#2#3}{\ifnempty{#4}{,}}#4}
+
+\newcommand\evalr{\ensuremath{\Downarrow}}
+
+\newcommand*\seq[2]{\mathit{seq}\ #1\ #2}
+\newcommand*\seqx[1]{\mathit{seq}_1\ #1}
+\newcommand*\seqxx{\mathit{seq}_2}
+\newcommand*\rseq[2]{#1 ; #2}
+
+\newcommand*\abort[1]{\mathbf{abort}\ifnempty{#1}{\,#1}}
+
+\usepackage{mathpartir}
 
 \title{A Trustworthy Mechanized Formalization of R}
-\author{\textbf{Martin Bodin} \and Tomás Diaz \and Éric Tanter}
-\institute{University of Chile}
-\date{\(6^{th}\) of November}
+\author{\textbf{Martin Bodin}\inst{1,3} \and Tomás Diaz\inst{1} \and Éric Tanter\inst{1,2}}
+\institute{
+    \inst{1}University of Chile
+    \and
+    \inst{2}Inria
+    \and
+    \inst{3}Imperial College London}
+\date{DLS'18}
 
 \begin{document}
 
@@ -63,8 +115,6 @@ f <- function (i, offset)
 
 \end{frame}
 
-\end{document}
-
 \begin{frame}[fragile]
     \frametitle{Corner Cases}
 
@@ -75,7 +125,7 @@ if ("TRUE") 42                # Returns 42
 \end{frame}
 
 \begin{frame}[fragile]
-    \frametitle{\R{}: A Lazy Programming Language}
+    \frametitle{R: A Lazy Programming Language}
 
 \begin{Rcode}
 f <- function (x, y = x) {
@@ -102,7 +152,7 @@ b                                   # Raises an error
 \end{frame}
 
 \begin{frame}[fragile]
-    \frametitle{\R{}: A Dynamic Programming Language}
+    \frametitle{R: A Dynamic Programming Language}
 
 \begin{Rcode}
 f <- function (x, y) missing (y)
@@ -134,12 +184,12 @@ x + y                               # Raises an error
 
 \end{frame}
 
-\sectionframe*{Formalising \R{}}
+\sectionframe*{Formalising R}
 
-\section{\R{} Trust Sources}
+\section{R Trust Sources}
 
 \begin{frame}
-    \frametitle{\R{} Trust Sources}
+    \frametitle{R Trust Sources}
 
 % No specification (yet).
 % A reference interpreter.
@@ -162,7 +212,7 @@ x + y                               # Raises an error
 \end{frame}
 
 \begin{frame}
-    \frametitle{\jscert{} Overview
+    \frametitle{JSCert{} Overview
         \hfill\hfill\hfill
         \raisebox{-10mm}[0pt][0pt]{
             \includegraphics[width = 15mm]{images/jscert.png} ;
@@ -176,7 +226,7 @@ x + y                               # Raises an error
     \node [right of = realworldleft, node distance = 1.5cm] (semlim) {} ;
     \node [left of = realworldright, node distance = 4cm] (testlim) {} ;
 
-    \draw [dashed] (realworldleft) to node [above, pos = 0.9] {\coqn{} definitions} node [below, pos = 0.9] {Industrial world} (realworldright) ;
+    \draw [dashed] (realworldleft) to node [above, pos = 0.9] {Coq definitions} node [below, pos = 0.9] {Industrial world} (realworldright) ;
 
     % \node<2-> [below of = testlim, locnode] (ocaml) {\parbox{1.5cm}{\centering\camln{}\\extraction}} ;
     % \node<2-> [right of = ocaml, node distance = 2cm, locnode] (parser) {Parser} ;
@@ -185,7 +235,7 @@ x + y                               # Raises an error
     % \node<2-> [fit = (ocaml) (parser), locnode yellow] (interp) {} ;
 \end{pgfonlayer}
 
-    \node [above of = testlim, locnode brown] (jsref) {\jsref} ;
+    \node [above of = testlim, locnode brown] (jsref) {JSRef} ;
 
     \node [locnode blue, below of = jsref, node distance = 45mm] (tests) {\includegraphics[width = 4cm]{images/test262_small.png}} ;
     \node [below = 0pt of tests] {Test suites} ;
@@ -202,8 +252,8 @@ x + y                               # Raises an error
         node [sloped, above, fill = white] {Running tests}
         (jsref) ;
 
-    \node<1> [above of = semlim, locnode brown] (jscert) {\jscert} ;
-    \node<2> [dashed, above of = semlim, locnode brown] (jscert) {\jscert} ;
+    \node<1> [above of = semlim, locnode brown] (jscert) {JSCert} ;
+    \node<2> [dashed, above of = semlim, locnode brown] (jscert) {JSCert} ;
 
     \draw<1> [->, thick, DarkPlum] (jsref) -- node [above] {Correctness} (jscert) ;
     \draw<2> [->, dashed, thick, DarkPlum] (jsref) -- node [above] {Correctness} (jscert) ;
@@ -239,22 +289,22 @@ x + y                               # Raises an error
 
     \begin{widemargin}
     \begin{centertikz}
-        \node [locnode] (GNUR) {\R{} reference interpreter} ;
+        \node [locnode] (GNUR) {R reference interpreter} ;
         \node [right = 1cm of GNUR] {Lots of code for memory handling} ;
 
         \node [above = 1cm of GNUR, xshift = -3cm] (linel) {} ;
         \node [above = 1cm of GNUR, xshift = 8cm] (liner) {} ;
         \draw [dashed] (linel) -- (liner) ;
-        \node [below = 0mm of liner, xshift = -1cm] {\Cn{}} ;
-        \node [above = 0mm of liner, xshift = -1cm] {\Coq{}} ;
+        \node [below = 0mm of liner, xshift = -1cm] {C} ;
+        \node [above = 0mm of liner, xshift = -1cm] {Coq} ;
 
-        \node [locnode, above = 2cm of GNUR] (proveR) {\Coq{} monadic interpreter} ;
-        \node [right = 1cm of proveR] {Close to the \Cn{}} ;
+        \node [locnode, above = 2cm of GNUR] (proveR) {Coq monadic interpreter} ;
+        \node [right = 1cm of proveR] {Close to the C} ;
 
         \node [locnode, dashed, above = 2cm of proveR] (semantics) {Rule-based semantics} ;
         \node [right = 1cm of semantics] {As usable as possible} ;
 
-        \draw<2> [<->, dashed, DarkPlum, thick] (proveR) -- node [right] {\Coq{} proof} (semantics) ;
+        \draw<2> [<->, dashed, DarkPlum, thick] (proveR) -- node [right] {Coq proof} (semantics) ;
         \draw<2> [<->, DarkPlum, thick] (GNUR) to [bend right] node [right, pos = .3] {Eyeball closeness} (proveR) ;
         \draw<2> [<->, DarkPlum, thick] (GNUR) to [bend left] node [left, pos = .7] {Testing} (proveR) ;
     \end{centertikz}
@@ -267,8 +317,8 @@ x + y                               # Raises an error
 
 \sectionframe**{Eyeball Closeness}{
     \begin{itemize}
-        \item \Cn{} is imperative, pointer-based;
-        \item \Coq{} is purely functional, value-based;
+        \item C is imperative, pointer-based;
+        \item Coq is purely functional, value-based;
         \item The translation is based on a monad \(\mathrm{state}+\mathrm{error}\).
     \end{itemize}
 }
@@ -277,7 +327,7 @@ x + y                               # Raises an error
     \frametitle{Eyeball Closeness: Enumeration}
 
     \begin{minipage}{.45\textwidth}
-        \Cn{} code
+        C code
 
 \begin{ccode}
 typedef enum {
@@ -294,7 +344,7 @@ typedef enum {
     \end{minipage}
     \qquad
     \begin{minipage}{.45\textwidth}
-        \Coq{} code
+        Coq code
 
 \begin{coqcode}
 Inductive SExpType :=
@@ -311,7 +361,7 @@ Inductive SExpType :=
     \end{minipage}
 
     %\begin{itemize}
-    %    \item Enumerations are actually more natural in \Coq{} than in \Cn{}.
+    %    \item Enumerations are actually more natural in Coq than in C.
     %\end{itemize}
 
 \end{frame}
@@ -320,7 +370,7 @@ Inductive SExpType :=
     \frametitle{Eyeball Closeness: Records}
 
     \begin{minipage}{.45\textwidth}
-        \Cn{} code
+        C code
 
 \begin{ccode}
 struct sxpinfo_struct {
@@ -341,7 +391,7 @@ struct sxpinfo_struct {
     \end{minipage}
     \qquad
     \begin{minipage}{.45\textwidth}
-        \Coq{} code
+        Coq code
 
 \begin{coqcode}
 Inductive named_field :=
@@ -383,7 +433,7 @@ union {
 \end{ccode}
 \end{minipage}
     \begin{minipage}{.3\textwidth}
-    {\Cn{} code}
+    {C code}
 
     \begin{itemize}
         \item Accesses are unsafe.
@@ -401,7 +451,7 @@ Inductive SExpRec_union :=
 \end{coqcode}
 \end{minipage}
     \begin{minipage}{.3\textwidth}
-    {\Coq{} code}
+    {Coq code}
 
     \begin{itemize}
         \item Accesses must be guarded.
@@ -422,14 +472,14 @@ Inductive SExpRec_union :=
     \vspace{-1mm}
     \begin{changemargin}{-5mm}{-5mm}
 \begin{minipage}{.53\textwidth}
-    {\Cn{} code}
+    {C code}
 \begin{ccode}
 symsxp_struct p_sym = p->symsxp;
 /* ... */
 \end{ccode}
 \end{minipage}\hspace{6mm}%
 \begin{minipage}{.50\textwidth}
-    {\Coq{} code}
+    {Coq code}
 \begin{coqcode}
 read%sym p_sym := p using S in
 (* ... *)
@@ -459,7 +509,7 @@ Notation "'read%sym' p_sym ':=' p 'using' S 'in' cont" :=
 \end{frame}
 
 \begin{frame}[fragile]
-    \frametitle{Eyeball Closeness: \Cn{} Code}
+    \frametitle{Eyeball Closeness: C Code}
 
 \begin{changemargin}{-5mm}{-5mm}
 \begin{ccode}
@@ -485,7 +535,7 @@ EXP* applyClosure (EXP* op, EXP* arglist, EXP* rho){
 \end{frame}
 
 \begin{frame}[fragile]
-    \frametitle{Eyeball Closeness: \Coq{} Code}
+    \frametitle{Eyeball Closeness: Coq Code}
 
 \begin{changemargin}{-5mm}{-5mm}
 \begin{coqcode}
@@ -510,10 +560,10 @@ Definition applyClosure (S : state) (op arglist rho : EXP_pointer)
 
 \end{frame}
 
-\sectionframe{\R{} Features}
+\sectionframe{R Features}
 
 \begin{frame}[fragile]
-    \frametitle{\R{} Core}
+    \frametitle{R Core}
 
 \begin{ccode}
 FUNTAB R_FunTab[] = {
@@ -607,7 +657,7 @@ FUNTAB R_FunTab[] = {
 \end{frame}
 
 \begin{frame}[fragile]
-    \frametitle{Proof that \(1 + 1\) reduces to \(2\) in \jscert{}}
+    \frametitle{Proof that \(1 + 1\) reduces to \(2\) in JSCert{}}
 
 \begin{coqcode}[fontsize = \tiny]
 Lemma one_plus_one_exec : forall S C,
@@ -648,10 +698,10 @@ Qed.
 \begin{frame}[fragile]
     \frametitle{RExplain}
 
-   %\begin{block}{In practise, JavaScript people read JSRef, not \jscert{}}
+   %\begin{block}{In practise, JavaScript people read JSRef, not JSCert{}}
    %    \begin{itemize}
-   %        \item An executable \R{} interpreter would be easier to read than a rule-based semantics;
-   %        \item Some want to specify \R{}, we may propose a solution.
+   %        \item An executable R interpreter would be easier to read than a rule-based semantics;
+   %        \item Some want to specify R, we may propose a solution.
    %    \end{itemize}
    %\end{block}
 
@@ -743,13 +793,13 @@ read%clo res_clo = res using S in
 \newcommand\questiontoc{
     %\begin{multicols}{2}
     \begin{enumerate}
-        \item \hyperlink{frame:jscert}{\jscert{}};
+        \item \hyperlink{frame:jscert}{JSCert{}};
         \item \hyperlink{frame:imperative:functional}{Representing imperativity in a functional setting};
-        \item \hyperlink{frame:semantics:coq}{Semantics in \coqn{}};
+        \item \hyperlink{frame:semantics:coq}{Semantics in Coq};
         \item \hyperlink{frame:semantic:sizes}{Semantic sizes};
-        \item \hyperlink{frame:other:subtleties}{Other Subtleties of \R{}};
+        \item \hyperlink{frame:other:subtleties}{Other Subtleties of R};
         \item \hyperlink{frame:reading:pointers}{Reading pointers};
-        \item \hyperlink{frame:parser}{Parsing \R{}};
+        \item \hyperlink{frame:parser}{Parsing R};
         \item \hyperlink{frame:full:monad}{The full state+error monad};
         \item \hyperlink{frame:input:output}{Inputs and outputs}.
     \end{enumerate}
@@ -760,7 +810,7 @@ read%clo res_clo = res using S in
 
 \begin{frame}
     \label{frame:jscert}
-    \frametitle{The \jscert{} Project
+    \frametitle{The JSCert{} Project
         \hfill\hfill\hfill
         \raisebox{-10mm}[0pt][0pt]{
             \includegraphics[width = 15mm]{images/jscert.png} ;
@@ -774,7 +824,7 @@ read%clo res_clo = res using S in
     \node [right of = realworldleft, node distance = 1.5cm] (semlim) {} ;
     \node [left of = realworldright, node distance = 4cm] (testlim) {} ;
 
-    \draw [dashed] (realworldleft) to node[above, pos = 0.9] {\coqn{} definitions} node [below, pos = 0.9] {Industrial world} (realworldright) ;
+    \draw [dashed] (realworldleft) to node[above, pos = 0.9] {Coq definitions} node [below, pos = 0.9] {Industrial world} (realworldright) ;
 
     % \node<2-> [below of = testlim, locnode] (ocaml) {\parbox{1.5cm}{\centering\camln{}\\extraction}} ;
     % \node<2-> [right of = ocaml, node distance = 2cm, locnode] (parser) {Parser} ;
@@ -783,7 +833,7 @@ read%clo res_clo = res using S in
     % \node<2-> [fit = (ocaml) (parser), locnode yellow] (interp) {} ;
 \end{pgfonlayer}
 
-    \node [above of = testlim, locnode brown] (jsref) {\jsref} ;
+    \node [above of = testlim, locnode brown] (jsref) {JSRef} ;
     \node [above = 0pt of jsref] {\(\sim{}3,000\)~lines of code} ;
 
     \node [locnode blue, below of = jsref, node distance = 45mm] (tests) {\includegraphics[width = 4cm]{images/test262_small.png}} ;
@@ -801,7 +851,7 @@ read%clo res_clo = res using S in
         node [sloped, above, fill = white] {Running tests}
         (jsref) ;
 
-    \node [above of = semlim, locnode brown] (jscert) {\jscert} ;
+    \node [above of = semlim, locnode brown] (jscert) {JSCert} ;
     \node [above = 0pt of jscert] {\(\sim{}900\)~rules} ;
 
     \draw [->, thick, DarkPlum] (jsref) -- node [above] {Correctness}
@@ -856,7 +906,7 @@ if_success (run s1 p) (fun s2 =>
 
 \begin{frame}[fragile]
     \label{frame:semantics:coq}
-    \frametitle{Formalisation of Semantics in \coqn{}}
+    \frametitle{Formalisation of Semantics in Coq}
 
 \begin{coqcode}
 Inductive semantics : state -> prog -> state -> Prop ->
@@ -876,7 +926,7 @@ Inductive semantics : state -> prog -> state -> Prop ->
 \end{frame}
 
 \begin{frame}
-    \frametitle{Sequence in \jscert{} (Paper Version)}
+    \frametitle{Sequence in JSCert{} (Paper Version)}
 
     \begin{overlayarea}{\textwidth}{3cm}
     \begin{block}{“\mintedinlinespacebug\jsinline|s1 ; s2|” is evaluated as follows.}
@@ -885,7 +935,7 @@ Inductive semantics : state -> prog -> state -> Prop ->
     \item If~\(o_1\) is an exception, return~\(o_1\).
     \item Let~\(o_2\) be the result of evaluating~\mintedinlinespacebug\jsinline|s2|.
     \only<1>{
-        \item If an exception~\(\mathit{V}\) was thrown, return \(\mpar{\jstthrow{}, \mathit{V}, \mathit{empty}}\). % where \(\mathit{V}\)~is the exception.
+        \item If an exception~\(\mathit{V}\) was thrown, return \(\mpar{\mathtt{throw}, \mathit{V}, \mathit{empty}}\). % where \(\mathit{V}\)~is the exception.
             % (Execution now proceeds as if no exception were thrown.)
         \item If~\(\mathit{o_2}.\mathit{value}\) is empty, let~\(\mathit{V} = \mathit{o_1}.\mathit{value}\),
             otherwise let~\(\mathit{V} = \mathit{o_2}.\mathit{value}\).
@@ -919,7 +969,7 @@ Inductive semantics : state -> prog -> state -> Prop ->
 
 \begin{frame}[fragile]
     \label{frame:seq:jscert}
-    \frametitle{Sequence in \jscert{}}
+    \frametitle{Sequence in JSCert{}}
 
 %  | red_stat_abort : forall S C extt o,
 %    out_of_ext_stat extt = Some o →
@@ -980,8 +1030,8 @@ Inductive red_stat : state → scope → stat → out → Prop :=
     \begin{centertikz}
         \node (lambda) {\(\lambda\)-calculus} ;
         \node [right = 5mm of lambda] (ml) {CoreML} ;
-        \node [right = 5mm of ml] (compcert) {\CompCert{} \Cn{}} ;
-        \node [right = 5mm of compcert] (jscert) {\jscert{}} ;
+        \node [right = 5mm of ml] (compcert) {CompCert{} C} ;
+        \node [right = 5mm of compcert] (jscert) {JSCert{}} ;
 
         \draw [DarkPlum, fill = LightPlum] ($(lambda.north) + (-.5, .1)$) rectangle ++ (1, .003) ;
         \node [above = 1mm of lambda] {\(3\)~rules} ; % 5 in pretty-big-step.
@@ -1053,7 +1103,7 @@ f (a = 3, 1, 2) # Returns an error.
     \begin{changemargin}{-5mm}{-5mm}
 
 \begin{minipage}{.6\textwidth}
-    {\Cn{} code}
+    {C code}
 \begin{ccode}
 symsxp_struct p_sym = p->symsxp;
 /* ... */
@@ -1068,7 +1118,7 @@ symsxp_struct p_sym = p->symsxp;
 
 \vfill
 
-\parbox{\textwidth}{\onslide<2->{\Coq{} code, \only<2>{first}\only<3>{second}\only<4>{third}\only<5>{fourth} try}}
+\parbox{\textwidth}{\onslide<2->{Coq code, \only<2>{first}\only<3>{second}\only<4>{third}\only<5>{fourth} try}}
 \begin{minipage}{.5\textwidth}
 \begin{overlayarea}{\textwidth}{5cm}
     \begin{onlyenv}<2>

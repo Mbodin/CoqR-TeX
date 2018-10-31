@@ -30,7 +30,7 @@
       {\minted@addto@optlistcl{\minted@optlistcl@cmd}{}%
         \@namedef{minted@opt@cmd:#1}{false}}
 }
-\minted@def@optcl@switch@simple{kwrename}{-F kwrenamefilter}
+% \minted@def@optcl@switch@simple{kwrename}{-F kwrenamefilter}
 \makeatother
 
 \usepackage{tcolorbox}
@@ -55,7 +55,7 @@
         listing only,
         minted language = #1,
         minted options= {
-            kwrename,
+            % kwrename,
             linenos = true,
             fontsize = \small,
             ##1}
@@ -65,7 +65,7 @@
         listing only,
         minted language = #1,
         minted options= {
-            kwrename,
+            % kwrename,
             linenos = true,
             fontsize = \small,
             escapeinside = @@,
@@ -76,7 +76,7 @@
         listing only,
         minted language = #1,
         minted options= {
-            kwrename,
+            % kwrename,
             linenos = true,
             fontsize = \small,
             escapeinside = @@,
@@ -112,7 +112,7 @@
 \AfterEndEnvironment{minted}{\end{english}}
 
 \makenewlistings{text}
-\makenewlistings[extcoq]{coq}
+\makenewlistings{coq}
 \makenewlistings[ocaml]{caml}
 \makenewlistings{js}
 \makenewlistings[extk]{k}

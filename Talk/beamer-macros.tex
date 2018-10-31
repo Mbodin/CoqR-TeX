@@ -107,3 +107,34 @@
     \setbeamercolor{block title}{#3}
           \begin{block}{#1}}{\end{block}}
 
+\newenvironment{innertikz}[1][]{%
+    \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)}, #1]
+}{
+    \end{tikzpicture}%
+}
+
+\newenvironment{centertikz}[1][]{%
+    \begin{center}%
+    \begin{tikzpicture}[#1]
+}{
+    \end{tikzpicture}%
+    \end{center}
+}
+
+\def\changemargin#1#2{\list{}{\rightmargin#2\leftmargin#1}\item[]}
+\let\endchangemargin=\endlist 
+
+\newenvironment{widemargin}{
+    \begin{changemargin}{-1cm}{-1cm}}{
+    \end{changemargin}}
+
+\newcommand\anchor[3][]{%
+    \begin{innertikz}[remember picture, #1]%
+        \node (#2) {#3} ;%
+    \end{innertikz}%
+}
+
+\newcommand*\anchorm[3][]{%
+    \anchor[#1]{#2}{\!\!\(#3\)\!\!}%
+}
+
