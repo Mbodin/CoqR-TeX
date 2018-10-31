@@ -481,50 +481,55 @@ SEXP do_attr@\anchorm{nameA}{}@
 
     \begin{centertikz}
 
-        \node (coqR) {CoqR (Coq)} ;
+        \node [box] (coqR) {CoqR (Coq)} ;
 
-        \onslide<2->{
-            \node [below = 25mm of coqR] (Rlibraries) {R base library (R)} ;
-        }
+        % \onslide<3->{
+        %     \node [box, left = 5mm of coqR] (Rlibraries) {\parbox{5em}{\centering{}R base\\library (R)}} ;
+        %     \draw [->, DarkPlum, thick] (Rlibraries) to [bend left = 50] (coqR) ;
+        %     \draw [->, DarkSkyBlue, thick] (Rlibraries) to [bend right = 50]
+        %         node [below, DarkSkyBlue] {Initial state} (coqR) ;
+        % }
 
-        \node [above right = 3cm of coqR] (gnuR) {GNU~R (C)} ;
-
-        \node [below right = 3cm of coqR] (tests) {test suites (R)} ;
+        \node [box, right = 3cm of coqR] (gnuR) {GNU~R (C)} ;
 
         \draw [<->, DarkChocolate, thick] (coqR) --
-            node [sloped, above, DarkChocolate] {line-by-line}
-            node [sloped, below, DarkChocolate] {correspondence} (gnuR) ;
+            node [above, DarkChocolate] (llc) {line-by-line}
+            node [below, DarkChocolate] {correspondence} (gnuR) ;
 
-        \draw<2-> [<-, DarkPlum, thick] (Rlibraries) to [bend left]
-            node [sloped, above, DarkPlum] {execute} (coqR) ;
-        \draw<2-> [->, DarkSkyBlue, thick] (Rlibraries) to [bend right]
-            node [sloped, above, DarkSkyBlue] {Initial state} (coqR) ;
-        \draw [<-, DarkPlum, thick] (tests) -- node [sloped, below, DarkPlum] {execute} (coqR) ;
+        \onslide<2->{
+            \node [box, above = 2cm of llc] (tests) {test suites (R)} ;
+            \draw [->, DarkPlum, thick] (tests) to [out = -90, in = 90] (coqR) ;
+            \draw [->, DarkPlum, thick] (tests) to [out = -90, in = 90] node [right, near end] {execute} (gnuR) ;
+        }
+
+        \onslide<2>{
+            \node [box, below = 2cm of coqR] (resultCoqR) {output} ;
+            \node [box, below = 2cm of gnuR] (resultGnuR) {output} ;
+            \draw [->, DarkSkyBlue, thick] (coqR) -- (resultCoqR) ;
+            \draw [->, DarkSkyBlue, thick] (gnuR) -- node [right] {results} (resultGnuR) ;
+            \draw [<->, DarkScarletRed, thick] (resultCoqR) --
+               node [above] {compare} (resultGnuR) ;
+        }
+
+        \onslide<3>{
+            \newcommand\identifytype{\parbox{5.5em}{\centering{}Identify type\\of results}}
+            \node [box, below = 15mm of coqR] (typeCoqR) {\identifytype} ;
+            \node [box, below = 15mm of gnuR] (typeGnuR) {\identifytype} ;
+            \draw [->, DarkSkyBlue, thick] (coqR) -- (typeCoqR) ;
+            \draw [->, DarkSkyBlue, thick] (gnuR) -- node [right] {results} (typeGnuR) ;
+            \draw [<->, DarkScarletRed, thick] (typeCoqR) --
+               node [above] {compare types} (typeGnuR) ;
+            \newcommand\interpretetresult{\parbox{3.5em}{\centering{}Interpret\\results}}
+            \node [box, below = 1cm of typeCoqR] (interCoqR) {\interpretetresult} ;
+            \node [box, below = 1cm of typeGnuR] (interGnuR) {\interpretetresult} ;
+            \draw [->, DarkSkyBlue, thick] (typeCoqR) -- (interCoqR) ;
+            \draw [->, DarkSkyBlue, thick] (typeGnuR) -- (interGnuR) ;
+            \draw [<->, DarkScarletRed, thick] (interCoqR) --
+               node [above] {compare} node [below] {interpretations} (interGnuR) ;
+        }
 
     \end{centertikz}
 
-\end{frame}
-
-\begin{frame}
-     \begin{centertikz}[node distance = 2cm]
-         \node [box] (source) {R program} ;
-         \node [box, below left of = source, xshift = -1cm, yshift = -5mm] (R) {GNU~R} ;
-         \node [box, below right of = source, xshift = 1cm, yshift = -5mm] (CoqR) {CoqR} ;
-         \newcommand\identifytype{\parbox{5.5em}{\centering{}Identify type\\of result}}
-         \node [box, below of = R] (Rtype) {\identifytype} ;
-         \node [box, below of = CoqR] (CoqRtype) {\identifytype} ;
-         \newcommand\interpretetresult{\parbox{3.5em}{\centering{}Interpret\\result}}
-         \node [box, below of = Rtype] (Rint) {\interpretetresult} ;
-         \node [box, below of = CoqRtype] (CoqRint) {\interpretetresult} ;
-         \draw [->, thick] (source) to [out = -90, in = 90] (R) ;
-         \draw [->, thick] (source) to [out = -90, in = 90] (CoqR) ;
-         \draw [->, thick] (R) -- (Rtype) ;
-         \draw [->, thick] (CoqR) -- (CoqRtype) ;
-         \draw [<->] (Rtype) -- node [above] {compare} node [below] {types} (CoqRtype) ;
-         \draw [->, thick] (Rtype) -- (Rint) ;
-         \draw [->, thick] (CoqRtype) -- (CoqRint) ;
-         \draw [<->] (Rint) -- node [above] {compare} node [below] {interpretations} (CoqRint) ;
-     \end{centertikz}
 \end{frame}
 
 \begin{frame}
