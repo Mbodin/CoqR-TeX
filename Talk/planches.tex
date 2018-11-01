@@ -138,14 +138,14 @@ Qed.
         % http://blog.revolutionanalytics.com/2014/04/seven-quick-facts-about-r.html
         %\item Trending programming language;
         \item More than \emphb{2~million users} worldwide;
-        \item More than \emphb{13,000~packages}:
+        \item More than \emphb{\(13,000\)~packages}:
             \begin{itemize}
                 \item \texttt{ggplot2}: elegant data visualisations
                 \item \texttt{lawstat}: tools for public policy, and law;
                 \item \texttt{ptstem}: Stemming algorithms for the Portuguese language;
                 \item …
             \end{itemize}
-        \item Used by 70\% of \emphb{data miners} (24\% as primary language).
+        \item Used by \(70\%\) of \emphb{data miners} (\(24\%\) as primary language).
     \end{itemize}
 \end{frame}
 
@@ -230,7 +230,7 @@ TRUE                      # Returns TRUE
 
     \begin{itemize}
         \item A Coq formalisation of R;
-        \item \anchorm{l18Kbegin}{}\emph{18,000 lines}\anchorm{l18Kend}{} of Coq definitions;
+        \item \anchorm{l18Kbegin}{}\emph{\(18,000\)~lines}\anchorm{l18Kend}{} of Coq definitions;
         % \item A \emph{runnable} semantics;
         \item Supports a non-trivial subset of R, and \emph{fully} support them.
     \end{itemize}
@@ -499,10 +499,26 @@ SEXP do_attr@\anchorm{nameA}{}@
         \onslide<2->{
             \node [box, above = 2cm of llc] (tests) {test suites (R)} ;
             \draw [->, DarkPlum, thick] (tests) to [out = -90, in = 90] (coqR) ;
-            \draw [->, DarkPlum, thick] (tests) to [out = -90, in = 90] node [right, near end] {execute} (gnuR) ;
+            \draw [->, DarkPlum, thick] (tests) to [out = -90, in = 90] node [right, near end, xshift = 1mm] {execute} (gnuR) ;
         }
 
-        \onslide<2>{
+        \onslide<3->{
+            \node [right = 1cm of tests] (testinstances) {%
+                \hspace{-1em}%
+                \begin{minipage}{25mm}
+                \begin{itemize}
+                    \item GNU~R's;
+                    \item FastR's;
+                    \item Corners.
+                \end{itemize}
+                \end{minipage}%
+            } ;
+            \draw [->, Aluminium6] (tests) -- (testinstances);
+            \draw [decorate, decoration = {brace, amplitude = 10pt}, DarkPlum] (testinstances.north east) --
+               node [xshift = 4mm, right, DarkPlum] {\parbox{4em}{\(20,000\)\\expressions}} (testinstances.south east) ;
+        }
+
+        \onslide<2-3>{
             \node [box, below = 2cm of coqR] (resultCoqR) {output} ;
             \node [box, below = 2cm of gnuR] (resultGnuR) {output} ;
             \draw [->, DarkSkyBlue, thick] (coqR) -- (resultCoqR) ;
@@ -511,7 +527,7 @@ SEXP do_attr@\anchorm{nameA}{}@
                node [above] {compare} (resultGnuR) ;
         }
 
-        \onslide<3>{
+        \onslide<4->{
             \newcommand\identifytype{\parbox{5.5em}{\centering{}Identify type\\of results}}
             \node [box, below = 15mm of coqR] (typeCoqR) {\identifytype} ;
             \node [box, below = 15mm of gnuR] (typeGnuR) {\identifytype} ;
@@ -528,52 +544,119 @@ SEXP do_attr@\anchorm{nameA}{}@
                node [above] {compare} node [below] {interpretations} (interGnuR) ;
         }
 
+        \onslide<5->{
+            \node [right = 5mm of typeGnuR] (types) {%
+                \hspace{-1em}%
+                \begin{minipage}{37mm}
+                \begin{itemize}
+                    \item Boolean vector;
+                    \item Numeric vector;
+                    \item …
+                    \item Closure;
+                    \item Error;
+                    \onslide<6->{
+                    \item Unknown;
+                    \item Not implemented.
+                    }
+                \end{itemize}
+                \end{minipage}%
+            } ;
+            \draw [->, Aluminium6] (typeGnuR) -- (types);
+        }
+
     \end{centertikz}
 
 \end{frame}
 
 \begin{frame}
-
-    TODO:
-    - can be instantiated for other languages
-    - help production code by identifying low-hanging fruits.
-    - clear view of the debugging process.
-    - a custom testing architecture
-
-\end{frame}
-
-\begin{frame}
-
     \begin{center}
-        \includegraphics[width=10cm]{images/unknown.png}
-
+        \vspace{-2mm}
         \href{https://coqr.dcc.uchile.cl/\#/test-detail/148}{\url{https://coqr.dcc.uchile.cl}}
+        \vspace{2mm}
+        \includegraphics[width=10cm]{images/unknown.png}
+    \end{center}
+\end{frame}
+
+% \begin{frame}
+
+%     \begin{center}
+%         \includegraphics[width=10cm]{../missing_functions_base_r.png}
+%     \end{center}
+
+% \end{frame}
+
+\begin{frame}
+    \frametitle{Identifying low-hanging fruits}
+
+    \begin{center}
+        \includegraphics[width=10cm]{images/not-implemented.png}
     \end{center}
 
 \end{frame}
 
 \begin{frame}
+    \frametitle{This way of doing things is generic!}
 
-    \begin{center}
-        \includegraphics[width=10cm]{../missing_functions_base_r.png}
-    \end{center}
-
-\end{frame}
-
-\begin{frame}
-
-    \begin{center}
-        \includegraphics[width=10cm]{../not-implemented.png}
-    \end{center}
+    From:
+    \begin{itemize}
+        \item Two interpreters with similar inputs;
+        \item A set of result types;
+        \item A meaningful way to interpreter these results
+    \end{itemize}
+    We get:
+    \begin{itemize}
+        \item A custom testing framework;
+        \item Meaningful testing results;
+        \item A way to prioritise functions to be implemented.
+    \end{itemize}
 
 \end{frame}
 
 \begin{frame}
     \frametitle{Thank you for listening!}
 
-TODO
+    \begin{centertikz}
 
-    \url{https://github.com/Mbodin/proveR}
+        \node [box] (coqR) {CoqR (Coq)} ;
+
+        % \onslide<3->{
+        %     \node [box, left = 5mm of coqR] (Rlibraries) {\parbox{5em}{\centering{}R base\\library (R)}} ;
+        %     \draw [->, DarkPlum, thick] (Rlibraries) to [bend left = 50] (coqR) ;
+        %     \draw [->, DarkSkyBlue, thick] (Rlibraries) to [bend right = 50]
+        %         node [below, DarkSkyBlue] {Initial state} (coqR) ;
+        % }
+
+        \node [box, right = 3cm of coqR] (gnuR) {GNU~R (C)} ;
+
+        \draw [<->, DarkChocolate, thick] (coqR) --
+            node [above, DarkChocolate] (llc) {line-by-line}
+            node [below, DarkChocolate] {correspondence} (gnuR) ;
+
+            \node [box, above = 11mm of llc] (tests) {test suites (R)} ;
+            \draw [->, DarkPlum, thick] (tests) to [out = -90, in = 90] (coqR) ;
+            \draw [->, DarkPlum, thick] (tests) to [out = -90, in = 90] node [right, near end, xshift = 1mm] {execute} (gnuR) ;
+
+            \newcommand\identifytype{\parbox{5.5em}{\centering{}Identify type\\of results}}
+            \node [box, below = 9mm of coqR] (typeCoqR) {\identifytype} ;
+            \node [box, below = 9mm of gnuR] (typeGnuR) {\identifytype} ;
+            \draw [->, DarkSkyBlue, thick] (coqR) -- (typeCoqR) ;
+            \draw [->, DarkSkyBlue, thick] (gnuR) -- node [right] {results} (typeGnuR) ;
+            \draw [<->, DarkScarletRed, thick] (typeCoqR) --
+               node [above] {compare types} (typeGnuR) ;
+            \newcommand\interpretetresult{\parbox{3.5em}{\centering{}Interpret\\results}}
+            \node [box, below = 5mm of typeCoqR] (interCoqR) {\interpretetresult} ;
+            \node [box, below = 5mm of typeGnuR] (interGnuR) {\interpretetresult} ;
+            \draw [->, DarkSkyBlue, thick] (typeCoqR) -- (interCoqR) ;
+            \draw [->, DarkSkyBlue, thick] (typeGnuR) -- (interGnuR) ;
+            \draw [<->, DarkScarletRed, thick] (interCoqR) --
+               node [above] {compare} node [below] {interpretations} (interGnuR) ;
+
+    \end{centertikz}
+
+    \begin{center}
+        \url{https://github.com/Mbodin/CoqR}
+        \href{https://coqr.dcc.uchile.cl/\#/test-detail/148}{\url{https://coqr.dcc.uchile.cl}}
+    \end{center}
 
 \end{frame}
 
@@ -593,7 +676,7 @@ TODO
         \item \hyperlink{frame:reading:pointers}{Reading pointers};
         \item \hyperlink{frame:parser}{Parsing R};
         \item \hyperlink{frame:eyeball}{The eyeball closeness};
-        \item \hyperlink{frame:full:monad}{The full state+error monad};
+        \item \hyperlink{frame:full:monad}{The full monad};
         \item \hyperlink{frame:RFeatures}{R features};
         \item \hyperlink{frame:input:output}{Inputs and outputs};
         \item \hyperlink{frame:proofs}{Proofs};
@@ -757,11 +840,11 @@ Inductive semantics : state -> prog -> state -> Prop ->
     \frametitle{Sequence in JSCert{} (Paper Version)}
 
     \begin{overlayarea}{\textwidth}{3cm}
-    \begin{block}{“\mintedinlinespacebug\jsinline|s1 ; s2|” is evaluated as follows.}
+    \begin{block}{“\jsinline|s1 ; s2|” is evaluated as follows.}
 \begin{enumerate}
-    \item Let~\(o_1\) be the result of evaluating~\mintedinlinespacebug\jsinline|s1|.
+    \item Let~\(o_1\) be the result of evaluating~\jsinline|s1|.
     \item If~\(o_1\) is an exception, return~\(o_1\).
-    \item Let~\(o_2\) be the result of evaluating~\mintedinlinespacebug\jsinline|s2|.
+    \item Let~\(o_2\) be the result of evaluating~\jsinline|s2|.
     \only<1>{
         \item If an exception~\(\mathit{V}\) was thrown, return \(\mpar{\mathtt{throw}, \mathit{V}, \mathit{empty}}\). % where \(\mathit{V}\)~is the exception.
             % (Execution now proceeds as if no exception were thrown.)
@@ -800,52 +883,53 @@ Inductive semantics : state -> prog -> state -> Prop ->
     \frametitle{Sequence in JSCert{}}
 
 %  | red_stat_abort : forall S C extt o,
-%    out_of_ext_stat extt = Some o →
+%    out_of_ext_stat extt = Some o ->
 %    abort o ->
-%    ~ abort_intercepted_stat extt →
+%    ~ abort_intercepted_stat extt ->
 %    red_stat S C extt o
 
 \begin{changemargin}{-5.5mm}{-9mm}
 \begin{coqcode}
-Inductive red_stat : state → scope → stat → out → Prop :=
+Inductive red_stat : state -> scope -> stat -> out -> Prop :=
 
 | red_stat_seq_1 : forall S C s1 s2 o1 o,
-  red_stat S C s1 o1 →
-  red_stat S C (seq_1 s2 o1) o →@\anchor{seq1}{}@
+  red_stat S C s1 o1 ->
+  red_stat S C (seq_1 s2 o1) o ->@\anchor{seq1}{}@
   red_stat S C (seq s1 s2) o
 
 | red_stat_seq_2 : forall S C s2 o1,
-  abort o1 →@\anchor{seq2}{}@
+  abort o1 ->@\anchor{seq2}{}@
   red_stat S C (seq_1 s2 o1) o1
 
 | red_stat_seq_3 : forall S0 S C s2 o2 o,
-  red_stat S C s2 o2 →@\anchor{seq3}{}@
-  red_stat S C (seq_2 o2) o →
+  red_stat S C s2 o2 ->@\anchor{seq3}{}@
+  red_stat S C (seq_2 o2) o ->
   red_stat S0 C (seq_1 s2 (out_ter S)) o
 
 (* ... *).
 \end{coqcode}
 \end{changemargin}
+\onslide<2>{%
 \begin{innertikz}[overlay, remember picture]
     \def\distshift{35mm} % WTF: This looks like a TikZ bug: nodes appear this distance below their supposed location…
-    \node [right = 25mm of seq1, yshift = \distshift, scale = .8] {\(
+    \node [right = 15mm of seq1, yshift = \distshift, scale = .8] {\(
         \inferrule[seq-\raisebox{.6ex}{\bsphere{1}}\(\fund{s_1}{s_2}\)]
         { S, C, s_1 \evalr o_1 \\ o_1, \seqx{s_2} \evalr o }
         { S, C, \seq{s_1}{s_2} \evalr o }
     \)} ;
-    \node [right = 64mm of seq2, yshift = \distshift, scale = .8] {\(
+    \node [right = 61mm of seq2, yshift = \distshift, scale = .8] {\(
         \inferrule[seq-\raisebox{.6ex}{\bsphere{2}}\(\funu{s_2}\)]
         { }
         { o_1, \seqx{s_2} \evalr o_1 }
         \quad { \abort{o_1} }
     \)} ;
-    \node [right = 34mm of seq3, yshift = \distshift, scale = .7] {\(
+    \node [right = 28mm of seq3, yshift = \distshift, scale = .7] {\(
         \inferrule[seq-\raisebox{.55ex}{\bsphere{3}}\(\funu{s_2}\)]
         { o_1, s_2 \evalr o_2 \\ o_1, o_2, \seqxx{} \evalr o }
         { o_1, \seqx{s_2} \evalr o }
         \quad { \neg\abort{o_1} }
     \)} ;
-\end{innertikz}
+\end{innertikz}}
 
 \end{frame}
 
@@ -954,8 +1038,8 @@ symsxp_struct p_sym = p->symsxp;
 \end{minipage}
     \begin{minipage}{.45\textwidth}
     \begin{itemize}
-        \item May fail because the pointer \mintedinlinespacebug\cinline|p| is unbound;
-        \item May fail because the union \mintedinlinespacebug\cinline|*p| is not a \mintedinlinespacebug\cinline|symsxp|.
+        \item May fail because the pointer \cinline|p| is unbound;
+        \item May fail because the union \cinline|*p| is not a \cinline|symsxp|.
     \end{itemize}
     \end{minipage}
 
@@ -999,7 +1083,8 @@ end
     \end{onlyenv}
     \begin{onlyenv}<5>
 \begin{coqcode}
-read%sym p_sym := p using S in
+read%sym p_sym :=
+  p using S in
 (* ... *)
 \end{coqcode}
     \end{onlyenv}
@@ -1011,15 +1096,16 @@ read%sym p_sym := p using S in
     \begin{onlyenv}<4->
 \begin{coqcode}
 Inductive result (T : Type) :=
-  | success : state -> T -> result T
+  | success : state -> T
+              -> result T
   | error : result T
   .
 \end{coqcode}
     \end{onlyenv}
     \begin{onlyenv}<5->
 \begin{coqcode}
-Notation "'read%sym' p_sym ':=' p
-    'using' S 'in' cont" :=
+Notation "'read%sym' p_sym ':='
+    p 'using' S 'in' cont" :=
   (* ... *).
 \end{coqcode}
     \end{onlyenv}
@@ -1036,17 +1122,17 @@ Notation "'read%sym' p_sym ':=' p
 \begin{frame}[fragile]
     \label{frame:parser}
 
-\begin{ccodenoescape}
+\begin{textcodenoescape}
 expr:
-  | NUM_CONST                   { $$ = $1;  setId( $$, @$); }
-  | STR_CONST                   { $$ = $1;  setId( $$, @$); }
-  | NULL_CONST                  { $$ = $1;  setId( $$, @$); }          
-  | SYMBOL                      { $$ = $1;  setId( $$, @$); }
+  | NUM_CONST              { $$ = $1;  setId( $$, @$); }
+  | STR_CONST              { $$ = $1;  setId( $$, @$); }
+  | NULL_CONST             { $$ = $1;  setId( $$, @$); }          
+  | SYMBOL                 { $$ = $1;  setId( $$, @$); }
   | LBRACE exprlist RBRACE
     { $$ = xxexprlist($1,&@1,$2); setId( $$, @$); }
   | LPAR expr_or_assign RPAR
     { $$ = xxparen($1,$2);  setId( $$, @$); }
-\end{ccodenoescape}
+\end{textcodenoescape}
 
 \begin{camlcode}
 expr:
@@ -1055,7 +1141,8 @@ expr:
   | c = NULL_CONST                      { c }
   | c = SYMBOL                          { c }
   | b = LBRACE; e = exprlist; RBRACE
-    { eatLines := false ; lift2 (only_state xxexprlist) b e }
+    { eatLines := false ;
+      lift2 (only_state xxexprlist) b e }
   | p = LPAR; e = expr_or_assign; RPAR
     { lift2 (no_runs xxparen) p e }
 \end{camlcode}
@@ -1267,7 +1354,8 @@ Notation "'read%sym' p_sym ':=' p 'using' S 'in' cont" :=
 Inductive result (A : Type) :=
   | result_success : state -> A -> result A
   | result_error : state -> string -> result A
-  | result_longjump : state -> nat -> context_type -> result A
+  | result_longjump : state -> nat -> context_type
+                      -> result A
   | result_impossible : state -> string -> result A
   | result_not_implemented : string -> result A
   | result_bottom : state -> result A
@@ -1519,10 +1607,10 @@ read%clo res_clo = res using S in
         \node [locnode, below = 5mm of imp, xshift = 4cm] (spec) {\begin{minipage}{10cm}
             ECMA-style specification
             \begin{enumerate}
-                \item Let \mintedinlinespacebug\camlinline{res} be the result
-                    of calling \mintedinlinespacebug\camlinline{f} with argument
-                    \mintedinlinespacebug\camlinline{args};
-                \item At this stage, \mintedinlinespacebug\camlinline{res} should
+                \item Let \camlinline{res} be the result
+                    of calling \camlinline{f} with argument
+                    \camlinline{args};
+                \item At this stage, \camlinline{res} should
                     be a closure.
             \end{enumerate}
             \end{minipage}} ;
@@ -1580,13 +1668,12 @@ read%clo res_clo = res using S in
 
 \begin{frame}
     \label{frame:fails}
-
     \begin{center}
-        \includegraphics[width=10cm]{images/fail.png}
-
+        \vspace{-2mm}
         \href{https://coqr.dcc.uchile.cl/\#/test-detail/148}{\url{https://coqr.dcc.uchile.cl}}
+        \vspace{2mm}
+        \includegraphics[width=10cm]{images/fail.png}
     \end{center}
-
 \end{frame}
 
 \frame{\questiontoc}
