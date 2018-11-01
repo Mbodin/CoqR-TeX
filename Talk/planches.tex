@@ -216,10 +216,8 @@ c(1, TRUE, "a")           # Returns c("1", "TRUE", "a")
 "x" <- 18
 x                         # Returns 18
 
-TRUE <- 18                # Error
 "TRUE" <- 18              # No error
 TRUE                      # Returns TRUE
-`TRUE`                    # Returns 18
 \end{Rcode}
 
 \end{frame}
@@ -230,9 +228,9 @@ TRUE                      # Returns TRUE
 
     \begin{itemize}
         \item A Coq formalisation of R;
-        \item \anchorm{l18Kbegin}{}\emph{\(18,000\)~lines}\anchorm{l18Kend}{} of Coq definitions;
+        \item \anchorm{l18Kbegin}{}\emphb{\(18,000\)~lines}\anchorm{l18Kend}{} of Coq definitions;
         % \item A \emph{runnable} semantics;
-        \item Supports a non-trivial subset of R, and \emph{fully} support them.
+        \item Supports a non-trivial subset of R, and \emphb{fully} support them.
     \end{itemize}
 
     \begin{center}
@@ -319,9 +317,10 @@ TRUE                      # Returns TRUE
 \end{frame}
 
 \begin{frame}
+    \frametitle{Going back to R}
 
     \begin{block}{R Trust Sources}
-        \begin{changemargin}{0pt}{2cm}
+        \begin{changemargin}{0pt}{1cm}
     \begin{itemize}
         \item Specification \hfill \xmark
         \item Reference interpreter \hfill \cmark
@@ -332,7 +331,7 @@ TRUE                      # Returns TRUE
         \item Test suites \hfill \cmark
            \begin{itemize}
                %\item Related by testing and comparing the results with the reference interpreter.
-               \item TestR, Genthat, etc.
+               \item GNU~R's, FastR's, etc.
            \end{itemize}
         % \item Books and tutoriels (= programmers’s intuition) \hfill \cmark
     \end{itemize}
@@ -555,8 +554,9 @@ SEXP do_attr@\anchorm{nameA}{}@
                     \item Closure;
                     \item Error;
                     \onslide<6->{
-                    \item Unknown;
-                    \item Not implemented.
+                    \item Not implemented;
+                    \item Impossible;
+                    \item Unknown.
                     }
                 \end{itemize}
                 \end{minipage}%
@@ -592,6 +592,9 @@ SEXP do_attr@\anchorm{nameA}{}@
         \includegraphics[width=10cm]{images/not-implemented.png}
     \end{center}
 
+    \pause
+    CoqR supports a \emphb{non-trivial} subset of R, and fully support them.
+
 \end{frame}
 
 \begin{frame}
@@ -605,10 +608,16 @@ SEXP do_attr@\anchorm{nameA}{}@
     \end{itemize}
     We get:
     \begin{itemize}
-        \item A custom testing framework;
+        \item A customized testing framework;
         \item Meaningful testing results;
         \item A way to prioritise functions to be implemented.
     \end{itemize}
+
+    \pause
+    \vfill
+    \begin{block}{Bonus}
+        The eyeball closeness made debugging trivial.
+    \end{block}
 
 \end{frame}
 
@@ -682,7 +691,8 @@ SEXP do_attr@\anchorm{nameA}{}@
         \item \hyperlink{frame:proofs}{Proofs};
         \item \hyperlink{frame:proofs:future}{Future of proofs};
         \item \hyperlink{frame:ble}{Basic language elements in memory};
-        \item \hyperlink{frame:fails}{More details about the website’s results}.
+        \item \hyperlink{frame:fails}{More details about the website’s results};
+        \item \hyperlink{frame:full:results}{Full testing results}.
     \end{enumerate}
     %\end{multicols}
 }
@@ -1674,6 +1684,27 @@ read%clo res_clo = res using S in
         \vspace{2mm}
         \includegraphics[width=10cm]{images/fail.png}
     \end{center}
+\end{frame}
+
+\frame{\questiontoc}
+
+\begin{frame}
+    \label{frame:full:results}
+    \frametitle{Full results}
+
+\begin{tabular}{|l||r|r|r|r|r|r|r|r|}
+\hline
+{\bf Suite}  & {\bf P} & {\bf F} & {\bf NI} & {\bf NF} & {\bf I} & {\bf U} & {\bf PP} & {\bf PF} \\ \hline\hline
+Corners     & 2,613 & 7     & 48     &   119    & 0   & 149    &   20  & 6 \\ \hline
+GNU~R       & 243   & 31    & 739    &   723    & 1   & 27     &   0   & 0 \\ \hline
+FastR1      & 1,103 & 25    & 987    &   115    & 0   & 161    &   59  & 326 \\ \hline
+FastR2      & 2,411 & 1,128 & 6,888  &   493    & 0   & 1,914  &   297 & 343 \\ \hline\hline
+{\bf Total} & 6,370 & 1,191 & 8,662  &   1,450  &  1  & 2,251  &   376 & 675 \\
+\hline
+\end{tabular}
+
+{\em total number of tests:} 20,976
+
 \end{frame}
 
 \frame{\questiontoc}
