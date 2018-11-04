@@ -115,7 +115,7 @@ Proof.
 Qed.
 \end{coqcode}
 \begin{innertikz}[overlay, remember picture]
-    \def\distshift{17mm} % WTF: This looks like a TikZ bug: nodes appear this distance below their supposed location…
+    \def\distshift{4mm}%{17mm} % WTF: This looks like a TikZ bug: nodes appear this distance below their supposed location…
 
     \node<3> [fit = (evalRstart) (evalRend), ellipse, draw, DarkScarletRed, thick, yshift = \distshift, xshift = 1ex] (evalRellipse) {} ;
     \node<3> [above = 2cm of evalRellipse, DarkScarletRed] (thistalk) {This talk} ;
@@ -138,7 +138,7 @@ Qed.
         % http://blog.revolutionanalytics.com/2014/04/seven-quick-facts-about-r.html
         %\item Trending programming language;
         \item More than \emphb{2~million users} worldwide;
-        \item More than \emphb{\(13,000\)~packages}:
+        \item More than \emphb{13,000~packages}:
             \begin{itemize}
                 \item \texttt{ggplot2}: elegant data visualisations
                 \item \texttt{lawstat}: tools for public policy, and law;
@@ -228,7 +228,7 @@ TRUE                      # Returns TRUE
 
     \begin{itemize}
         \item A Coq formalisation of R;
-        \item \anchorm{l18Kbegin}{}\emphb{\(18,000\)~lines}\anchorm{l18Kend}{} of Coq definitions;
+        % \item \anchorm{l18Kbegin}{}\emphb{18,000~lines}\anchorm{l18Kend}{} of Coq definitions;
         % \item A \emph{runnable} semantics;
         \item Supports a non-trivial subset of R, and \emphb{fully} support them.
     \end{itemize}
@@ -236,13 +236,61 @@ TRUE                      # Returns TRUE
     \begin{center}
     \url{https://github.com/Mbodin/CoqR}
     \end{center}
-
-\begin{tikzpicture}[overlay, remember picture]
-    \node<2> [fit = (l18Kbegin) (l18Kend), ellipse, DarkScarletRed, draw, thick] (l18KO) {} ;
-    \node<2> [above = 1cm of l18KO, DarkScarletRed] (lot) {Would you trust \emph{that}?} ;
-    \draw<2> [->, thick, DarkScarletRed] (lot) to [bend right] (l18KO) ;
-\end{tikzpicture}
+%\begin{tikzpicture}[overlay, remember picture]
+%    \node<2> [fit = (l18Kbegin) (l18Kend), ellipse, DarkScarletRed, draw, thick] (l18KO) {} ;
+%    \node<2> [above = 1cm of l18KO, DarkScarletRed] (lot) {Would you trust \emph{that}?} ;
+%    \draw<2> [->, thick, DarkScarletRed] (lot) to [bend right] (l18KO) ;
+%\end{tikzpicture}
 }
+
+\begin{frame}
+    \frametitle{Semantic Sizes}
+
+    \vspace{-5mm}
+
+    \begin{centertikz}[scale=.5]
+
+        \node (lambda) {\(\lambda\)-calculus} ;
+        \node [right = 5mm of lambda] (ml) {CoreML} ;
+        \node [right = 5mm of ml] (compcert) {CompCert{} C} ;
+        \node [right = 5mm of compcert] (jscert) {JSCert{}} ;
+        \node [right = 5mm of jscert] (coqR) {CoqR{}} ;
+
+        \draw [DarkPlum, fill = LightPlum] ($(lambda.north) + (-.5, .1)$) rectangle ++ (1, .003) ;
+        \node [above = 1mm of lambda] {\(3\)~rules} ; % 5 in pretty-big-step.
+
+        \draw [DarkPlum, fill = LightPlum] ($(ml.north) + (-.5, .1)$) rectangle ++ (1, .25) ;
+        \node [above = 2mm of ml] {\(\sim{}50\)~rules} ; % 61 in pretty-big-step.
+
+        \draw [DarkPlum, fill = LightPlum] ($(compcert.north) + (-.5, .1)$) rectangle ++ (1, 1) ;
+        \node [above = 6mm of compcert] {\(\sim{}200\)~rules} ; % 110 in big step + 77 in denotational.
+        % Source: http://compcert.inria.fr/doc/html/Csem.html and http://compcert.inria.fr/doc/html/Cop.html
+
+        \draw [DarkPlum, fill = LightPlum] ($(jscert.north) + (-.5, .1)$) rectangle ++ (1, 4.5) ;
+        \node [above = 23mm of jscert] {\(\sim{}900\)~rules} ; % ~900 in pretty-big-step.
+
+        \draw [DarkPlum, fill = LightPlum] ($(coqR.north) + (-.5, .1)$) rectangle ++ (1, 10) ;
+        \node [above = 50mm of coqR] {\(\sim{}2,000\)~rules} ; % 2028 occurrences of 'let%'.
+
+%        \draw [thick, dashed, ->] (compcert) to [bend right] ($(compcert) + (-1, -1)$) ;
+
+    \end{centertikz}
+%    \vspace{-5mm}
+
+%   \begin{refsection}
+%       \nocite{Verasco}
+%       \printbibliography{}
+%   \end{refsection}
+
+    \begin{block}{}
+    (Rough estimation of the size of each project if we were to entirely translate them into a small-step semantics.)
+    \end{block}
+
+    ~\vfill
+
+    ~\vfill
+
+\end{frame}
 
 \begin{frame}
     \frametitle{Trusting JavaScript: JSCert
@@ -301,14 +349,15 @@ TRUE                      # Returns TRUE
     \node [locnode orange, below of = semlim, node distance = 32mm] (ecma) {\includegraphics[width = 15mm]{images/ecmastandard.png}} ;
 
     \draw<1> [<->, thick, Plum] (ecma) --
-        node [sloped, above, fill = white] {Step / rule}
+        node [sloped, above, fill = white] {Line-by-line}
         node [sloped, below, fill = white] {correspondence} (jscert) ;
     \draw<2> [<->, dashed, thick, Plum] (ecma) --
-        node [sloped, above, fill = white] {Step / rule}
+        node [sloped, above, fill = white] {Line-by-line}
         node [sloped, below, fill = white] {correspondence} (jscert) ;
 
     \draw<2> [<->, thick, Plum] (ecma) --
-        node [sloped, below, fill = white] {Step correspondence} (jsref) ;
+        node [sloped, above, fill = white] {Line-by-line}
+        node [sloped, below, fill = white] {correspondence} (jsref) ;
 
 %    \node [right of = ecma, below, node distance = 3cm] {\texttt{jscert.org}} ;
 
@@ -317,41 +366,87 @@ TRUE                      # Returns TRUE
 \end{frame}
 
 \begin{frame}
-    \frametitle{Going back to R}
+    \frametitle{Trusting R}
 
-    \begin{block}{R Trust Sources}
-        \begin{changemargin}{0pt}{1cm}
-    \begin{itemize}
-        \item Specification \hfill \xmark
-        \item Reference interpreter \hfill \cmark
-           \begin{itemize}
-               % \item Related by code similarity.
-               \item GNU~R.
-           \end{itemize}
-        \item Test suites \hfill \cmark
-           \begin{itemize}
-               %\item Related by testing and comparing the results with the reference interpreter.
-               \item GNU~R's, FastR's, etc.
-           \end{itemize}
-        % \item Books and tutoriels (= programmers’s intuition) \hfill \cmark
-    \end{itemize}
-        \end{changemargin}
-    \end{block}
+~\vspace{-2mm}
 
-    \begin{block}{Our contributions}
-        \begin{itemize}
-            \item A Coq interpreter
-                \begin{itemize}
-                    \item Visually close to the source code of GNU~R;
-                    \item Runnable;
-                \end{itemize}
-            \item A testing architecture.
-        \end{itemize}
-    \end{block}
+\begin{centertikz}[node distance = 1.5cm]
+
+    \node (realworldleft) {};
+    \node [right of = realworldleft, node distance = 11.5cm] (realworldright) {} ;
+
+    \node [right of = realworldleft, node distance = 1.5cm] (semlim) {} ;
+    \node [left of = realworldright, node distance = 4cm] (testlim) {} ;
+
+    \draw [dashed] (realworldleft) to node [above, pos = 0.9] {Coq definitions} node [below, pos = 0.9] {Industrial world} (realworldright) ;
+
+    % \node<2-> [below of = testlim, locnode] (ocaml) {\parbox{1.5cm}{\centering\camln{}\\extraction}} ;
+    % \node<2-> [right of = ocaml, node distance = 2cm, locnode] (parser) {Parser} ;
+
+\begin{pgfonlayer}{background}
+    % \node<2-> [fit = (ocaml) (parser), locnode yellow] (interp) {} ;
+\end{pgfonlayer}
+
+    \node [above of = testlim, locnode brown] (coqr) {CoqR} ;
+
+    \node [locnode blue, below of = coqr, node distance = 45mm] (tests) {Test suites} ;
+
+    \draw [<->, thick, Plum] (tests) --
+        node [sloped, above, fill = white] {Running tests}
+        (coqr) ;
+
+    \onslide<1>{
+        \node [locnode orange, below of = semlim, node distance = 32mm] (standard) {\includegraphics[width = 15mm]{images/ecmastandard.png}} ;
+        \node [draw, ScarletRed, cross out, ultra thick, fit = (standard)] {} ;
+    }
+    \onslide<2>{
+        \node [locnode brown, below of = semlim, node distance = 27mm] {GNU~R} ;
+    }
+
+    \draw [<->, thick, Plum] (standard) --
+        node [sloped, above, fill = white] {Line-by-line}
+        node [sloped, below, fill = white] {correspondence} (coqr) ;
+
+\end{centertikz}
 
 \end{frame}
 
-\section{Eyeball closeness}
+%\begin{frame}
+%    \frametitle{Going back to R}
+%
+%    \begin{block}{R Trust Sources}
+%        \begin{changemargin}{0pt}{1cm}
+%    \begin{itemize}
+%        \item Specification \hfill \xmark
+%        \item Reference interpreter \hfill \cmark
+%           \begin{itemize}
+%               % \item Related by code similarity.
+%               \item GNU~R.
+%           \end{itemize}
+%        \item Test suites \hfill \cmark
+%           \begin{itemize}
+%               %\item Related by testing and comparing the results with the reference interpreter.
+%               \item GNU~R’s, FastR’s, etc.
+%           \end{itemize}
+%        % \item Books and tutoriels (= programmers’s intuition) \hfill \cmark
+%    \end{itemize}
+%        \end{changemargin}
+%    \end{block}
+%
+%    \begin{block}{Our contributions}
+%        \begin{itemize}
+%            \item A Coq interpreter
+%                \begin{itemize}
+%                    \item Visually close to the source code of GNU~R;
+%                    \item Runnable;
+%                \end{itemize}
+%            \item A testing architecture.
+%        \end{itemize}
+%    \end{block}
+%
+%\end{frame}
+
+\section{Line-to-line Correspondence}
 
 \sectionframe**{How close CoqR is\\from GNU~R?}{
     \vfill
@@ -360,7 +455,7 @@ TRUE                      # Returns TRUE
 }
 
 \begin{frame}[fragile]
-    \frametitle{Eyeball Closeness: C Code from GNU~R}
+    \frametitle{Line-to-line Correspondence: C Code from GNU~R}
 
 \begin{changemargin}{-5mm}{-5mm}
 \begin{ccode}
@@ -383,7 +478,7 @@ SEXP do_attr
 \end{frame}
 
 \begin{frame}[fragile]
-    \frametitle{Eyeball Closeness: Coq Code from CoqR}
+    \frametitle{Line-to-line Correspondence: Coq Code from CoqR}
 
 \begin{changemargin}{-5mm}{-5mm}
 \begin{coqcode}
@@ -406,7 +501,7 @@ Definition do_attr globals runs S
 \end{frame}
 
 \begin{frame}[fragile]
-    \frametitle{Eyeball Closeness}
+    \frametitle{Line-to-line Correspondence}
 
     \begin{widemargin}\centering{}
 \begin{minipage}{.53\textwidth}
@@ -448,7 +543,7 @@ SEXP do_attr@\anchorm{nameA}{}@
 
     \begin{tikzpicture}[overlay, remember picture]
         \def\localxshift{2.5mm} % WTF Tikz…
-        \def\localyshift{18mm}
+        \def\localyshift{3.5mm}%{18mm}
         \draw<2-> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]nameA.east) -- ([xshift = \localxshift, yshift = \localyshift]nameB.west) ;
         \draw<2-> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]argsA.east) -- ([xshift = \localxshift, yshift = \localyshift]argsB.west) ;
         \draw<2-> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]RlengthA.east) -- ([xshift = \localxshift, yshift = \localyshift]RlengthB.west) ;
@@ -462,7 +557,7 @@ SEXP do_attr@\anchorm{nameA}{}@
 
     \begin{block}<3>{Not an exact match, but easily verifiable}
         \begin{itemize}
-            \item Monads encode the semantics of GNU~R;
+            \item Monads encode the semantics of GNU~R’s subset of C;
             \item Coq notations ease the line-to-line correspondence;
             \item Main differences:
                 \begin{itemize}
@@ -506,8 +601,8 @@ SEXP do_attr@\anchorm{nameA}{}@
                 \hspace{-1em}%
                 \begin{minipage}{25mm}
                 \begin{itemize}
-                    \item GNU~R's;
-                    \item FastR's;
+                    \item GNU~R’s;
+                    \item FastR’s;
                     \item Corners.
                 \end{itemize}
                 \end{minipage}%
@@ -593,7 +688,7 @@ SEXP do_attr@\anchorm{nameA}{}@
     \end{center}
 
     \pause
-    CoqR supports a \emphb{non-trivial} subset of R, and fully support them.
+    CoqR supports a \emphb{non-trivial} subset of R, and fully supports them.
 
 \end{frame}
 
@@ -613,12 +708,60 @@ SEXP do_attr@\anchorm{nameA}{}@
         \item A way to prioritise functions to be implemented.
     \end{itemize}
 
-    \pause
-    \vfill
-    \begin{block}{Bonus}
-        The eyeball closeness made debugging trivial.
-    \end{block}
+   %\pause
+   %\vfill
+   %\begin{block}{Bonus}
+   %    The eyeball closeness made debugging trivial.
+   %\end{block}
 
+\end{frame}
+
+\sectionframe**{In CoqR we trust}{
+    \vfill
+    \centering{}
+    \textcolor{DarkPlum}{Let’s build proofs!}
+}
+
+\begin{frame}[fragile]
+    \frametitle{Typing Invariants}
+
+\begin{coqcode}
+Inductive safe_SExp S : SExp -> Prop :=
+  | safe_ListStruct : forall car cdr tag,
+      may_have_types S [NilSxp ; ListSxp] cdr ->
+      may_have_types S [NilSxp ; CharSxp] tag ->
+      safe_SExp S (make_ListStruct car cdr tag)
+  | safe_StrStruct : forall data,
+      (forall a, Mem a data ->
+        may_have_types S [CharSxp] a) ->
+      safe_SExp S (make_StrStruct data)
+  (* ... *).
+\end{coqcode}
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Tactic Usage}
+
+\begin{coqcode}
+Lemma do_attr_result :
+  forall S globals call op args env,
+  safe_state S ->
+  safe_globals S globals ->
+  safe_pointer S args ->
+  may_have_types S [NilSxp; ListSxp] args ->
+  (* ... *)
+  result_prop (fun S' ans =>
+      safe_state S' /\ safe_globals S' globals
+      /\ safe_pointer S' ans)
+    (do_attr globals runs S call op args env).
+Proof.
+  introv OKS OKglobals OKargs Targs. unfolds do_attr.
+  cutR R_length_result. computeR.
+  cutR matchArgs_result. computeR.
+  (* ... *)
+Qed.
+\end{coqcode}
 \end{frame}
 
 \begin{frame}
@@ -681,7 +824,6 @@ SEXP do_attr@\anchorm{nameA}{}@
         \item \hyperlink{frame:jscert}{JSCert{}};
         \item \hyperlink{frame:imperative:functional}{Representing imperativity in a functional setting};
         \item \hyperlink{frame:semantics:coq}{Semantics in Coq};
-        \item \hyperlink{frame:semantic:sizes}{Semantic sizes};
         \item \hyperlink{frame:other:subtleties}{Other Subtleties of R};
         \item \hyperlink{frame:reading:pointers}{Reading pointers};
         \item \hyperlink{frame:parser}{Parsing R};
@@ -689,8 +831,7 @@ SEXP do_attr@\anchorm{nameA}{}@
         \item \hyperlink{frame:full:monad}{The full monad};
         \item \hyperlink{frame:RFeatures}{R features};
         \item \hyperlink{frame:input:output}{Inputs and outputs};
-        \item \hyperlink{frame:proofs}{Proofs};
-        \item \hyperlink{frame:proofs:future}{Future of proofs};
+        \item \hyperlink{frame:proofs:future}{RExplain};
         \item \hyperlink{frame:ble}{Basic language elements in memory};
         \item \hyperlink{frame:fails}{More details about the website’s results};
         \item \hyperlink{frame:full:results}{Full testing results}.
@@ -946,58 +1087,6 @@ Inductive red_stat : state -> scope -> stat -> out -> Prop :=
 
 \frame{\questiontoc}
 
-\begin{frame}
-    \label{frame:semantic:sizes}
-    \frametitle{Semantic Sizes}
-
-    \vspace{-5mm}
-
-    \begin{centertikz}[scale=.5]
-
-        \node (lambda) {\(\lambda\)-calculus} ;
-        \node [right = 5mm of lambda] (ml) {CoreML} ;
-        \node [right = 5mm of ml] (compcert) {CompCert{} C} ;
-        \node [right = 5mm of compcert] (jscert) {JSCert{}} ;
-        \node [right = 5mm of jscert] (coqR) {CoqR{}} ;
-
-        \draw [DarkPlum, fill = LightPlum] ($(lambda.north) + (-.5, .1)$) rectangle ++ (1, .003) ;
-        \node [above = 1mm of lambda] {\(3\)~rules} ; % 5 in pretty-big-step.
-
-        \draw [DarkPlum, fill = LightPlum] ($(ml.north) + (-.5, .1)$) rectangle ++ (1, .25) ;
-        \node [above = 2mm of ml] {\(\sim{}50\)~rules} ; % 61 in pretty-big-step.
-
-        \draw [DarkPlum, fill = LightPlum] ($(compcert.north) + (-.5, .1)$) rectangle ++ (1, 1) ;
-        \node [above = 6mm of compcert] {\(\sim{}200\)~rules} ; % 110 in big step + 77 in denotational.
-        % Source: http://compcert.inria.fr/doc/html/Csem.html and http://compcert.inria.fr/doc/html/Cop.html
-
-        \draw [DarkPlum, fill = LightPlum] ($(jscert.north) + (-.5, .1)$) rectangle ++ (1, 4.5) ;
-        \node [above = 23mm of jscert] {\(\sim{}900\)~rules} ; % ~900 in pretty-big-step.
-
-        \draw [DarkPlum, fill = LightPlum] ($(coqR.north) + (-.5, .1)$) rectangle ++ (1, 10) ;
-        \node [above = 50mm of coqR] {\(\sim{}2,000\)~rules} ; % 2028 occurrences of 'let%'.
-
-%        \draw [thick, dashed, ->] (compcert) to [bend right] ($(compcert) + (-1, -1)$) ;
-
-    \end{centertikz}
-%    \vspace{-5mm}
-
-%   \begin{refsection}
-%       \nocite{Verasco}
-%       \printbibliography{}
-%   \end{refsection}
-
-    \begin{block}{}
-    (Estimation of the size of each project if we were to entirely translate them into a small-step semantics.)
-    \end{block}
-
-    ~\vfill
-
-    ~\vfill
-
-\end{frame}
-
-\frame{\questiontoc}
-
 \begin{frame}[fragile]
     \label{frame:other:subtleties}
     \frametitle{Other Subtleties}
@@ -1036,7 +1125,7 @@ f (a = 3, 1, 2) # Returns an error.
 
 \begin{frame}[fragile]
     \label{frame:reading:pointers}
-    \frametitle{Eyeball Closeness: Reading Pointers}
+    \frametitle{Line-to-line Correspondence: Reading Pointers}
 
     \begin{changemargin}{-5mm}{-5mm}
 
@@ -1162,7 +1251,7 @@ expr:
 
 \frame{\questiontoc}
 
-\sectionframe**{Eyeball Closeness}{
+\sectionframe**{Line-to-line Correspondence}{
     \label{frame:eyeball}
     \begin{itemize}
         \item C is imperative, pointer-based;
@@ -1172,7 +1261,7 @@ expr:
 }
 
 \begin{frame}[fragile]
-    \frametitle{Eyeball Closeness: Enumeration}
+    \frametitle{Line-to-line Correspondence: Enumeration}
 
     \begin{minipage}{.45\textwidth}
         C code
@@ -1215,7 +1304,7 @@ Inductive SExpType :=
 \end{frame}
 
 \begin{frame}[fragile]
-    \frametitle{Eyeball Closeness: Records}
+    \frametitle{Line-to-line Correspondence: Records}
 
         \begin{widemargin}
             \centering{}
@@ -1270,7 +1359,7 @@ Record SxpInfo :=
 \end{frame}
 
 \begin{frame}[fragile]
-    \frametitle{Eyeball Closeness: Unions}
+    \frametitle{Line-to-line Correspondence: Unions}
 
     \begin{changemargin}{-5mm}{-5mm}
 \begin{minipage}{.8\textwidth}
@@ -1314,7 +1403,7 @@ Inductive SExpRec_union :=
 \end{frame}
 
 \begin{frame}[fragile]
-    \frametitle{Eyeball Closeness: Reading Pointers}
+    \frametitle{Line-to-line Correspondence: Reading Pointers}
 
     \vspace{-1mm}
     \begin{changemargin}{-10mm}{-10mm}\centering{}
@@ -1460,51 +1549,6 @@ FUNTAB R_FunTab[] = {
 % C.
 % Separation between core and non-core.
 
-\end{frame}
-
-\frame{\questiontoc}
-
-\begin{frame}[fragile]
-    \label{frame:proofs}
-    \frametitle{Typing Invariants}
-
-\begin{coqcode}
-Inductive safe_SExp S : SExp -> Prop :=
-  | safe_ListStruct : forall car cdr tag,
-      may_have_types S [NilSxp ; ListSxp] cdr ->
-      may_have_types S [NilSxp ; CharSxp] tag ->
-      safe_SExp S (make_ListStruct car cdr tag)
-  | safe_StrStruct : forall data,
-      (forall a, Mem a data ->
-        may_have_types S [CharSxp] a) ->
-      safe_SExp S (make_StrStruct data)
-  (* ... *).
-\end{coqcode}
-
-\end{frame}
-
-\begin{frame}[fragile]
-    \frametitle{Tactic usage}
-
-\begin{coqcode}
-Lemma do_attr_result :
-  forall S globals call op args env,
-  safe_state S ->
-  safe_globals S globals ->
-  safe_pointer S args ->
-  may_have_types S [NilSxp; ListSxp] args ->
-  (* ... *)
-  result_prop (fun S' ans =>
-      safe_state S' /\ safe_globals S' globals
-      /\ safe_pointer S' ans)
-    (do_attr globals runs S call op args env).
-Proof.
-  introv OKS OKglobals OKargs Targs. unfolds do_attr.
-  cutR R_length_result. computeR.
-  cutR matchArgs_result. computeR.
-  (* ... *)
-Qed.
-\end{coqcode}
 \end{frame}
 
 \frame{\questiontoc}
