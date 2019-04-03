@@ -1,0 +1,122 @@
+\usepackage[langlinenos,cache,newfloat]{minted}
+
+\setminted{encoding=utf8}
+
+\makeatletter
+\newcommand{\minted@def@optcl@switch@simple}[2]{%
+  \define@booleankey{minted@opt@g}{#1}%
+    {\minted@addto@optlistcl{\minted@optlistcl@g}{#2}%
+      \@namedef{minted@opt@g:#1}{true}}
+    {\minted@addto@optlistcl{\minted@optlistcl@g}{}%
+      \@namedef{minted@opt@g:#1}{false}}
+  \define@booleankey{minted@opt@g@i}{#1}%
+    {\minted@addto@optlistcl{\minted@optlistcl@g@i}{#2}%
+      \@namedef{minted@opt@g@i:#1}{true}}
+    {\minted@addto@optlistcl{\minted@optlistcl@g@i}{}%
+      \@namedef{minted@opt@g@i:#1}{false}}
+  \define@booleankey{minted@opt@lang}{#1}%
+    {\minted@addto@optlistcl@lang{minted@optlistcl@lang\minted@lang}{#2}%
+      \@namedef{minted@opt@lang\minted@lang:#1}{true}}
+    {\minted@addto@optlistcl@lang{minted@optlistcl@lang\minted@lang}{}%
+      \@namedef{minted@opt@lang\minted@lang:#1}{false}}
+  \define@booleankey{minted@opt@lang@i}{#1}%
+    {\minted@addto@optlistcl@lang{minted@optlistcl@lang\minted@lang @i}{#2}%
+      \@namedef{minted@opt@lang\minted@lang @i:#1}{true}}
+    {\minted@addto@optlistcl@lang{minted@optlistcl@lang\minted@lang @i}{}%
+      \@namedef{minted@opt@lang\minted@lang @i:#1}{false}}
+  \define@booleankey{minted@opt@cmd}{#1}%
+      {\minted@addto@optlistcl{\minted@optlistcl@cmd}{#2}%
+        \@namedef{minted@opt@cmd:#1}{true}}
+      {\minted@addto@optlistcl{\minted@optlistcl@cmd}{}%
+        \@namedef{minted@opt@cmd:#1}{false}}
+}
+% \minted@def@optcl@switch@simple{kwrename}{-F kwrenamefilter}
+\makeatother
+
+\usepackage{tcolorbox}
+
+\tcbuselibrary{minted, skins}
+
+\tcbset{programbox/.style = {
+        enhanced,
+        colback = LightPlum!10,
+        colframe = DarkPlum,
+        left = 1mm,
+        listing only,
+        listing engine = minted
+    }
+}
+
+% Definition of programming languages used in the document.
+\makeatletter
+\newcommand\makenewlistings@aux[2]{
+    \expandafter\newtcblisting{#2codenoescape}[1][]{
+        programbox,
+        listing only,
+        minted language = #1,
+        minted options= {
+            % kwrename,
+            linenos = true,
+            fontsize = \small,
+            ##1}
+    }
+    \expandafter\newtcblisting{#2code}[1][]{
+        programbox,
+        listing only,
+        minted language = #1,
+        minted options= {
+            % kwrename,
+            linenos = true,
+            fontsize = \small,
+            escapeinside = @@,
+            ##1}
+    }
+    \expandafter\newtcblisting{#2codelink}[2][]{
+        programbox,
+        listing only,
+        minted language = #1,
+        minted options= {
+            % kwrename,
+            linenos = true,
+            fontsize = \small,
+            escapeinside = @@,
+            ##1},
+        overlay = {
+                \begin{scope}[shift={([xshift=-1em, yshift=-1em]frame.north east)}]
+                    \node (0, 0) {##2} ;
+                \end{scope}
+            }
+    }
+    \newmintinline[#2inline]{#1}{
+        breaklines = true,
+        escapeinside = @@,
+        breakbytoken = true
+    }
+    \newmintinline[#2inlinenoescape]{#1}{
+        breaklines = true,
+        breakbytoken = true
+    }
+}
+\newcommand\makenewlistings[2][]{
+    \expandafter\makenewlistings@aux{\defaultempty{#1}{#2}}{#2}
+}
+\makeatother
+
+
+% There is a very frustrating bug in my LaTeX distribution.
+% Set this command to nothing if your LaTeX distribution hasn’t this bug.
+\newcommand\mintedinlinespacebug{\hspace{-4mm}}
+
+% Fixing bug between minted and polyglossia.
+\BeforeBeginEnvironment{minted}{\begin{english}}
+\AfterEndEnvironment{minted}{\end{english}}
+
+\makenewlistings{text}
+\makenewlistings{coq}
+\makenewlistings[ocaml]{caml}
+\makenewlistings{js}
+\makenewlistings[extk]{k}
+\makenewlistings{pascal}
+\makenewlistings{c}
+\makenewlistings{R}
+
