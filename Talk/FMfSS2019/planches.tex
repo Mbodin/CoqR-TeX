@@ -88,8 +88,10 @@
 \end{frame}
 
 \begin{frame}[fragile]
-    \frametitle{The Coq Proof Assistant
-    \hfill\parbox[t][1em][t]{10mm}{\includegraphics[width = 10mm]{images/CoqLogo.png}}}
+  \frametitle{\makebox[6cm][l]{The Coq Proof Assistant}
+    \hfill\raisebox{-10mm}[0pt][0pt]{\includegraphics[width = 10mm]{images/CoqLogo.png}}}
+
+    \vspace{5mm}
 
     \begin{block}{A success story}
       \begin{itemize}
@@ -111,24 +113,37 @@
 
 \end{frame}
 
-\section{R}
-
 \begin{frame}[fragile]
-    \frametitle{R: A Programming Language About Vectors}
+  \frametitle{\makebox[6cm][l]{A Coq Theorem}
+    \hfill\raisebox{-10mm}[0pt][0pt]{\includegraphics[width = 10mm]{images/CoqLogo.png}}}
 
-\begin{Rcode}
-v <- c(10, 12, 14, 11, 13)
-v[1]                         # Returns 10@\pause@
-indices <- c(3, 5, 1)
-v[indices]                   # Returns c(14, 13, 10)@\pause@
-v[-2]                        # Returns c(10, 14, 11, 13)@\pause@
-v[-indices]                  # Returns c(12, 11)@\pause@
-v[c(FALSE, TRUE, FALSE)]     # Returns c(12, 13)@\pause@
-f <- function(i, offset)
-       v[i + offset]         # ??
-\end{Rcode}
+    \vspace{5mm}
 
+\begin{coqcode}
+Definition program := (* Your favorite R program *).
+
+Definition OK state :=
+  (* An interesting invariant of your program *).
+
+Theorem OKprogram : forall state,
+  OK state ->
+  exists result,
+    @\anchorm{evalRstart}{}@eval@\anchorm{evalRend}{}@ state program = Some result /\ OK result.
+Proof.
+  (* Lots of lines of proof *)
+Qed.
+\end{coqcode}
+\begin{innertikz}[overlay, remember picture]
+  \def\distshift{27mm} % WTF: This looks like a TikZ bug: nodes appear this distance below their supposed location…
+
+    \node<2> [fit = (evalRstart) (evalRend), ellipse, draw, DarkScarletRed, thick, yshift = \distshift, xshift = 1ex] (evalRellipse) {} ;
+    \node<2> [below = 2cm of evalRellipse, DarkScarletRed] (thistalk) {This talk} ;
+    \draw<2> [thick, DarkScarletRed, ->] (thistalk) to [bend left = 50] (evalRellipse) ;
+
+\end{innertikz}
 \end{frame}
+
+\section{R}
 
 \begin{frame}[fragile]
     \frametitle{R: A Dynamic Programming Language}
@@ -140,7 +155,7 @@ f(1)                             # Returns TRUE
 f()                              # Returns TRUE
 \end{Rcode}
 
-\pause
+%\pause
 
 \begin{Rcode}
 f <- function(expr) {
@@ -150,10 +165,10 @@ f <- function(expr) {
                                  # the local environment
   }
 f(x + y)                         # Returns 5
-x + y                            # Raises an error
 \end{Rcode}
+%x + y                            # Raises an error
 
-\pause
+%\pause
 
 \begin{Rcode}
 "(" <- function(x) 2 * x
@@ -164,25 +179,63 @@ x + y                            # Raises an error
 \end{frame}
 
 \begin{frame}[fragile]
-    \frametitle{Corner Cases}
+  \frametitle{R’s Corner Cases}
 
+  \begin{block}{%
+    \href{https://cran.r-project.org/doc/manuals/r-release/R-lang.html\#if}%
+    {\nolinkurl{cran.r-project.org/doc/manuals/r-release/R-lang.html}}}
+
+  \Rinline{if ( statement1 ) statement2 else statement3}
+
+  \begin{itemize}
+    \item First, \Rinline{statement1} is evaluated to yield \Rinline{value1}.
+    \item If \Rinline{value1} is a logical vector with first element \Rinline{TRUE}
+      then \Rinline{statement2} is evaluated.
+    \item If the first element of \Rinline{value1} is \Rinline{FALSE}
+      then \Rinline{statement3} is evaluated.
+    \item If \Rinline{value1} is a numeric vector then \Rinline{statement3} is evaluated
+      when the first element of \Rinline{value1} is zero and otherwise \Rinline{statement2} is evaluated.
+  %\item Only the first element of value1 is used.
+  %\item All other elements are ignored.
+    \item If \Rinline{value1} has any type other than a logical or a numeric vector
+      an error is signalled.
+  \end{itemize}
+
+  \end{block}
+
+\begin{overlayarea}{\textwidth}{15mm}
+  \begin{onlyenv}<1>
 \begin{Rcode}
-if ("TRUE") 42            # Returns 42
+if ("TRUE") 42 else 18
+"TRUE" || FALSE
+\end{Rcode}
+  \end{onlyenv}
+  \begin{onlyenv}<2>
+\begin{Rcode}
+if ("TRUE") 42 else 18    # Returns 42
+"TRUE" || FALSE
+\end{Rcode}
+  \end{onlyenv}
+  \begin{onlyenv}<3>
+\begin{Rcode}
+if ("TRUE") 42 else 18    # Returns 42
 "TRUE" || FALSE           # Type error
 \end{Rcode}
+  \end{onlyenv}
+\end{overlayarea}
 
-\begin{Rcode}
-c(c(1, TRUE), "a")        # Returns c("1", "1", "a")
-c(1, TRUE, "a")           # Returns c("1", "TRUE", "a")
-\end{Rcode}
+\end{frame}
 
-\begin{Rcode}
-"x" <- 18
-x                         # Returns 18
+\begin{frame}
+  \frametitle{Consequences of such Corner Cases}
 
-"TRUE" <- 18              # No error
-TRUE                      # Returns TRUE
-\end{Rcode}
+  \begin{itemize}
+    \item Programmers may be aware of some corner cases, but not all.
+    \item It can be hard to understand a program.
+    \item It is hard to know whether a program will fail.
+    \item A program may return a wrong result… but this result may look right.
+    \item We need formal verification.
+  \end{itemize}
 
 \end{frame}
 
@@ -207,191 +260,115 @@ TRUE                      # Returns TRUE
 %\end{tikzpicture}
 }
 
-\begin{frame}[fragile]
-\begin{coqcode}
-Theorem OKprogram : forall state,
-  OK state ->
-  exists result,
-  @\anchorm{evalRstart}{}@eval@\anchorm{evalRend}{}@ state program = Some result /\ OK result.
-Proof.
-  (* Lots of lines of proof *)
-Qed.
-\end{coqcode}
-\begin{innertikz}[overlay, remember picture]
-  \def\distshift{17mm} % WTF: This looks like a TikZ bug: nodes appear this distance below their supposed location…
-
-    \node<2> [fit = (evalRstart) (evalRend), ellipse, draw, DarkScarletRed, thick, yshift = \distshift, xshift = 1ex] (evalRellipse) {} ;
-    \node<2> [above = 2cm of evalRellipse, DarkScarletRed] (thistalk) {This talk} ;
-    \draw<2> [thick, DarkScarletRed, ->] (thistalk) to [bend right = 50] (evalRellipse.170) ;
-
-\end{innertikz}
-\end{frame}
-
 \begin{frame}
     \frametitle{Semantic Sizes}
 
-    \vspace{-5mm}
+    \vspace{-2mm}
 
     \begin{centertikz}[scale=.5]
 
         \node (lambda) {\(\lambda\)-calculus} ;
         \node [right = 5mm of lambda] (ml) {CoreML} ;
-        \node [right = 5mm of ml] (compcert) {CompCert{} C} ;
-        \node [right = 5mm of compcert] (jscert) {JSCert{}} ;
-        \node [right = 5mm of jscert] (coqR) {CoqR{}} ;
+        \node [right = 5mm of ml] (compcert) {\parbox{4em}{\centering{}CompCert{}\\C}} ;
+        \node [right = 5mm of compcert] (jscert) {\parbox{4em}{\centering{}JSCert{}\\JavaScript}} ;
+        \node [right = 5mm of jscert] (coqR) {\parbox{4em}{\centering{}CoqR{}\\R}} ;
+
+        \onslide<2>{
+        \node [above = 40mm of ml, xshift = 1cm] {\begin{minipage}{7cm}
+          \begin{itemize}
+            \item \textcolor{DarkPlum}{Core functions are all interconnected}
+            \item \textcolor{DarkSkyBlue}{Feature functions are independent of each other, but relies on the core.}
+          \end{itemize}
+          \end{minipage}} ;
+        }
 
         \draw [DarkPlum, fill = LightPlum] ($(lambda.north) + (-.5, .1)$) rectangle ++ (1, .003) ;
         \node [above = 1mm of lambda] {\(3\)~rules} ; % 5 in pretty-big-step.
 
         \draw [DarkPlum, fill = LightPlum] ($(ml.north) + (-.5, .1)$) rectangle ++ (1, .25) ;
+        %\draw<2> [DarkSkyBlue, fill = LightSkyBlue] ($(ml.north) + (-.5, .1)$) rectangle ++ (1, .25) ;
         \node [above = 2mm of ml] {\(\sim{}50\)~rules} ; % 61 in pretty-big-step.
 
         \draw [DarkPlum, fill = LightPlum] ($(compcert.north) + (-.5, .1)$) rectangle ++ (1, 1) ;
+        %\draw<2> [DarkSkyBlue, fill = LightSkyBlue] ($(compcert.north) + (-.5, .1)$) rectangle ++ (1, 1) ;
         \node [above = 6mm of compcert] {\(\sim{}200\)~rules} ; % 110 in big step + 77 in denotational.
         % Source: http://compcert.inria.fr/doc/html/Csem.html and http://compcert.inria.fr/doc/html/Cop.html
 
         \draw [DarkPlum, fill = LightPlum] ($(jscert.north) + (-.5, .1)$) rectangle ++ (1, 4.5) ;
         \node [above = 23mm of jscert] {\(\sim{}900\)~rules} ; % ~900 in pretty-big-step.
 
-        \draw [DarkPlum, fill = LightPlum] ($(coqR.north) + (-.5, .1)$) rectangle ++ (1, 10) ;
-        \node [above = 50mm of coqR] {\(\sim{}2,000\)~rules} ; % 2028 occurrences of 'let%'.
-
-%        \draw [thick, dashed, ->] (compcert) to [bend right] ($(compcert) + (-1, -1)$) ;
+        \draw<1> [DarkPlum, fill = LightPlum] ($(coqR.north) + (-.5, .1)$) rectangle ++ (1, 11.45) ;
+        \node [above = 57mm of coqR] {\(\sim{}2,000\)~rules} ; % 2291 occurrences of 'let%' and 'read%'.
+        \draw<2> [DarkPlum, fill = LightPlum] ($(coqR.north) + (-.5, .1)$) rectangle ++ (1, 5.3)
+          node [pos = .5, right = 1.1ex] {Core} ; % 1058 occurrences of 'let%' and 'read%' in core.
+        \draw<2> [DarkSkyBlue, fill = LightSkyBlue] ($(coqR.north) + (-.5, 5.35)$) rectangle ++ (1, 6.2)
+          node [pos = .5, right = 1.1ex] {Features} ; % 1233 occurrences of 'let%' and 'read%' in features.
 
     \end{centertikz}
-%    \vspace{-5mm}
 
-%   \begin{refsection}
-%       \nocite{Verasco}
-%       \printbibliography{}
-%   \end{refsection}
+    \vspace{-3mm}
 
     \begin{block}{}
+      \tiny
     (Rough estimation of the size of each project if we were to entirely translate them into a small-step semantics.)
     \end{block}
 
     ~\vfill
 
-    ~\vfill
-
 \end{frame}
 
 \begin{frame}
-    \frametitle{Trusting JavaScript: JSCert
-        \hfill\hfill\hfill
-        \raisebox{-10mm}[0pt][0pt]{
-            \includegraphics[width = 15mm]{images/jscert.png} ;
-        }}
+  \only<1>{
+  \frametitle{\makebox[6cm][l]{Trusting JavaScript: JSCert}
+    \hfill\raisebox{-10mm}[0pt][0pt]{\includegraphics[height = 15mm]{images/jscert.png}}}
+  }
+  \only<2->{
+  \frametitle{\makebox[6cm][l]{Trusting R: CoqR}
+    \hfill\raisebox{-10mm}[0pt][0pt]{\includegraphics[height = 15mm]{images/Rlogo.png}}}
+  }
 
-\begin{centertikz}[node distance = 1.5cm]
+        \begin{widemargin}
+\begin{centertikz}
 
-    \node (realworldleft) {};
-    \node [right of = realworldleft, node distance = 11.5cm] (realworldright) {} ;
+    \node [locnode brown] (jscert) {JSCert} ;
+    \node [below = 0pt of jscert] {\parbox{7em}{\centering{}Coq\\formalisation}} ;
 
-    \node [right of = realworldleft, node distance = 1.5cm] (semlim) {} ;
-    \node [left of = realworldright, node distance = 4cm] (testlim) {} ;
-
-    \draw [dashed] (realworldleft) to node [above, pos = 0.9] {Coq definitions} node [below, pos = 0.9] {Industrial world} (realworldright) ;
-
-    % \node<2-> [below of = testlim, locnode] (ocaml) {\parbox{1.5cm}{\centering\camln{}\\extraction}} ;
-    % \node<2-> [right of = ocaml, node distance = 2cm, locnode] (parser) {Parser} ;
-
-\begin{pgfonlayer}{background}
-    % \node<2-> [fit = (ocaml) (parser), locnode yellow] (interp) {} ;
-\end{pgfonlayer}
-
-    \node [above of = testlim, locnode brown] (jsref) {JSRef} ;
-
-    \node [locnode blue, below of = jsref, node distance = 45mm] (tests) {\includegraphics[width = 4cm]{images/test262_small.png}} ;
+    \node<1> [locnode blue, right = 3cm of jscert] (tests) {\includegraphics[width = 25mm]{images/test262_small.png}} ;
+    \node<2-> [locnode blue, right = 3cm of jscert] {
+      \begin{minipage}{25mm}
+      \begin{itemize}
+        \item GNU~R,
+        \item FastR
+      \end{itemize}
+      \end{minipage}
+    } ;
     \node [below = 0pt of tests] {Test suites} ;
 
-    % \draw<2-> [->, thick] (tests) to node (testing) {} (interp) ;
-
-    % \node<3> [locnode plum, left of = testing] (bisect) {\textsc{Bisect}} ;
-
-    % \draw<3> [->, thick, DarkPlum] (bisect) -- (testing) ;
-
-    % \draw<2-> [<->, thick] (ocaml) -- (jsref) ;
 
     \draw [<->, thick, Plum] (tests) --
-        node [sloped, above, fill = white] {Running tests}
-        (jsref) ;
-
-    \node<1> [above of = semlim, locnode brown] (jscert) {JSCert} ;
-    \node<2> [dashed, above of = semlim, locnode brown] (jscert) {JSCert} ;
-
-    \draw<1> [->, thick, DarkPlum] (jsref) -- node [above] {Correctness} (jscert) ;
-    \draw<2> [->, dashed, thick, DarkPlum] (jsref) -- node [above] {Correctness} (jscert) ;
-
-%   \node [above of = jscert, node distance = 1cm] (next) {} ;
-%   \draw [dashed, ->] (jscert) -- (next) ;
-%   \node [above of = jscert, left = 3mm, node distance = 1cm] (nextl) {} ;
-%   \draw [dashed, ->] (jscert) -- (nextl) ;
-%   \node [above of = jscert, right = 3mm, node distance = 1cm] (nextr) {} ;
-%   \draw [dashed, ->] (jscert) -- (nextr) ;
-
-    \node [locnode orange, below of = semlim, node distance = 32mm] (ecma) {\includegraphics[width = 15mm]{images/ecmastandard.png}} ;
-
-    \draw<1> [<->, thick, Plum] (ecma) --
-        node [sloped, above, fill = white] {Line-by-line}
-        node [sloped, below, fill = white] {correspondence} (jscert) ;
-    \draw<2> [<->, dashed, thick, Plum] (ecma) --
-        node [sloped, above, fill = white] {Line-by-line}
-        node [sloped, below, fill = white] {correspondence} (jscert) ;
-
-    \draw<2> [<->, thick, Plum] (ecma) --
-        node [sloped, above, fill = white] {Line-by-line}
-        node [sloped, below, fill = white] {correspondence} (jsref) ;
-
-%    \node [right of = ecma, below, node distance = 3cm] {\texttt{jscert.org}} ;
-
-\end{centertikz}
-
-\end{frame}
-
-\begin{frame}
-    \frametitle{Trusting R}
-
-~\vspace{-2mm}
-
-\begin{centertikz}[node distance = 1.5cm]
-
-    \node (realworldleft) {};
-    \node [right of = realworldleft, node distance = 11.5cm] (realworldright) {} ;
-
-    \node [right of = realworldleft, node distance = 1.5cm] (semlim) {} ;
-    \node [left of = realworldright, node distance = 4cm] (testlim) {} ;
-
-    \draw [dashed] (realworldleft) to node [above, pos = 0.9] {Coq definitions} node [below, pos = 0.9] {Industrial world} (realworldright) ;
-
-    % \node<2-> [below of = testlim, locnode] (ocaml) {\parbox{1.5cm}{\centering\camln{}\\extraction}} ;
-    % \node<2-> [right of = ocaml, node distance = 2cm, locnode] (parser) {Parser} ;
-
-\begin{pgfonlayer}{background}
-    % \node<2-> [fit = (ocaml) (parser), locnode yellow] (interp) {} ;
-\end{pgfonlayer}
-
-    \node [above of = testlim, locnode brown] (coqr) {CoqR} ;
-
-    \node [locnode blue, below of = coqr, node distance = 45mm] (tests) {Test suites} ;
-
-    \draw [<->, thick, Plum] (tests) --
-        node [sloped, above, fill = white] {Running tests}
-        (coqr) ;
+        node [sloped, above] {Running tests}
+        (jscert) ;
 
     \onslide<1>{
-        \node [locnode orange, below of = semlim, node distance = 32mm] (standard) {\includegraphics[width = 15mm]{images/ecmastandard.png}} ;
-        \node [draw, ScarletRed, cross out, ultra thick, fit = (standard)] {} ;
+        \node [locnode orange, left = 3cm of jscert] (ecma) {\includegraphics[width = 15mm]{images/ecmastandard.png}} ;
+        \node [below = 0pt of ecma] {Specification} ;
     }
     \onslide<2>{
-        \node [locnode brown, below of = semlim, node distance = 27mm] {GNU~R} ;
+        \node [locnode orange, left = 3cm of jscert] (ecma) {\includegraphics[width = 15mm]{images/ecmastandard.png}} ;
+        \node [below = 0pt of ecma] {Specification} ;
+        \node [draw, ScarletRed, cross out, ultra thick, fit = (ecma)] {} ;
+    }
+    \onslide<3>{
+        \node [locnode brown, left = 3cm of jscert] (gnuR) {GNU~R} ;
+        \node [below = 0pt of gnuR] {\parbox{6em}{\centering{}Source code of the reference interpreter}} ;
     }
 
-    \draw [<->, thick, Plum] (standard) --
-        node [sloped, above, fill = white] {Line-by-line}
-        node [sloped, below, fill = white] {correspondence} (coqr) ;
+    \draw [<->, thick, Plum] (ecma) --
+        node [sloped, above] {Line-by-line}
+        node [sloped, below] {correspondence} (jscert) ;
 
 \end{centertikz}
+        \end{widemargin}
 
 \end{frame}
 
@@ -466,19 +443,18 @@ SEXP do_attr
 
 \begin{changemargin}{-5mm}{-5mm}
 \begin{coqcode}
-Definition do_attr globals runs S
-    (call op args env : SEXP) : result SEXP :=
-  let%success nargs :=
-    R_length globals runs S args using S in
+Definition do_attr
+    (call op args env : SEXP)
+    : result SEXP :=
+  let%success nargs := R_length args in
   let%success argList :=
-    matchArgs globals runs S
-      do_attr_formals args call using S in
+    matchArgs do_attr_formals args call in
   if nargs <? 2 || nargs >? 3 then
-    result_error S "Wrong argument count."
+    result_error "Wrong argument count."
   else
-    read%list car, _, _ := argList using S in
+    read%list car, _, _ := argList in
     (* ... *)
-    result_success S ans.
+    result_success ans.
 \end{coqcode}
 \end{changemargin}
 
@@ -508,26 +484,26 @@ SEXP do_attr@\anchorm{nameA}{}@
 \qquad
 \begin{minipage}{.5\textwidth}
 \begin{coqcode}[fontsize=\tiny]
-@\anchorm{nameB}{}@Definition do_attr globals runs S
-    @\anchorm{argsB}{}@(call op args env : SEXP) :=
-  let%success nargs :=
-    @\anchorm{RlengthB}{}@R_length globals runs S args using S in
+@\anchorm{nameB}{}@Definition do_attr
+    @\anchorm{argsB}{}@(call op args env : SEXP)
+    : result SEXP :=
+  @\anchorm{RlengthB}{}@let%success nargs := R_length args in
   @\anchorm{argListB}{}@let%success argList :=
-    @\anchorm{matchArgsB}{}@matchArgs globals runs S
-      do_attr_formals args call using S in
+    @\anchorm{matchArgsB}{}@matchArgs do_attr_formals args call in
   @\anchorm{ifB}{}@if nargs <? 2 || nargs >? 3 then
-    @\anchorm{errorB}{}@result_error S "Wrong argument count."
+    @\anchorm{errorB}{}@result_error "Wrong argument count."
   else
-    @\anchorm{carB}{}@read%list car, _, _ := argList using S in
+    @\anchorm{carB}{}@read%list car, _, _ := argList in
     (* ... *)
-    @\anchorm{ansB}{}@result_success S ans.
+    @\anchorm{ansB}{}@result_success ans.
+@@
 \end{coqcode}
 \end{minipage}
     \end{widemargin}
 
     \begin{tikzpicture}[overlay, remember picture]
         \def\localxshift{2.5mm} % WTF Tikz…
-        \def\localyshift{3.5mm}%{18mm}
+        \def\localyshift{18mm}%{18mm}
         \draw<2-> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]nameA.east) -- ([xshift = \localxshift, yshift = \localyshift]nameB.west) ;
         \draw<2-> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]argsA.east) -- ([xshift = \localxshift, yshift = \localyshift]argsB.west) ;
         \draw<2-> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]RlengthA.east) -- ([xshift = \localxshift, yshift = \localyshift]RlengthB.west) ;
@@ -542,12 +518,7 @@ SEXP do_attr@\anchorm{nameA}{}@
     \begin{block}<3>{Not an exact match, but easily verifiable}
         \begin{itemize}
             \item Monads encode the semantics of GNU~R’s subset of C;
-            \item Coq notations ease the line-to-line correspondence;
-            \item Main differences:
-                \begin{itemize}
-                    \item the global state is propagated all along;
-                    \item no garbage collection.
-                \end{itemize}
+            \item Coq notations ease the line-to-line correspondence.
         \end{itemize}
     \end{block}
 
@@ -808,6 +779,7 @@ Qed.
         \item \hyperlink{frame:jscert}{JSCert{}};
         \item \hyperlink{frame:imperative:functional}{Representing imperativity in a functional setting};
         \item \hyperlink{frame:semantics:coq}{Semantics in Coq};
+        \item \hyperlink{frame:R:vectors}{Subsets in R};
         \item \hyperlink{frame:other:subtleties}{Other Subtleties of R};
         \item \hyperlink{frame:reading:pointers}{Reading pointers};
         \item \hyperlink{frame:parser}{Parsing R};
@@ -1066,6 +1038,26 @@ Inductive red_stat : state -> scope -> stat -> out -> Prop :=
         \quad { \neg\abort{o_1} }
     \)} ;
 \end{innertikz}}
+
+\end{frame}
+
+\frame{\questiontoc}
+
+\begin{frame}[fragile]
+    \label{frame:R:vectors}
+    \frametitle{R: A Programming Language About Vectors}
+
+\begin{Rcode}
+v <- c(10, 12, 14, 11, 13)
+v[1]                         # Returns 10@\pause@
+indices <- c(3, 5, 1)
+v[indices]                   # Returns c(14, 13, 10)@\pause@
+v[-2]                        # Returns c(10, 14, 11, 13)@\pause@
+v[-indices]                  # Returns c(12, 11)@\pause@
+v[c(FALSE, TRUE, FALSE)]     # Returns c(12, 13)@\pause@
+f <- function(i, offset)
+       v[i + offset]         # ??
+\end{Rcode}
 
 \end{frame}
 
