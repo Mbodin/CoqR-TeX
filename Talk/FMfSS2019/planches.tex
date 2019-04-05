@@ -330,7 +330,7 @@ if ("TRUE") 42 else 18    # Returns 42
         \begin{widemargin}
 \begin{centertikz}
 
-    \node [locnode brown] (jscert) {JSCert} ;
+    \node [locnode brown] (jscert) {\parbox{3em}{\centering{}\only<1>{JSCert}\only<2->{CoqR}}} ;
     \node [below = 0pt of jscert] {\parbox{7em}{\centering{}Coq\\formalisation}} ;
 
     \node<1> [locnode blue, right = 3cm of jscert] (tests) {\includegraphics[width = 25mm]{images/test262_small.png}} ;
@@ -415,56 +415,57 @@ if ("TRUE") 42 else 18    # Returns 42
     \textcolor{DarkPlum}{Thanks to monads and Coq notations, pretty close.}
 }
 
-\begin{frame}[fragile]
-    \frametitle{Line-to-line Correspondence: C Code from GNU~R}
-
-\begin{changemargin}{-5mm}{-5mm}
-\begin{ccode}
-SEXP do_attr
-    (SEXP call, SEXP op, SEXP args, SEXP env){
-  SEXP argList, car, ans;
-  int nargs = R_length (args);
-  argList =
-    matchArgs (do_attr_formals, args, call);
-  PROTECT (argList);
-  if (nargs < 2 || nargs > 3)
-    error ("Wrong argument count.");
-  car = CAR (argList);
-  /* ... */
-  return ans;
-}
-\end{ccode}
-\end{changemargin}
-
-\end{frame}
-
-\begin{frame}[fragile]
-    \frametitle{Line-to-line Correspondence: Coq Code from CoqR}
-
-\begin{changemargin}{-5mm}{-5mm}
-\begin{coqcode}
-Definition do_attr
-    (call op args env : SEXP)
-    : result SEXP :=
-  let%success nargs := R_length args in
-  let%success argList :=
-    matchArgs do_attr_formals args call in
-  if nargs <? 2 || nargs >? 3 then
-    result_error "Wrong argument count."
-  else
-    read%list car, _, _ := argList in
-    (* ... *)
-    result_success ans.
-\end{coqcode}
-\end{changemargin}
-
-\end{frame}
+% \begin{frame}[fragile]
+%     \frametitle{Line-to-line Correspondence: C Code from GNU~R}
+%
+% \begin{changemargin}{-5mm}{-5mm}
+% \begin{ccode}
+% SEXP do_attr
+%     (SEXP call, SEXP op, SEXP args, SEXP env){
+%   SEXP argList, car, ans;
+%   int nargs = R_length (args);
+%   argList =
+%     matchArgs (do_attr_formals, args, call);
+%   PROTECT (argList);
+%   if (nargs < 2 || nargs > 3)
+%     error ("Wrong argument count.");
+%   car = CAR (argList);
+%   /* ... */
+%   return ans;
+% }
+% \end{ccode}
+% \end{changemargin}
+%
+% \end{frame}
+%
+% \begin{frame}[fragile]
+%     \frametitle{Line-to-line Correspondence: Coq Code from CoqR}
+%
+% \begin{changemargin}{-5mm}{-5mm}
+% \begin{coqcode}
+% Definition do_attr
+%     (call op args env : SEXP)
+%     : result SEXP :=
+%   let%success nargs := R_length args in
+%   let%success argList :=
+%     matchArgs do_attr_formals args call in
+%   if nargs <? 2 || nargs >? 3 then
+%     result_error "Wrong argument count."
+%   else
+%     read%list car, _, _ := argList in
+%     (* ... *)
+%     result_success ans.
+% \end{coqcode}
+% \end{changemargin}
+%
+% \end{frame}
 
 \begin{frame}[fragile]
     \frametitle{Line-to-line Correspondence}
 
     \begin{widemargin}\centering{}
 \begin{minipage}{.53\textwidth}
+      GNU~R
 \begin{ccode}[fontsize=\tiny]
 SEXP do_attr@\anchorm{nameA}{}@
     (SEXP call, SEXP op, SEXP args, SEXP env){@\anchorm{argsA}{}@
@@ -483,6 +484,7 @@ SEXP do_attr@\anchorm{nameA}{}@
 \end{minipage}
 \qquad
 \begin{minipage}{.5\textwidth}
+  CoqR
 \begin{coqcode}[fontsize=\tiny]
 @\anchorm{nameB}{}@Definition do_attr
     @\anchorm{argsB}{}@(call op args env : SEXP)
@@ -504,23 +506,46 @@ SEXP do_attr@\anchorm{nameA}{}@
     \begin{tikzpicture}[overlay, remember picture]
         \def\localxshift{2.5mm} % WTF Tikz…
         \def\localyshift{18mm}%{18mm}
-        \draw<2-> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]nameA.east) -- ([xshift = \localxshift, yshift = \localyshift]nameB.west) ;
-        \draw<2-> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]argsA.east) -- ([xshift = \localxshift, yshift = \localyshift]argsB.west) ;
-        \draw<2-> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]RlengthA.east) -- ([xshift = \localxshift, yshift = \localyshift]RlengthB.west) ;
-        \draw<2-> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]argListA.east) -- ([xshift = \localxshift, yshift = \localyshift]argListB.west) ;
-        \draw<2-> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]matchArgsA.east) -- ([xshift = \localxshift, yshift = \localyshift]matchArgsB.west) ;
-        \draw<2-> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]ifA.east) -- ([xshift = \localxshift, yshift = \localyshift]ifB.west) ;
-        \draw<2-> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]errorA.east) -- ([xshift = \localxshift, yshift = \localyshift]errorB.west) ;
-        \draw<2-> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]carA.east) -- ([xshift = \localxshift, yshift = \localyshift]carB.west) ;
-        \draw<2-> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]ansA.east) -- ([xshift = \localxshift, yshift = \localyshift]ansB.west) ;
+        \draw<2-3> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]nameA.east) -- ([xshift = \localxshift, yshift = \localyshift]nameB.west) ;
+        \draw<2-3> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]argsA.east) -- ([xshift = \localxshift, yshift = \localyshift]argsB.west) ;
+        \draw<2-3> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]RlengthA.east) -- ([xshift = \localxshift, yshift = \localyshift]RlengthB.west) ;
+        \draw<2-3> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]argListA.east) -- ([xshift = \localxshift, yshift = \localyshift]argListB.west) ;
+        \draw<2-3> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]matchArgsA.east) -- ([xshift = \localxshift, yshift = \localyshift]matchArgsB.west) ;
+        \draw<2-3> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]ifA.east) -- ([xshift = \localxshift, yshift = \localyshift]ifB.west) ;
+        \draw<2-3> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]errorA.east) -- ([xshift = \localxshift, yshift = \localyshift]errorB.west) ;
+        \draw<2-3> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]carA.east) -- ([xshift = \localxshift, yshift = \localyshift]carB.west) ;
+        \draw<2-3> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]ansA.east) -- ([xshift = \localxshift, yshift = \localyshift]ansB.west) ;
     \end{tikzpicture}
 
-    \begin{block}<3>{Not an exact match, but easily verifiable}
-        \begin{itemize}
+    \begin{overlayarea}{\textwidth}{4cm}
+      \only<3>{
+        \begin{block}{Not an exact match, but easily verifiable}
+          \begin{itemize}
             \item Monads encode the semantics of GNU~R’s subset of C;
             \item Coq notations ease the line-to-line correspondence.
-        \end{itemize}
-    \end{block}
+          \end{itemize}
+        \end{block}
+      }
+    \begin{onlyenv}<4>
+\begin{coqcode}[fontsize=\tiny]
+Definition if_success@\anchorm{ifsuccessDef}{}@ A B (a : result A) (f : A -> result B)
+    : result B := fun S =>
+  let r := a S in
+  match r with
+  | result_success a S' => f a S'
+  | _ => r
+  end.
+
+Notation "'let%success' a ':=' r 'in' cont" :=
+  (if_success r (fun a => cont)).
+\end{coqcode}
+    \begin{tikzpicture}[overlay, remember picture]
+        \def\localxshift{2.5mm} % WTF Tikz…
+        \def\localyshift{18mm}%{18mm}
+        \draw<4> [DarkChocolate, thick, ->] ([xshift = \localxshift-3mm, yshift = \localyshift-3mm]ifsuccessDef.north) to[bend left] ([xshift = \localxshift, yshift = \localyshift]RlengthB.west) ;
+    \end{tikzpicture}
+    \end{onlyenv}
+    \end{overlayarea}
 
 \end{frame}
 
@@ -596,15 +621,15 @@ SEXP do_attr@\anchorm{nameA}{}@
         \onslide<5->{
             \node [right = 5mm of typeGnuR] (types) {%
                 \hspace{-1em}%
-                \begin{minipage}{37mm}
+                \begin{minipage}{42mm}
                 \begin{itemize}
                     \item Boolean vector;
                     \item Numeric vector;
                     \item …
                     \item Closure;
                     \item Error;
-                    \onslide<6->{
-                    \item Not implemented;
+                    \onslide<5->{
+                    \item \textbf<6>{Not implemented};
                     \item Impossible;
                     \item Unknown.
                     }
@@ -618,14 +643,14 @@ SEXP do_attr@\anchorm{nameA}{}@
 
 \end{frame}
 
-\begin{frame}
-    \begin{center}
-        \vspace{-2mm}
-        \href{https://coqr.dcc.uchile.cl/\#/test-detail/148}{\url{https://coqr.dcc.uchile.cl}}
-        \vspace{2mm}
-        \includegraphics[width=10cm]{images/unknown.png}
-    \end{center}
-\end{frame}
+% \begin{frame}
+%     \begin{center}
+%         \vspace{-2mm}
+%         \href{https://coqr.dcc.uchile.cl/\#/test-detail/148}{\url{https://coqr.dcc.uchile.cl}}
+%         \vspace{5mm}
+%         \includegraphics[width=10cm]{images/unknown.png}
+%     \end{center}
+% \end{frame}
 
 % \begin{frame}
 
@@ -636,92 +661,21 @@ SEXP do_attr@\anchorm{nameA}{}@
 % \end{frame}
 
 \begin{frame}
-    \frametitle{Identifying low-hanging fruits}
+    \frametitle{Not implemented cases, and their usages in our test suites}
 
     \begin{center}
         \includegraphics[width=10cm]{images/not-implemented.png}
     \end{center}
 
-    \pause
-    CoqR supports a \emphb{non-trivial} subset of R, and fully supports them.
+    \begin{itemize}
+      \item CoqR supports a \emphb{non-trivial} subset of R.
+      \item Is this subset large enough?
+    \end{itemize}
 
 \end{frame}
 
 \begin{frame}
-    \frametitle{This way of doing things is generic!}
-
-    From:
-    \begin{itemize}
-        \item Two interpreters with similar inputs;
-        \item A set of result types;
-        \item A meaningful way to interpreter these results
-    \end{itemize}
-    We get:
-    \begin{itemize}
-        \item A customized testing framework;
-        \item Meaningful testing results;
-        \item A way to prioritise functions to be implemented.
-    \end{itemize}
-
-   %\pause
-   %\vfill
-   %\begin{block}{Bonus}
-   %    The eyeball closeness made debugging trivial.
-   %\end{block}
-
-\end{frame}
-
-\sectionframe**{In CoqR we trust}{
-    \vfill
-    \centering{}
-    \textcolor{DarkPlum}{Let’s build proofs!}
-}
-
-\begin{frame}[fragile]
-    \frametitle{Typing Invariants}
-
-\begin{coqcode}
-Inductive safe_SExp S : SExp -> Prop :=
-  | safe_ListStruct : forall car cdr tag,
-      may_have_types S [NilSxp ; ListSxp] cdr ->
-      may_have_types S [NilSxp ; CharSxp] tag ->
-      safe_SExp S (make_ListStruct car cdr tag)
-  | safe_StrStruct : forall data,
-      (forall a, Mem a data ->
-        may_have_types S [CharSxp] a) ->
-      safe_SExp S (make_StrStruct data)
-  (* ... *).
-\end{coqcode}
-
-\end{frame}
-
-\begin{frame}[fragile]
-    \frametitle{Tactic Usage}
-
-\begin{coqcode}
-Lemma do_attr_result :
-  forall S globals call op args env,
-  safe_state S ->
-  safe_globals S globals ->
-  safe_pointer S args ->
-  may_have_types S [NilSxp; ListSxp] args ->
-  (* ... *)
-  result_prop (fun S' ans =>
-      safe_state S' /\ safe_globals S' globals
-      /\ safe_pointer S' ans)
-    (do_attr globals runs S call op args env).
-Proof.
-  introv OKS OKglobals OKargs Targs. unfolds do_attr.
-  cutR R_length_result. computeR.
-  cutR matchArgs_result. computeR.
-  (* ... *)
-Qed.
-\end{coqcode}
-\end{frame}
-
-\begin{frame}
-    \only<1>{\frametitle{Conclusion}}
-    \only<2>{\frametitle{Thank you for listening!}}
+    %\frametitle{Conclusion}
 
     \begin{centertikz}
 
@@ -761,14 +715,40 @@ Qed.
 
     \end{centertikz}
 
+\end{frame}
+
+\begin{frame}
+    \only<1>{\frametitle{Conclusion}}
+    \only<2>{\frametitle{Thank you for listening!}}
+
+    \begin{block}{CoqR}
+    \begin{itemize}
+        \item A formalisation of R in Coq;
+        \item Two means of trusting it:
+          line-by-line correspondence
+          and testing;
+        \item Can be used to build proofs about R programs.
+    \end{itemize}
+    \end{block}
+
+    \begin{block}{Questions and Future Work}
+    \begin{itemize}
+        \item Is CoqR big enough for your programs?
+        \item What kind of properties would you like to be able to prove with CoqR?
+        \item CoqR is quite complex: how to ease proofs about such a beast?
+    \end{itemize}
+    \end{block}
+
     \begin{center}
         \url{https://github.com/Mbodin/CoqR}
-        \href{https://coqr.dcc.uchile.cl/\#/test-detail/148}{\url{https://coqr.dcc.uchile.cl}}
+        %\href{https://coqr.dcc.uchile.cl/\#/test-detail/148}{\url{https://coqr.dcc.uchile.cl}}
     \end{center}
 
 \end{frame}
 
 \frame{\tableofcontents}
+
+% \end{document}
 
 \sectionframe*{Bonuses}
 
