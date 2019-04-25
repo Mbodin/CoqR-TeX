@@ -113,35 +113,35 @@
 
 \end{frame}
 
-\begin{frame}[fragile]
-  \frametitle{\makebox[6cm][l]{A Coq Theorem}
-    \hfill\raisebox{-10mm}[0pt][0pt]{\includegraphics[width = 10mm]{images/CoqLogo.png}}}
-
-    \vspace{5mm}
-
-\begin{coqcode}
-Definition program := (* Your favorite R program *).
-
-Definition OK state :=
-  (* An interesting invariant of your program *).
-
-Theorem OKprogram : forall state,
-  OK state ->
-  exists result,
-    @\anchorm{evalRstart}{}@eval@\anchorm{evalRend}{}@ state program = Some result /\ OK result.
-Proof.
-  (* Lots of lines of proof *)
-Qed.
-\end{coqcode}
-\begin{innertikz}[overlay, remember picture]
-  \def\distshift{27mm} % WTF: This looks like a TikZ bug: nodes appear this distance below their supposed location…
-
-    \node<2> [fit = (evalRstart) (evalRend), ellipse, draw, DarkScarletRed, thick, yshift = \distshift, xshift = 1ex] (evalRellipse) {} ;
-    \node<2> [below = 2cm of evalRellipse, DarkScarletRed] (thistalk) {This talk} ;
-    \draw<2> [thick, DarkScarletRed, ->] (thistalk) to [bend left = 50] (evalRellipse) ;
-
-\end{innertikz}
-\end{frame}
+%\begin{frame}[fragile]
+%  \frametitle{\makebox[6cm][l]{A Coq Theorem}
+%    \hfill\raisebox{-10mm}[0pt][0pt]{\includegraphics[width = 10mm]{images/CoqLogo.png}}}
+%
+%    \vspace{5mm}
+%
+%\begin{coqcode}
+%Definition program := (* Your favorite R program *).
+%
+%Definition OK state :=
+%  (* An interesting invariant of your program *).
+%
+%Theorem OKprogram : forall state,
+%  OK state ->
+%  exists result,
+%    @\anchorm{evalRstart}{}@eval@\anchorm{evalRend}{}@ state program = Some result /\ OK result.
+%Proof.
+%  (* Lots of lines of proof *)
+%Qed.
+%\end{coqcode}
+%\begin{innertikz}[overlay, remember picture]
+%  \def\distshift{27mm} % WTF: This looks like a TikZ bug: nodes appear this distance below their supposed location…
+%
+%    \node<2> [fit = (evalRstart) (evalRend), ellipse, draw, DarkScarletRed, thick, yshift = \distshift, xshift = 1ex] (evalRellipse) {} ;
+%    \node<2> [below = 2cm of evalRellipse, DarkScarletRed] (thistalk) {This talk} ;
+%    \draw<2> [thick, DarkScarletRed, ->] (thistalk) to [bend left = 50] (evalRellipse) ;
+%
+%\end{innertikz}
+%\end{frame}
 
 \section{R}
 
@@ -231,9 +231,8 @@ if ("TRUE") 42 else 18    # Returns 42
 
   \begin{itemize}
     \item Programmers may be aware of some corner cases, but not all.
-    \item It can be hard to understand a program.
-    \item It is hard to know whether a program will fail.
-    \item A program may return a wrong result… but this result may look right.
+    \item Programs can be difficult to understand or certify.
+    \item A program may return a wrong result… that looks right.
     \item We need formal verification.
   \end{itemize}
 
@@ -248,6 +247,7 @@ if ("TRUE") 42 else 18    # Returns 42
         % \item \anchorm{l18Kbegin}{}\emphb{18,000~lines}\anchorm{l18Kend}{} of Coq definitions;
         % \item A \emph{runnable} semantics;
         \item Supports a non-trivial subset of R, and \emphb{fully} support them.
+        \item Can be used to prove theorems about R programs.
     \end{itemize}
 
     \begin{center}
@@ -407,7 +407,7 @@ if ("TRUE") 42 else 18    # Returns 42
 %
 %\end{frame}
 
-\section{Line-to-line Correspondence}
+\section{Line-by-line Correspondence}
 
 \sectionframe**{How close CoqR is\\from GNU~R?}{
     \vfill
@@ -416,7 +416,7 @@ if ("TRUE") 42 else 18    # Returns 42
 }
 
 % \begin{frame}[fragile]
-%     \frametitle{Line-to-line Correspondence: C Code from GNU~R}
+%     \frametitle{Line-by-line Correspondence: C Code from GNU~R}
 %
 % \begin{changemargin}{-5mm}{-5mm}
 % \begin{ccode}
@@ -439,7 +439,7 @@ if ("TRUE") 42 else 18    # Returns 42
 % \end{frame}
 %
 % \begin{frame}[fragile]
-%     \frametitle{Line-to-line Correspondence: Coq Code from CoqR}
+%     \frametitle{Line-by-line Correspondence: Coq Code from CoqR}
 %
 % \begin{changemargin}{-5mm}{-5mm}
 % \begin{coqcode}
@@ -461,7 +461,7 @@ if ("TRUE") 42 else 18    # Returns 42
 % \end{frame}
 
 \begin{frame}[fragile]
-    \frametitle{Line-to-line Correspondence}
+    \frametitle{Line-by-line Correspondence}
 
     \begin{widemargin}\centering{}
 \begin{minipage}{.53\textwidth}
@@ -506,19 +506,19 @@ SEXP do_attr@\anchorm{nameA}{}@
     \begin{tikzpicture}[overlay, remember picture]
         \def\localxshift{2.5mm} % WTF Tikz…
         \def\localyshift{18mm}%{18mm}
-        \draw<2-3> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]nameA.east) -- ([xshift = \localxshift, yshift = \localyshift]nameB.west) ;
-        \draw<2-3> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]argsA.east) -- ([xshift = \localxshift, yshift = \localyshift]argsB.west) ;
-        \draw<2-3> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]RlengthA.east) -- ([xshift = \localxshift, yshift = \localyshift]RlengthB.west) ;
-        \draw<2-3> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]argListA.east) -- ([xshift = \localxshift, yshift = \localyshift]argListB.west) ;
-        \draw<2-3> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]matchArgsA.east) -- ([xshift = \localxshift, yshift = \localyshift]matchArgsB.west) ;
-        \draw<2-3> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]ifA.east) -- ([xshift = \localxshift, yshift = \localyshift]ifB.west) ;
-        \draw<2-3> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]errorA.east) -- ([xshift = \localxshift, yshift = \localyshift]errorB.west) ;
-        \draw<2-3> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]carA.east) -- ([xshift = \localxshift, yshift = \localyshift]carB.west) ;
-        \draw<2-3> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]ansA.east) -- ([xshift = \localxshift, yshift = \localyshift]ansB.west) ;
+        \draw<3-4> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]nameA.east) -- ([xshift = \localxshift, yshift = \localyshift]nameB.west) ;
+        \draw<3-4> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]argsA.east) -- ([xshift = \localxshift, yshift = \localyshift]argsB.west) ;
+        \draw<3-4> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]RlengthA.east) -- ([xshift = \localxshift, yshift = \localyshift]RlengthB.west) ;
+        \draw<3-4> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]argListA.east) -- ([xshift = \localxshift, yshift = \localyshift]argListB.west) ;
+        \draw<3-4> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]matchArgsA.east) -- ([xshift = \localxshift, yshift = \localyshift]matchArgsB.west) ;
+        \draw<3-4> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]ifA.east) -- ([xshift = \localxshift, yshift = \localyshift]ifB.west) ;
+        \draw<3-4> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]errorA.east) -- ([xshift = \localxshift, yshift = \localyshift]errorB.west) ;
+        \draw<3-4> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]carA.east) -- ([xshift = \localxshift, yshift = \localyshift]carB.west) ;
+        \draw<3-4> [DarkChocolate, thick, <->] ([xshift = \localxshift, yshift = \localyshift]ansA.east) -- ([xshift = \localxshift, yshift = \localyshift]ansB.west) ;
     \end{tikzpicture}
 
     \begin{overlayarea}{\textwidth}{4cm}
-      \only<3>{
+      \only<4>{
         \begin{block}{Not an exact match, but easily verifiable}
           \begin{itemize}
             \item Monads encode the semantics of GNU~R’s subset of C;
@@ -526,7 +526,7 @@ SEXP do_attr@\anchorm{nameA}{}@
           \end{itemize}
         \end{block}
       }
-    \begin{onlyenv}<4>
+    \begin{onlyenv}<2>
 \begin{coqcode}[fontsize=\tiny]
 Definition if_success@\anchorm{ifsuccessDef}{}@ A B (a : result A) (f : A -> result B)
     : result B := fun S =>
@@ -542,7 +542,7 @@ Notation "'let%success' a ':=' r 'in' cont" :=
     \begin{tikzpicture}[overlay, remember picture]
         \def\localxshift{2.5mm} % WTF Tikz…
         \def\localyshift{18mm}%{18mm}
-        \draw<4> [DarkChocolate, thick, ->] ([xshift = \localxshift-3mm, yshift = \localyshift-3mm]ifsuccessDef.north) to[bend left] ([xshift = \localxshift, yshift = \localyshift]RlengthB.west) ;
+        \draw [DarkChocolate, thick, ->] ([xshift = \localxshift-3mm, yshift = \localyshift-3mm]ifsuccessDef.north) to[bend left] ([xshift = \localxshift, yshift = \localyshift]RlengthB.west) ;
     \end{tikzpicture}
     \end{onlyenv}
     \end{overlayarea}
@@ -670,6 +670,7 @@ Notation "'let%success' a ':=' r 'in' cont" :=
     \begin{itemize}
       \item CoqR supports a \emphb{non-trivial} subset of R.
       \item Is this subset large enough?
+      \item Would you be interested in adding a feature you care about?
     \end{itemize}
 
 \end{frame}
@@ -724,10 +725,13 @@ Notation "'let%success' a ':=' r 'in' cont" :=
     \begin{block}{CoqR}
     \begin{itemize}
         \item A formalisation of R in Coq;
-        \item Two means of trusting it:
-          line-by-line correspondence
-          and testing;
-        \item Can be used to build proofs about R programs.
+        \item Two means of \textbf{trusting} it:
+          \begin{itemize}
+            \item
+              line-by-line correspondence
+              and testing;
+          \end{itemize}
+        \item Can be used to build \textbf{proofs about R programs}.
     \end{itemize}
     \end{block}
 
@@ -1081,7 +1085,7 @@ f (a = 3, 1, 2) # Returns an error.
 
 \begin{frame}[fragile]
     \label{frame:reading:pointers}
-    \frametitle{Line-to-line Correspondence: Reading Pointers}
+    \frametitle{Line-by-line Correspondence: Reading Pointers}
 
     \begin{changemargin}{-5mm}{-5mm}
 
@@ -1207,7 +1211,7 @@ expr:
 
 \frame{\questiontoc}
 
-\sectionframe**{Line-to-line Correspondence}{
+\sectionframe**{Line-by-line Correspondence}{
     \label{frame:eyeball}
     \begin{itemize}
         \item C is imperative, pointer-based;
@@ -1217,7 +1221,7 @@ expr:
 }
 
 \begin{frame}[fragile]
-    \frametitle{Line-to-line Correspondence: Enumeration}
+    \frametitle{Line-by-line Correspondence: Enumeration}
 
     \begin{minipage}{.45\textwidth}
         C code
@@ -1260,7 +1264,7 @@ Inductive SExpType :=
 \end{frame}
 
 \begin{frame}[fragile]
-    \frametitle{Line-to-line Correspondence: Records}
+    \frametitle{Line-by-line Correspondence: Records}
 
         \begin{widemargin}
             \centering{}
@@ -1315,7 +1319,7 @@ Record SxpInfo :=
 \end{frame}
 
 \begin{frame}[fragile]
-    \frametitle{Line-to-line Correspondence: Unions}
+    \frametitle{Line-by-line Correspondence: Unions}
 
     \begin{changemargin}{-5mm}{-5mm}
 \begin{minipage}{.8\textwidth}
@@ -1359,7 +1363,7 @@ Inductive SExpRec_union :=
 \end{frame}
 
 \begin{frame}[fragile]
-    \frametitle{Line-to-line Correspondence: Reading Pointers}
+    \frametitle{Line-by-line Correspondence: Reading Pointers}
 
     \vspace{-1mm}
     \begin{changemargin}{-10mm}{-10mm}\centering{}
