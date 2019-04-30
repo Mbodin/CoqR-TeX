@@ -181,6 +181,7 @@ f(x + y)                         # Returns 5
 \begin{frame}[fragile]
   \frametitle{R’s Corner Cases}
 
+  \vspace{-3mm}
   \begin{block}{%
     \href{https://cran.r-project.org/doc/manuals/r-release/R-lang.html\#if}%
     {\nolinkurl{cran.r-project.org/doc/manuals/r-release/R-lang.html}}}
@@ -189,10 +190,14 @@ f(x + y)                         # Returns 5
 
   \begin{itemize}
     \item First, \Rinline{statement1} is evaluated to yield \Rinline{value1}.
-    \item If \Rinline{value1} is a logical vector with first element \Rinline{TRUE}
-      then \Rinline{statement2} is evaluated.
-    \item If the first element of \Rinline{value1} is \Rinline{FALSE}
-      then \Rinline{statement3} is evaluated.
+   %\item If \Rinline{value1} is a logical vector with first element \Rinline{TRUE}
+   %  then \Rinline{statement2} is evaluated.
+   %\item If the first element of \Rinline{value1} is \Rinline{FALSE}
+   %  then \Rinline{statement3} is evaluated.
+    \item If \Rinline{value1} is a logical vector then \Rinline{statement2} is evaluated
+      when the first element of \Rinline{value1} is \Rinline{TRUE},
+      and \Rinline{statement3} is evaluated
+      when the first element of \Rinline{value1} is \Rinline{FALSE}.
     \item If \Rinline{value1} is a numeric vector then \Rinline{statement3} is evaluated
       when the first element of \Rinline{value1} is zero and otherwise \Rinline{statement2} is evaluated.
   %\item Only the first element of value1 is used.
@@ -206,20 +211,30 @@ f(x + y)                         # Returns 5
 \begin{overlayarea}{\textwidth}{15mm}
   \begin{onlyenv}<1>
 \begin{Rcode}
+if (numeric(0)) 42 else 18
 if ("TRUE") 42 else 18
 "TRUE" || FALSE
 \end{Rcode}
   \end{onlyenv}
   \begin{onlyenv}<2>
 \begin{Rcode}
-if ("TRUE") 42 else 18    # Returns 42
+if (numeric(0)) 42 else 18  # Error
+if ("TRUE") 42 else 18
 "TRUE" || FALSE
 \end{Rcode}
   \end{onlyenv}
   \begin{onlyenv}<3>
 \begin{Rcode}
-if ("TRUE") 42 else 18    # Returns 42
-"TRUE" || FALSE           # Type error
+if (numeric(0)) 42 else 18  # Error
+if ("TRUE") 42 else 18      # Returns 42
+"TRUE" || FALSE
+\end{Rcode}
+  \end{onlyenv}
+  \begin{onlyenv}<4>
+\begin{Rcode}
+if (numeric(0)) 42 else 18  # Error
+if ("TRUE") 42 else 18      # Returns 42
+"TRUE" || FALSE             # Error
 \end{Rcode}
   \end{onlyenv}
 \end{overlayarea}
@@ -277,7 +292,7 @@ if ("TRUE") 42 else 18    # Returns 42
         \node [above = 40mm of ml, xshift = 1cm] {\begin{minipage}{7cm}
           \begin{itemize}
             \item \textcolor{DarkPlum}{Core functions are all interconnected}
-            \item \textcolor{DarkSkyBlue}{Feature functions are independent of each other, but relies on the core.}
+            \item \textcolor{DarkSkyBlue}{Feature functions are independent of each other, but rely on the core.}
           \end{itemize}
           \end{minipage}} ;
         }
