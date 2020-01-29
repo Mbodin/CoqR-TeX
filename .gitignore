@@ -228,4 +228,7 @@ TSWLatexianTemp*
 *.pdf
 *.listing
 _minted-*
+*.html
+*.idv
+*.lg
 
