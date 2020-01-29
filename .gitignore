@@ -225,6 +225,7 @@ TSWLatexianTemp*
 *.swp
 
 # Miscellaneous
+*.pdf
 *.listing
 _minted-*
 
