@@ -1,6 +1,6 @@
 \documentclass{beamer}
 
-% Note to the reader: if you find the word “FUCK” in this TeX source,
+% Note to the reader: if you find the word “WTF” in this TeX source,
 % this means that some part of TeX is absolutely not behaving as
 % specified in its documentation. It is usually followed by the name
 % of the guilty person. Any presence of such a word in this document
@@ -12,7 +12,7 @@
 
 \title{A Coq Formalisation of a Core of \R{}}
 \author{Martin \textsc{Bodin}}
-\institute{CMM}
+\institute{Center for Mathematical Modeling, Universidad de Chile}
 \date{13\(^{th}\) of January}
 
 \begin{document}
@@ -97,11 +97,11 @@ f ()                                # Returns TRUE
 \pause
 
 \begin{Rcode}
-f <- function (expr, s) {
+f <- function (expr) {
     x <- 2
     y <- 3
-    eval (substitute (expr))        # Evaluates “expr” in the
-                                    # current environment
+    eval (substitute (expr))        # Evaluates the body “expr”
+                                    # in the local environment
   }
 f (x + y)                           # Returns 5
 x + y                               # Raises an error
@@ -154,12 +154,12 @@ x + y                               # Raises an error
 \begin{centertikz}[node distance = 1.5cm]
 
     \node (realworldleft) {};
-    \node [right of = realworldleft, node distance = 11cm] (realworldright) {} ;
+    \node [right of = realworldleft, node distance = 11.5cm] (realworldright) {} ;
 
-    \node [right of = realworldleft, node distance = 1cm] (semlim) {} ;
+    \node [right of = realworldleft, node distance = 1.5cm] (semlim) {} ;
     \node [left of = realworldright, node distance = 4cm] (testlim) {} ;
 
-    \draw [dashed] (realworldleft) to node[above, pos = 0.9] {\coqn{} definitions} node [below, pos = 0.9] {Industrial world} (realworldright) ;
+    \draw [dashed] (realworldleft) to node [above, pos = 0.9] {\coqn{} definitions} node [below, pos = 0.9] {Industrial world} (realworldright) ;
 
     % \node<2-> [below of = testlim, locnode] (ocaml) {\parbox{1.5cm}{\centering\camln{}\\extraction}} ;
     % \node<2-> [right of = ocaml, node distance = 2cm, locnode] (parser) {Parser} ;
@@ -526,7 +526,7 @@ FUNTAB R_FunTab[] = {
                 \centering{}~\hspace{-1cm}%
                 \tikz \fill[white] (0, 0) rectangle (12, 6) ;
             }%
-            \vspace{-6cm} % FUCK KNUTH
+            \vspace{-6cm} % WTF KNUTH
             \begin{block}{The core is what is needed to call these functions.}
                 \begin{itemize}
                     \item The core is small;
@@ -568,6 +568,8 @@ FUNTAB R_FunTab[] = {
         \end{itemize}
     \end{block}
 
+    \pause
+
     \begin{block}{Building proofs}
         \vspace{-4mm}
         \[
@@ -588,7 +590,7 @@ FUNTAB R_FunTab[] = {
 \end{frame}
 
 \begin{frame}[fragile]
-    \frametitle{Proof that \(1 + 1\) reduces to \(2\) in JSCert}
+    \frametitle{Proof that \(1 + 1\) reduces to \(2\) in \jscert{}}
 
 \begin{coqcode}[fontsize = \tiny]
 Lemma one_plus_one_exec : forall S C,
@@ -629,7 +631,7 @@ Qed.
 \begin{frame}[fragile]
     \frametitle{RExplain}
 
-   %\begin{block}{In practise, JavaScript people read JSRef, not JSCert}
+   %\begin{block}{In practise, JavaScript people read JSRef, not \jscert{}}
    %    \begin{itemize}
    %        \item An executable \R{} interpreter would be easier to read than a rule-based semantics;
    %        \item Some want to specify \R{}, we may propose a solution.
@@ -653,7 +655,7 @@ read%clo res_clo = res using S in
 \end{camlcode}
             \end{minipage}} ;
         \node [locnode, below = 5mm of imp, xshift = 4cm] (spec) {\begin{minipage}{10cm}
-            Ecma-style specification
+            ECMA-style specification
             \begin{enumerate}
                 \item Let \mintedinlinespacebug\camlinline{res} be the result
                     of calling \mintedinlinespacebug\camlinline{f} with argument
@@ -728,10 +730,11 @@ read%clo res_clo = res using S in
         \item \hyperlink{frame:imperative:functional}{Representing imperativity in a functional setting};
         \item \hyperlink{frame:semantics:coq}{Semantics in \coqn{}};
         \item \hyperlink{frame:semantic:sizes}{Semantic sizes};
-        \item \hyperlink{frame:other:subtleties}{Other Subtleties of \R{}} ;
-        \item \hyperlink{frame:reading:pointers}{Reading pointers} ;
+        \item \hyperlink{frame:other:subtleties}{Other Subtleties of \R{}};
+        \item \hyperlink{frame:reading:pointers}{Reading pointers};
         \item \hyperlink{frame:parser}{Parsing \R{}};
-        \item \hyperlink{frame:full:monad}{The full state+error monad}.
+        \item \hyperlink{frame:full:monad}{The full state+error monad};
+        \item \hyperlink{frame:input:output}{Inputs and outputs}.
     \end{enumerate}
     %\end{multicols}
 }
@@ -749,9 +752,9 @@ read%clo res_clo = res using S in
 \begin{centertikz}[node distance = 1.5cm]
 
     \node (realworldleft) {};
-    \node [right of = realworldleft, node distance = 11cm] (realworldright) {} ;
+    \node [right of = realworldleft, node distance = 11.5cm] (realworldright) {} ;
 
-    \node [right of = realworldleft, node distance = 1cm] (semlim) {} ;
+    \node [right of = realworldleft, node distance = 1.5cm] (semlim) {} ;
     \node [left of = realworldright, node distance = 4cm] (testlim) {} ;
 
     \draw [dashed] (realworldleft) to node[above, pos = 0.9] {\coqn{} definitions} node [below, pos = 0.9] {Industrial world} (realworldright) ;
@@ -1123,18 +1126,6 @@ Notation "'read%sym' p_sym ':=' p
 \begin{frame}[fragile]
     \label{frame:parser}
 
-\begin{camlcode}
-expr:
-  | c = NUM_CONST                       { c }
-  | c = STR_CONST                       { c }
-  | c = NULL_CONST                      { c }
-  | c = SYMBOL                          { c }
-  | b = LBRACE; e = exprlist; RBRACE
-    { eatLines := false ; lift2 (only_state xxexprlist) b e }
-  | p = LPAR; e = expr_or_assign; RPAR
-    { lift2 (no_runs xxparen) p e }
-\end{camlcode}
-
 \begin{ccodenoescape}
 expr:
   | NUM_CONST                   { $$ = $1;  setId( $$, @$); }
@@ -1146,6 +1137,18 @@ expr:
   | LPAR expr_or_assign RPAR
     { $$ = xxparen($1,$2);  setId( $$, @$); }
 \end{ccodenoescape}
+
+\begin{camlcode}
+expr:
+  | c = NUM_CONST                       { c }
+  | c = STR_CONST                       { c }
+  | c = NULL_CONST                      { c }
+  | c = SYMBOL                          { c }
+  | b = LBRACE; e = exprlist; RBRACE
+    { eatLines := false ; lift2 (only_state xxexprlist) b e }
+  | p = LPAR; e = expr_or_assign; RPAR
+    { lift2 (no_runs xxparen) p e }
+\end{camlcode}
 
 \end{frame}
 
@@ -1164,6 +1167,35 @@ Inductive result (A : Type) :=
   | result_not_implemented : string -> result A
   | result_bottom : state -> result A
   .
+\end{coqcode}
+
+\end{frame}
+
+\frame{\questiontoc}
+
+\begin{frame}[fragile]
+    \label{frame:input:output}
+
+\begin{coqcode}
+Record input := make_input {
+    prompt_string : stream string ;
+    random_boolean : stream bool
+  }.
+\end{coqcode}
+
+\begin{coqcode}
+Record output := make_output {
+    output_string : list string
+  }.
+\end{coqcode}
+
+\begin{coqcode}
+Record state := make_state {
+    inputs :> input ;
+    outputs :> output ;
+    state_memory :> memory ;
+    state_context : context
+  }.
 \end{coqcode}
 
 \end{frame}
