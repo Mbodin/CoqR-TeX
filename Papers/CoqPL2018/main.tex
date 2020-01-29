@@ -75,7 +75,7 @@
 Real-world programming languages have subtle behaviours.
 In particular, their semantics often contains various corner cases
 that programmers are unaware of,
-possibly yielding to serious bugs.
+which can yield serious bugs.
 This is an opportunity for our community
 as \Coq{} enables to certify program behaviours.
 Such certifications rely on a formal semantics,
@@ -99,10 +99,10 @@ programming language for statisticians.
 It is used in a large range of fields (biology, finance, etc.),
 as illustrated by the list of available packages categories:
 \url{https://cran.r-project.org/web/views/}.
-This diversity is reflected among \R{} programmers,
-resulting in largely different programming styles.
 This makes \R{} unlikely to disappear
 in the following years.
+This diversity is reflected among \R{} programmers,
+resulting in largely different programming styles.
 
 The \R{} programming language presents itself
 as an expressive and powerful language,
@@ -167,7 +167,7 @@ not actually defining the formal model itself.
 
 In the case of \R{}, there is unfortunately
 no precise language specification
-(there exists an ongoing effort to write one,
+(there is an ongoing effort to write one,
 but it is too early to base ourself on it).
 There are however test suites~\parencite{2014testr, maj2013testr},
 as well as a reference interpreter~\parencite{Rwebsite}
@@ -279,7 +279,7 @@ For instance, the following function \mintinline{R}{f}
 only evaluates its second argument if the first is \(1\).
 Thus, in its second call, the variable \mintinline{R}{b}
 has confusingly not been defined because the assignment \mintinline{R}{b <- 1}
-was not evaluated.
+has not been evaluated.
 \begin{minted}{R}
 f <- function (x, y) if (x == 1) y
 f (1, a <- 1); a # Returns 1.
@@ -371,7 +371,7 @@ we could have used already existing \Coq{} semantics
 for \Cn{}~\parencite{formalin, Leroy-Compcert-CACM}
 to directly define a semantics for \R{}.
 We however believe that the abstraction layers of \Cn{}
-would provide a non-trivial additional complexity to the formalisation,
+would come with a non-trivial additional complexity to the formalisation,
 making it more difficult to use.
 Furthermore, the \R{} reference interpreter has been built
 with a strong intuition in mind~\parencite{ihaka1996r}.
