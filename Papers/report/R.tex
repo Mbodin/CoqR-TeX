@@ -1,0 +1,2065 @@
+\documentclass{article}
+
+\usepackage{fontspec}
+
+\usepackage{todonotes}
+
+\usepackage[xetex, colorlinks=true]{hyperref}
+\usepackage[
+   backend=biber,
+   bibencoding=utf8,
+   style=alphabetic,
+   hyperref=true,
+   % citestyle=authoryear-comp,
+   backref=false,
+   sortlocale=en,
+   url=true,
+   doi=false,
+   eprint=false
+ ]{biblatex}
+\addbibresource{biblio.bib}
+
+\newcommand\Coq{Coq}
+\newcommand\OCaml{OCaml}
+\newcommand\R{R}
+\newcommand\Cn{C}
+
+\usepackage{minted}
+\setminted{encoding=utf8}
+
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+
+\tikzset{
+	box/.style = {
+		draw = black,
+        fill = white,
+		rectangle,
+		rounded corners = 2pt,
+		text centered,
+		minimum height = 5mm,
+		minimum width = 10mm
+	}
+}
+
+\newcommand\mod{\mathit{mod}}
+
+
+\title{Notes about \R{}}
+\author{Martin Bodin}
+
+\begin{document}
+
+\maketitle
+
+\section{Presentation of the Language}
+\label{sec:presentation}
+
+\R{} is a trending programming language for mathematicians.
+Its usages, however, range from statistics to finance, biology,
+as well as big data analyses.
+A good way to have an idea of the diversity of the usage
+of \R{} is to look at the different “views” of \R{}
+(which group \R{} packages by type of analysis, fields, or methodologies):
+\url{https://cran.r-project.org/web/views/}.
+It is often presented as an interactive programming language
+(a read-eval-print-loop),
+but it is also possible to write programs in it and execute them directly.
+% The language enables easy integration of \Cn{} functions.
+The language is a weakly typed programming language
+manipulating different types of arrays.
+The syntax of the language contains numerous exceptions,
+leading to a high number of programs with a semantics.
+
+\subsection{History}
+\label{sec:history}
+
+\R{} is a programming language designed for statistics.
+Its specification~\parencite{team2000r}\footnote{
+    This specification is also given directly in \R{} itself,
+    by typing \mintinline{R}{help.search ()},
+    and clicking of the “\R{} Language Definition” link
+    on the webpage then opened.
+} is not precise (but really helps understand \R{} source code):
+in practise, it is specified by its main implementation~\parencite{Rwebsite}.
+
+The original authors of \R{}~\parencite{ihaka1996r}
+describe \R{} as a programming language similar to Scheme
+which has been mutated to get a programming language similar
+in appearance and features to S.
+In particular, \R{} features scoping and first-class functions
+as Scheme
+(whereas in S, nested functions are not lexically scoped).
+Similarly to S, however, it is a lazy programming language.
+
+It is a community driven programming language.
+This means that most of what is used in a \R{} program comes from various libraries,
+which can change the way the programming language behaves.
+This can be compared with JavaScript,
+and how libraries like jQuery changes the way programs look.
+However, not all of these libraries are written in \R{}:
+some are written in \Cn{} or Fortran
+with an interface in \R{}.
+
+One of the reasons of the success of \R{}
+is its built-in help system.
+Each functions are documented with examples
+and can be accessed by typing in \R{}
+a question mark followed by the corresponding feature.
+For instance \mintinline{R}{?c} displays
+the documentation of the \mintinline{R}{c} function,
+and \mintinline{R}{?'<-'} displays the documentation
+of the \mintinline{R}{<-} feature.
+
+\subsection{Features}
+\label{sec:features}
+
+\R{} is accompanied with a lot of features.
+We detail here the ones relevant from the point of view
+of it as a programming language.
+
+\subsubsection{Promises}
+\label{sec:promises}
+
+The \R{} programming language is lazy.
+This was a design choice:
+it is frequent in \R{} to define a large array,
+but then filter it to only consider a small number of its cells.
+Lazyness enables the programming language to focus on these cells
+and only compute what is needed to display their content.
+
+In practise, lazyness comes in the form of promises.
+A promise is composed of a syntactic expression,
+an environment, and an optional value.
+If \R{} needs the result of promise,
+it will check the optional value.
+If it is present, the promise already has been computed
+and the value is directly reused.
+Otherwise, the promise's expression is evaluated,
+and the promise's value is set to the returned value.
+The evaluation of the expression might raises side effects.
+%
+A typical place where promises are defined
+is during function calls.
+\begin{minted}{R}
+f <- function (x, y)
+     if (x == 1) y
+# “f” is now a function
+f (1, 2 + 2) # The expression “2 + 2” becomes here a promise.
+# The function “f” uses this promise, and it thus reduces to “4”.
+f (1, a <- 1) # This promise has a side effect.
+a # Returns 1. Note that the promise kept the initial environment:
+  # the variable “a” has been defined in the initial environment.
+f (0, b <- 1) # This promise has a side effect, but is not evaluated.
+b # Raises an error.
+\end{minted}
+
+This lazyness feature of \R{} enables
+language constructs like \mintinline{R}{if}
+to be considered as \emph{functions}.
+There are thus very few cases in the evaluation function
+of \R{}, corresponding to the atomic types.
+This also enables libraries to drastically change
+the language's syntax.
+
+Function arguments can have default argument,
+but in this case, it is still a promise.
+In the following example,
+the variable \mintinline{R}{y} is associated with
+the promise \mintinline{R}{x} and the local environment
+of the call (not the one from the calling point).
+But this environment may change during the function evaluation.
+\begin{minted}{R}
+x <- 1 # A global variable.
+f <- function (x, y = x) { # The variable “y” receives the promise “x”.
+       x <- 3 # We update the variable “x”.
+       y      # Evaluates the promise.
+       x <- 4 # We update again “x”.
+       y      # The promise has already been evaluated.
+     }
+f (2) # The local variable “x” is set to 2.
+# Returns 3.
+\end{minted}
+
+One of the initial goals of the \R{} programming language
+was to provide easy visualisation tools,
+through functions like \mintinline{R}{plot},
+drawing a graph.
+To express equations, we can in \R{} uses promises.
+Here is an example taken from the original paper~\parencite{ihaka1996r}.
+\begin{minted}{R}
+curve <- function (expr, from, to) {
+           x <- seq (from, to, length = 500)
+           y <- eval (substitute (expr))
+           plot (x, y)
+         }
+\end{minted}
+This function can be invoked as
+\mintinline{R}{curve (x^2 - 1, -2, 2)}
+to draw the function \(f(x) = x^2 - 1\)
+over the interval \([-2, 2]\).
+We now describe what happens during
+this call.
+First, the variable \mintinline{R}{expr}
+is associated with he promise \mintinline{R}{x^2 - 1}
+in the initial environment.
+This may be seen strange as the initial environment
+does not define any variable \mintinline{R}{x}.
+Inside the scope of function \mintinline{R}{curve},
+a variable \mintinline{R}{x} is defined, as a vector.
+The function \mintinline{R}{substitute} is a special function,
+as it manipulates the inner data type of the promise \mintinline{R}{expr}:
+it replaces its inner environment with the current environment
+(that is, the inner scope).
+The variable \mintinline{R}{x} inside the promise
+\mintinline{R}{expr} is now linked with the local
+variable \mintinline{R}{x},
+and the promise can be evaluated.
+
+
+\subsubsection{Vectors}
+\label{sec:vectors}
+
+In the previous example,
+the variable \mintinline{R}{x} was associated the result
+of \mintinline{R}{seq}, which is a numerical vector.
+It can be surprising be able to compute
+the expression \mintinline{R}{x^2 - 1},
+as \mintinline{R}{x} is not a number.
+The reason is that the operators \mintinline{R}{^} and \mintinline{R}{-}
+applies on vectors, component by component.
+The numbers \mintinline{R}{2} and \mintinline{R}{1}
+in the expression are seen as vectors with only one cell.
+We cannot assign a variable to a number,
+but we can assign it a numerical vector of size one,
+and \R{} does it all the time.
+As the vectors \mintinline{R}{2} and \mintinline{R}{1}
+are not the same size than \mintinline{R}{x},
+their values are reused in a cyclic manner.
+In most cases, this is what the user wants,
+but it can be surprising if the user thought that both
+vectors had the same size but had not:
+no warning will be emitted by \R{}.
+
+One operation whose semantics can be difficult
+to fully comprehend is the vector indexing.
+Given a vector \mintinline{R}{v},
+we can filter it by \mintinline{R}{v[i]}.
+The behaviour of this operation will be very different,
+depending on the nature of \mintinline{R}{i}.
+\begin{itemize}
+    \item If \mintinline{R}{i} is a logical vector\footnote{
+          Logical vectors stores tri-valued booleans,
+          which can be \mintinline{R}{TRUE}, \mintinline{R}{FALSE},
+          or \mintinline{R}{NA} (not applicable).
+          All base values have an \mintinline{R}{NA} value.
+      }, then \mintinline{R}{i} is first repeated
+      to match the size of \mintinline{R}{v}.
+      Then, each index of \mintinline{R}{v} corresponding
+      to the value \mintinline{R}{TRUE} from the index array \mintinline{R}{i}
+      are conserved;
+      each corresponding to \mintinline{R}{FALSE} are removed;
+      and each corresponding to \mintinline{R}{NA} are replaced
+      by the \mintinline{R}{NA} of the expected type.
+    \item If \mintinline{R}{i} is a numerical vector,
+      and that all its elements are positive, zero, or \mintinline{R}{NA},
+      then the corresponding indices of \mintinline{R}
+      are taken in the given order, resulting in an array
+      that can be thought of the same size than \mintinline{R}{i}.
+      Indexes of \mintinline{R}{v} are however counted from
+      \(1\), and all \(0\) in \mintinline{R}{i} are ignored.
+      If \mintinline{R}{i} contains \mintinline{R}{NA},
+      they yield \mintinline{R}{NA} in the resulting array.
+      Values of \mintinline{R}{i} greater than the size of \mintinline{R}{v}
+      results in \mintinline{R}{NA}.
+        Note that a special case of this case is when the size of \mintinline{R}{i}
+      is one (as in \mintinline{R}{v[18]}),
+      \R{} then returns an array with only one cell,
+      which looks like a base value.
+    \item If \mintinline{R}{i} is a non-empty numerical vector
+      whose elements are all negative or zero,
+      then the result is the array \mintinline{R}{v}
+      in which all values whose index (starting from \(1\))
+      is the opposite of a number in \mintinline{R}{i} are removed.
+    \item If \mintinline{R}{i} is a vector of character strings,
+      and that \mintinline{R}{v} is associated with a \mintinline{R}{names}
+      attribute\footnote{
+          Any \R{} object can be associated attributes.
+          They are a simple name to value mapping,
+          which can be updated at will.
+      }.
+      We do not detail this case in details,
+      but \R{} then intuitively selects the cells of \mintinline{R}{v}
+      by their names.
+\end{itemize}
+
+As an example, if \mintinline{R}{x} is a vector of numbers,
+then \mintinline{R}{x < 0} is a vector of booleans
+(\mintinline{R}{<} is an operation applying on the components
+of a vector, and the vector \mintinline{R}{0} is repeated).
+As a consequence, \mintinline{R}{x[x < 0]} is the subvector of
+\mintinline{R}{x} containing only its negative values.
+This is often used in the left-side of an assignment\footnote{
+    The left side of expression can be a variety of things,
+    not just variables.
+    It is however a complex operation with a lot of corner cases,
+    and I prefer not to explain it in detail in this document.
+}, as in \mintinline{R}{x[x < 0] <- 0} which replaces all
+negative values of \mintinline{R}{x} by \mintinline{R}{0}.
+
+\subsubsection{Function Calls}
+\label{sec:function:calls}
+
+The part of \R{} source code dealing with function application,
+and in particular in the part matching the given argument to the
+expected (formal) arguments, is surprisingly long.
+The reason is that there are several, separately simple, ways to call
+a function.
+Each of these ways then interoperate in each call,
+making them sometimes quite complex.
+
+We have seen in Section~\ref{sec:promises} that default arguments can be given
+to a function argument:
+if the argument is not provided, a promise is associated with the default expression.
+Arguments can also be given by name,
+as in the \mintinline{R}{curve} example of the same section:
+the function \mintinline{R}{seq} is given its argument named \mintinline{R}{length}
+as a named argument,
+overwriting the argument order.
+
+Arguments can also be missing.
+This does not break the function call.
+However, if the associated promise is evaluated, then an error is thrown.
+However, we can not provide more arguments than what a function expects,
+resulting in an error during the function call.
+It is however possible to provide a \mintinline{R}{...} formal argument
+to a function definition.
+When called, all additional arguments will be packed in a special array.
+
+Surprisingly, named arguments are matched by prefix
+(called “partial match” in \R{} source code) and not only by exact name,
+unless they are after a \mintinline{R}{...} formal argument.
+For instance, in the example below,
+we can refer to the argument \mintinline{R}{cd} as just \mintinline{R}{c}.
+Exact matches have however higher priority to prefix:
+although \mintinline{R}{ab} is a prefix of \mintinline{R}{abc},
+as it exactly corresponds to the name of a formal argument,
+\R{} do not mix them.
+Also, exact matches are checked first, and partial matches second:
+this is the reason why the call \mintinline{R}{f (ab = 2, a = 1, 3)}
+below succeeds, assigning \mintinline{R}{abc}
+(and not \mintinline{R}{ab}) to \(1\).
+\begin{minted}{R}
+f <- function (abc, ab, de) c (abc, ab, de)
+# All the expressions below returns the array 1 2 3.
+f (1, 2, 3)
+f (de = 3, 1, 2)
+f (d = 3, 1, 2)
+f (ab = 2, 1, 2)
+f (ab = 2, a = 1, 3)
+f (a = 3, 1, 2) # Returns an error, as “a” is the prefix of several formal arguments.
+\end{minted}
+
+\R{} inherited a lot from its Scheme inspiration (see Section~\ref{sec:history}).
+In particular, most features in \R{} are implemented as functions.
+This includes common functions like vector concatenation \mintinline{R}{c},
+but also flow-controling features like \mintinline{R}{if}, \mintinline{R}{while},
+side-effect features like \mintinline{R}{<-}, or even parentheses.
+For instance, \R{} parser converts the syntactic element \mintinline{R}{(1 + 1)}
+to the function call \mintinline{R}{"(" ("+" (1, 1))}.%)
+These functions are not as special as they might be thought of.
+It is for instance possible to reassign them:
+\begin{minted}{R}
+"(" <- function (a) a + 1
+(1)     # Returns 2.
+\end{minted}
+
+A final unusual behaviour about function calls in \R{}
+is that the evaluation of \mintinline{R}{f (x)} is different
+than the evaluation of \mintinline{R}{e (x)} when \mintinline{R}{e}
+is an expression returning the function \mintinline{R}{f}:
+when performing a variable look-up when the variable is in the place
+of a function call, non-functions are ignored.
+In particular, if there exists a global function \mintinline{R}{f}
+which has been shadowed by a non-function \mintinline{R}{f},
+then \mintinline{R}{f (1)} will call the global function
+(ignoring the shadowing non-function),
+but \mintinline{R}{(f) (1)} will result in a type error:
+as \mintinline{R}{(f)} is not a literal function call,
+it is the usual evaluation (variable look-up) which is performed,
+resulting in the shadowing value,
+which then triggers a type error as it is applied to an argument.
+\begin{minted}{R}
+f <- function (x) "global"
+(function (f) f (1)) ("shadowing")      # Returns "global".
+(function (f) (f) (1)) ("shadowing")    # Type error: can not apply "shadowing" to 1.
+\end{minted}
+
+
+\section{\R{} Interpreters}
+\label{sec:interpreters}
+
+There are several interpreters of \R{}.
+One is the official implementation,
+but others exist (mainly to provide more speed).
+
+\subsection{The Main \R{} Interpreter}
+\label{sec:main:interpreter}
+
+The main \R{} interpreter is a GNU project,
+to which most variants of \R{} are compared.
+It can thus be seen as a reference interpreter.
+However, this interpreter is not meant to be compiled
+with a specific compiler or within a specified system
+or compiling options.
+As a consequence, there might be minor differences
+of behaviour between each of its instances as a form
+of a compiled programs.
+The developpers of \R{}, however, made sure that these
+differences are not critical. % See R-internals.pdf for instance.
+
+\subsubsection{Concepts}
+\label{sec:concepts}
+
+Most \R{} objects are in the form of a \emph{basic language element}.
+This is a \Cn{} structure composed of a tag and four pointers.
+The tag indicates the kind of the basic language element;
+it can be for instance an integer vector, an environment, an expression, or an external pointer.
+The first pointer is used to associate \emph{attributes} to the basic language element.
+Attributes are additional fields that can be added to almost any \R{} object;
+they are untyped.
+
+The meaning of the last three vectors depends on the flag.
+%
+For instance, for an environment, the first (data) pointer is a pointer
+to the current frame (associating each local variable to a value or a promise),
+the second pointer points to the environment of the outer scope,
+and the third pointer points to a hash (to enable faster checks).
+%
+For a list, the first pointer points to the first element of the list,
+the second, to the rest of the list,
+and the third, to an optional name for the first element.
+
+Vectors are specials.
+They are associated with the same tag and attribute pointer
+than other basic language elements,
+then two integers follow.
+Lastly, a raw array of data directly follows the basic language element in the \Cn{} memory.
+The two integers store the size of this array as well as its allocated size
+(which is usually the same than its current size).
+The size of this array’s cells depend on what it stores
+(indicated by its tag):
+for a character vector, it will be an array of characters,
+for an integer vector, an array of integers, etc.
+
+
+\subsubsection{Main Files and Functions}
+\label{sec:files}
+
+This table shows the various main files of the \Cn{} source code of \R{}.
+
+\begin{tabular}{|c|p{7cm}|}
+    \hline
+    \texttt{src/include/Internal.h} & Defines the basic language element structure. \\
+    \hline
+    \texttt{src/main/names.c} & Fills in the global environment, associating each \R{} construct/name to its corresponding \Cn{} function. \\
+    \hline
+    \texttt{src/main/eval.c} & Defines \Cn{} functions to evaluate expressions. In particular the function \mintinline{C}{eval}, taking an expression and an environment and evaluating the expression. \\
+    \hline
+    \texttt{src/main/match.c} & Contains various function to deal with the association between formal and given arguments in a function call. \\
+    \hline
+    \texttt{src/main/context.c} & Defines contexts, which is a structure used to manipulate informations relative to program points, for constructs like \mintinline{R}{break} or \mintinline{R}{return}. \\
+    \hline
+    \texttt{src/main/envir.c} & Defines various \Cn{} functions to manipulate environments. \\
+    \hline
+    \texttt{src/main/coerce.c} & Contains a \Cn{} functions to converts \R{} values to other types. It also contains the \mintinline{R}{substitute} function. \\
+    \hline
+\end{tabular}
+
+These files change regularly,
+but rarely in the \Cn{} part.
+Most of the changes between the current (trunk) version
+and in Version~\(3.0\) (from 2012, that is five years ago)
+are changes in the preprocessor
+(some architectures includes different headers),
+added documentation in comments,
+small type changes between similar types
+(\mintinline{C}{unsigned long} updated to \mintinline{C}{size_t}),
+code restructuration,
+and more importantly,
+new behaviours.
+There new behaviours are mostly additional checks
+and exceptions providing more behaviours
+(or more precise behaviours) to the \R{} interpreter
+for rare cases.
+
+\subsubsection{Optimisations}
+\label{sec:optimisations}
+
+The main \R{} interpreter is written with various optimisations in mind.
+This section lists some of them.
+
+\paragraph{Symbols as Pointers}
+%
+Comparing strings is costly,
+and variables are inherently stored as strings.
+The main \R{} implementation,
+fixes this costly operation by comparing pointers
+instead of strings.
+First, any symbol must be installed using the \mintinline{C}{install}
+function, defined in \texttt{src/main/names.c}.
+This function allocates a basic language element
+of type “symbol”.
+One of its pointer points to the associated string.
+Then the pointer to this basic language element
+is always used instead of the initial string.
+%
+Symbols are stored in a global hash table:
+when “installing” a new symbol, it is first checked
+that the symbol did not already exist:
+if so, we have to return the previously allocated pointer.
+
+
+\subsection{FastR}
+\label{sec:FastR}
+
+The \R{} runtime can be slow.
+\cite{kalibera2014fast} propose a faster approach,
+based on a Java implementation.
+This implementation is itself based on the Truffle
+framework~\parencite{wimmer2012truffle}.
+This framework aims to build an optimised virtual machine
+from an unoptimised interpreter in Java.
+It is based on code specialisation,
+compiling each functions into several versions,
+depending on the types of its arguments.
+
+Due to the framework (as well as the Java virtual machine),
+FastR needs some time to “warm-up” and get to its full speed.
+During this initialisation, it can be slower than the main
+\R{} interpreter.
+However, once it gets to a critical loop,
+it is usually much faster than the main \R{} interpreter.
+
+\subsection{TestR}
+\label{sec:TestR}
+
+TestR~\parencite{maj2013testr, 2014testr} is a framework to generate and execute unit tests.
+It also aims at measuring the coverage of the generated tests
+in the main interpreter source code,
+as well as in its various \R{} libraries.
+
+Although not an interpreter,
+this test suite can be considered as a trust source
+for my \Coq{} formalisation of the \R{} programming language.
+
+
+\section{Formalisation}
+\label{sec:formalisation}
+
+This section describes my approach to formalise \R{} in \Coq{}.
+
+\subsection{Language Formalisation}
+\label{sec:language:formalisation}
+
+Following my experience with JSCert~\parencite{bodin2014trusted},
+I think that it is important to have a specification
+the closest possible to \R{} internals.
+Indeed, JavaScript manipulates structures somehow similar
+to the basic language elements of \R{} (see Section~\ref{sec:concepts}),
+called completion triples.
+In JSCert, we initially choose to represent these completion triples
+as a \Coq{} inductive,
+each case of the triples only containing the attributes that made sense for us.
+For instance, a basic language element whose tag is “symbol”
+will probably only use one pointer to represent the string of the symbol.
+By we discovered later that a construct of JavaScript % The sequence
+broke what we thought were invariants:
+the standard manipulated the structure as if it was a \Cn{} structure
+(and not as a usual pseudo-code structure),
+breaking our type assumptions.
+We were forced to start the formalisation again with a structure
+closer to the standard.
+
+I thus propose a formalisation based on the structure below.
+Arrows represent trust relations,
+those which are dashed are planned but not yet implemented.
+It is inspired by the refinement methodology~\parencite{cohen2013refinements}:
+produce several implementations,
+one easier to specify and one easier (or more efficient) to implement,
+then prove correct each one relatively to the next one.
+\begin{center}
+\begin{tikzpicture}
+    \node [box] (C) {\Cn{} code} ;
+    \node [box, right = 1cm of C] (low) {\parbox{25mm}{\centering{}Low-level \Coq{} formalisation}} ;
+    \node [box, right = 1cm of low] (structured) {\parbox{25mm}{\centering{}Structured \Coq{} formalisation}} ;
+    \node [box, right = 1cm of structured] (intuition) {\parbox{25mm}{\centering{}High-level \Coq{} formalisation}} ;
+
+    \draw [<->, thick, dashed] (C) to [bend left] node [above] {Link with CompCert} (low) ;
+    \draw [<->, thick] (low) to [bend left] node [below] {Eyeball correspondance} (C) ;
+    \draw [<->, thick, dashed] (low) to [bend left] node [above] {\Coq{} proof} (structured) ;
+    \draw [<-, thick, dashed] (structured) to [bend left] node [above] {\Coq{} proof} (intuition) ;
+\end{tikzpicture}
+\end{center}
+At one end of the refinements is the \Cn{} source code of the \R{} interpreter.
+As \R{} is defined by implementation,
+this can be seen as a specification.
+We in particular focus on the parts defining program evaluation
+(mostly the files \texttt{src/include/Internal.h} and \texttt{src/main/eval.c}),
+ignoring most constructs of the \R{} programming language.
+A \Coq{} version of these \Cn{} definitions is defined,
+with the aim to be the closest possible to the \Cn{} definition.
+Some parts of the functions are dropped at this level,
+such as error management.
+At term, it is planned to use CompCert~\parencite{Leroy-Compcert-CACM}
+(or any other \Coq{} semantics of \Cn{}~\parencite{formalin})
+to prove that the \Coq{}
+version is indeed identical to the chosen parts of the \Cn{} definition.
+
+A structured \Coq{} formalisation is then defined.
+This formalisation abstracts some low-level constructs,
+such as pointers to basic language elements
+(which are heavily used in \R{}'s source code).
+In particular, this version should abstract all what can be abstracted
+about the memory model:
+most pointers to basic language elements
+will be replaced by a \Coq{} inductive representing
+the corresponding basic language element.
+As \R{} semantics is mostly functional
+(with the exception of environments),
+this step should not raise too much difficulty.
+The basic language elements are also given a proper
+inductive at this stage (representing \R{} expressions),
+although it is only weakly typed.
+Abstracting the memory enables to make explicit
+a subtlety of \Cn{} pointers,
+which can be used for two distinct usages:
+a pointer to one object,
+or a pointer to an array of this object.
+In this structured formalisation, the pointers to arrays
+are replaced by a list,
+which is much easier to manipulate in \Coq{}.
+
+The last step of the process aims to fit
+the intuition that the original authors had in mind when defining
+the \R{} programming language~\parencite{ihaka1996r},
+which hopefully fits the intuition of programmers.
+As such, this third formalisation can also be considered to be a trust source.
+
+These formalisations are chosen to be interpretable.
+This enables to add another trust source
+by running these interpreters against \R{} test suites.
+Code coverage can also be applied on the extracted \OCaml{} interpreters
+using tools such as Bisect.
+
+One of the reasons why \R{} is so accurate for such a formalisation choice
+is its modularity:
+these three formalisations focus on the core of \R{}.
+Most of the additional features of \R{} can then be iteratively be added.
+For instance, the assignment feature \mintinline{R}{<-} is not
+strictly speaking in the core of \R{} and can be later added.
+These additional features can be limited to the ones needed to analyse
+a given program:
+it is not needed to formalise the entire \R{} programming language to start
+using these formalisations.
+In this aspect, \R{} is modular.
+%
+This also means that some features of \R{} can be formalised
+in less details than others
+without altering the trust of the code formalisation.
+
+We now discuss the proofs of equivalence between \Coq{} formalisations.
+%
+The first proof is between the low-level formalisation
+and the structured level one.
+The main change between the two formalisation is the memory model.
+As such, there are no semantic changes,
+and they can (at least in theory)
+be proven equivalent.
+However, the deterministic aspect of the formalisation
+(as both are \Coq{} interpreters)
+simplifies the equivalence proof:
+only one direction\footnote{
+    That is, that if one formalisation results in something,
+    then so does the other.
+} is needed to get the equivalence.
+%
+The second proof, between the structured formalisation
+and the high-level is more complex.
+Indeed, the high-level formalisation manipulates
+different structures than the structured one.
+Furthermore, the high-level structures carry assumptions:
+some advanced \R{} constructs may not fit such a high-level formalisation,
+for instance because they manipulate low-level bits or fields.
+If the assumptions underlying the high-level formalisation
+are broken, no result is given in the high-level semantics;
+but this doesn’t mean that there is no accepted results in the
+structured formalisation, which assumes less.
+The proof of correctness between these two formalisation
+is thus bound to be in only one direction:
+if the high-level returns a given result,
+so does the structured formalisation.
+
+I think that the structured formalisation
+is at the right level of reasoning to prove properties
+about \R{} programs.
+However, in places where the program to be proven does
+not use low-level features,
+it is possible to switch to the high-level formalisation,
+thanks to its proof of correctness.
+
+
+\subsection{What is Formalised}
+\label{sec:formalisation:coverage}
+
+The \Cn{} source code of \R{} is large.
+It is thus out of the question to translate every \Cn{} function to \Coq{}.
+I have focussed on the \mintinline{C}{eval} function from
+\texttt{src/main/eval.c} and its dependencies.
+This includes in particular the \Cn{} structures used to represent
+\R{} expressions,
+as well as a large parts of the files presented in Section~\ref{sec:files}.
+
+I later added simple features used in some sample \R{} programs.
+This includes assignments and some array manipulation functions.
+
+\subsubsection{Structures}
+\label{sec:coverage:structures}
+
+The memory management is completely ignored in this formalisation.
+In particular, the garbage collector and its special reserved bits in the
+basic element structure are completely ignored.
+Instead, we consider that the interpreter allocates new basic language element
+without reusing them.
+The memory is thus formalised as a partial map from pointers
+(which we defined to be natural numbers)
+to basic language elements.
+We think that this part of \R{} is sufficiently local
+to not be formalised.
+This also means that the extracted interpreter
+(from the low-level formalisation)
+is not able to release its simulated memory,
+making it quite impractical to run on large programs.
+
+\R{} implementation is done in a strong imperative style,
+as well as using pointers.
+Tracking whether two objects are aliases in the heap is thus important.
+I thus decided to include in the formalisation the \mintinline{C}{named}
+field of the language element.
+This may seem to contradict the previous statement of not formalising
+memory management.
+The idea is here to formalise pointers and aliases,
+but not tracking whether a pointer is actually used is not.
+%
+A explained in the documentation file \texttt{R-ints.pdf}
+(Section~1.1.2),
+which describes some of \R{}'s internal structures,
+this field can take three values:
+\(0\)~for temporary objects,
+\(1\)~for objects bounds to at least one variable,
+as \(2\)~for objects that may be bound to more than one variable.
+I formalised this part as a \Coq{} inductive, shown below.
+\begin{minted}{Coq}
+Inductive named_field :=
+  | named_temporary
+  | named_unique
+  | named_plural
+  .
+\end{minted}
+
+Other fields of the basic language elements were not formalised.
+For instance, the \mintinline{C}{debug} field,
+which is only used when debugging \R{} programs,
+or the fields reserved for the garbage collector.
+These fields are not difficult to later add in the formalisation,
+as basic language elements are very rarely built explicitly:
+they are usually defined or edited (following \Cn{}'s imperative style)
+using constructors.
+This means that only these constructors need to be updated
+when adding new fields,
+which is not a difficult operation.
+In the \Coq{} formalisation, these accessors are defined in the file
+\texttt{low/RinternalsAux.v}.
+
+Basic language elements are also associated a \mintinline{C}{gp} field,
+for general purpose.
+In a nutshell, this field is used differently by all \R{} functions
+to store some informations in the basic language elements.
+Usually, this is only stored locally.
+For instance, during the matching of given arguments to formal arguments,
+it is used to store some information about whether the argument
+has been used yet, whether it is known to be missing, etc.
+It was tempted not to formalise this part,
+or to formalise it as a parameterised type
+(each language element being able to store additional information
+of any type, using dependent-type constructs).
+Formalising out these constructs would however make the \Coq{}
+formalisation away from the \Cn{} source code.
+Such a choice would thus lead to further complexities to relate
+the \Cn{} source code with the low-level \Coq{} formalisation.
+It has thus been added in the formalisation as it is in \Cn{},
+as an array of \(16\)~booleans.
+The structured formalisation then formalises it out.
+
+
+\subsubsection{Simplified Items}
+\label{sec:coverage:simplifications}
+
+Contexts are large \Cn{} structures in \R{} source code.
+They are used to represent the \R{} stack.
+The structure contains low-level information,
+such as long-jumps
+(used in \Cn{} to jump to an arbitrary assembly code).
+These low-level informations have not been modeled.
+The structure also features some \R{} structures
+in the form of basic language elements.
+For instance, the \mintinline{C}{conexit} field
+is an optional basic language element executed when
+the context is ended.
+The end of a context typically at a function return.
+The \mintinline{C}{conexit} field can be set
+using the \mintinline{R}{on.exit} \R{} function.
+These fields about features of \R{} have been modeled.
+There are \(6\) of them:
+\mintinline{R}{promargs},
+\mintinline{R}{callfun},
+\mintinline{R}{sysparent},
+\mintinline{R}{call},
+\mintinline{R}{cloenv}, and
+\mintinline{R}{conexit}.
+
+Contexts also carry information about errors,
+enabling to catch them directly in \R{}.
+However,  the control flow has been modelled as a simple
+success-or-error monad,
+providing very few information in case of an error:
+errors are not properly modelled in the formalisation.
+The fields of contexts describing informations about
+the current error
+(such as line number and error type)
+have thus not been modelled.
+We think that this is not a major issue,
+as errors are usually unwanted behaviour:
+if we prove that a program has a semantics
+in our low-level formalisation,
+then no error can appear during its execution.
+
+
+\subsubsection{Miscellaneous Unformalised Items}
+\label{sec:coverage:unformalised}
+
+The hash of environment has not been formalised.
+In \R{}, this hash enables faster comparisons of environments.
+We considered it to be an optimisation and did not wanted to bother
+with the complex associated proofs.
+
+The \mintinline{R}{truelength} field of vectors
+(indicated the length of the allocated memory
+instead of the data length of the vector)
+has also been removed in the \Coq{} formalisation.
+It can be seen as a general choice not to model the \Cn{} memory in details.
+Similarly, the vector following a vector is considered to be part
+of the vector (represented as a list).
+We believe it to closely follow the intuition and the comments from the \Cn{} code:
+the only reason why it was not done as-is in \Cn{} is because \Cn{} types
+are not expressive enough for this.
+
+Character encodings has not been formalised.
+In particular, we consider variables to be simple
+\Coq{} strings (that is, limited to ASCII).
+This greatly simplifies functions like \mintinline{C}{install}
+without removing much expressivity.
+
+The function \mintinline{C}{R_PreserveObject} is used to tell the garbage collector
+not to free the given object.
+It internally works by creating a dummy list,
+whose head is never checked by the garbage collector.
+As we do not model the garbage collector,
+we do not model this function.
+
+As described in Section~\ref{sec:optimisations},
+symbols are not stored as strings,
+but as pointers.
+As a consequence, when looking for a symbol from its string
+(for instance when parsing a program, see Section~\ref{sec:parsing}),
+it is important not to allocate a new symbol if the
+symbol already exists.
+In order to make this check faster,
+\R{} source code uses a global array \mintinline{C}{R_SymbolTable}.
+When a symbol is looked for, it is first hashed,
+then \R{} looks at the specific cell
+of the array \mintinline{C}{R_SymbolTable}.
+This cell should points to a \R{} list with all the corresponding symbols.
+This is quite a complex algorithm for making proofs.
+Instead, we chose to model it as a simple \R{} list.
+This is equivalent to chose the size of the array to be only~\(1\)
+and not computing the hash of input strings
+(as there is only one list).
+
+
+\subsection{The Low-Level Formalisation}
+\label{sec:low:level}
+
+This formalisation is mainly inspired from the interpreter
+of the JSCert project~\parencite{bodin2014trusted}.
+In contrary to JSCert, the semantics is only given in the form
+of an interpreter.
+As illustrated by the JSExplain project~\parencite{JSExplain},
+such a form is enough to describe an operational semantics.
+More precisely, the JSExplain project illustrates
+how the other forms can be \emph{generated} from a monadic interpreter.
+
+\subsubsection{Notations}
+\label{sec:notations}
+
+When starting such a large project,
+having consistent notations is crucial.
+In particular,
+we tried to be conservative with the variable names from
+\R{} source code as much as possible.
+This greatly increases the eyeball closeness between
+the \Coq{} code and the \Cn{} code.
+However, keeping the same names between the two
+is not always possible.
+
+The \Cn{} language manipulates a lot of pointers,
+and the seemingly similar \Cn{} notations \mintinline{C}{p},
+\mintinline{C}{*p}, and \mintinline{C}{p->f}
+(which is often hidden in a macro in \R{} source code)
+represent different objects in \Coq{}.
+In particular, whilst \mintinline{C}{p} is always defined,
+\mintinline{C}{*p} may not.
+To catch this, we use monads (see next section),
+returning the pointed structure if defined:
+the pointed structure and the pointer are thus not
+syntactically related in \Coq{}.
+Similarly, when a field of \mintinline{C}{p} is actually an union,
+it is represented as an inductive type in \Coq{}:
+although \Cn{} access is unguarded
+(and thus seemingly always possible),
+we have to go through a monad in \Coq{}.
+We chose to write \mintinline{C}{*p} as \mintinline{Coq}{p_}
+and \mintinline{C}{p->f} as \mintinline{Coq}{p_f} in \Coq{}.
+We tried to use this notation as consistently as possible
+to increase the eyeball closeness between \Coq{} and \Cn{}.
+
+
+\subsubsection{Monadic Style}
+\label{sec:monadic:style}
+
+A \Cn{} program manipulates a global state.
+This states contains the heap
+(a partial mapping from pointers to values),
+but also stores global variables.
+To represent this in \Coq{}, we use a monadic construct, defined below.
+The main constructor \mintinline{Coq}{result_success}
+carries the global state and an object.
+This object is the result returned by the considered function.
+If a function call fails,
+the constructor \mintinline{Coq}{result_error}
+is called with the corresponding error message.
+We could have chosen to add informations
+such that the line number of the error
+(to be closer than \R{} source code),
+but we chose not to precisely formalise errors.
+The other constructors of \mintinline{Coq}{result}
+describe other reasons why a result was not given:
+because of places of the \R{} semantics that we do not catch yet,
+because of lack of fuel (see below),
+or because of an assertion failure
+(which should not happen,
+and is thus important to declare if they happen).
+The first point of this last list
+(not-yet-implemented features) is not of great importance
+in the formalisation
+(we could remove it once the entire project will be finished),
+but greatly helps having a working interpreter early
+in the development.
+Having an interpreter this early enables to quickly catch
+bugs before starting any proof.
+\begin{minted}{Coq}
+Inductive result (A : Type) :=
+  | result_success : state -> A -> result A
+  | result_error : state -> string -> result A
+  | result_not_implemented : string -> result A
+  | result_bottom : state -> result A
+  | result_impossible : state -> string -> result A
+  .
+\end{minted}
+
+We can then define a monad for this type
+through a bind function, shown below.
+Any call to a procedure that may fail
+is done through this function
+propagating errors.
+A notation has been added
+(following the monadic usage)
+to avoid difficult-to-read nested parentheses.
+\begin{minted}{Coq}
+Definition if_success (A B : Type)
+    (r : result A) (f : state -> A -> result B) : result B :=
+  match r with
+  | result_success S a => f S a
+  | result_error S => result_error S
+  (* ... *)
+  end.
+
+Notation "'let%success' a ':=' r 'using' S 'in' cont" :=
+  (if_success r (fun S a => cont))
+  (at level 50, left associativity) : monad_scope.
+\end{minted}
+
+Functions in \Coq{} must terminate.
+This makes programming in \Coq{} complex as we must explicitly
+mention what argument decreases in a recursive call.
+Mutually recursive calls are common in the source code of \R{},
+and it is not always clear what measure is decreasing in all function call.
+The common solution to this problem is to add an artificial
+argument—called “fuel”—and make it decrease at each step.
+When the fuel reaches \(0\), the computation ends,
+returning a dummy result
+(in this case \mintinline{Coq}{result_bottom}).
+This additional argument adds some code
+everywhere in \Coq{} programs,
+making it cumbersome,
+which is problematic for the eyeball closeness.
+We solved this problem with the same solution than JSCert:
+the potentially looping constructs are packed into a \Coq{}
+structure, which is given to the argument of any function.
+There is no recursive call in such a programming pattern:
+all calls are replaced by a call to one field
+of the structure.
+If this is a recursive call,
+the field of the \Coq{} structure have the same name than
+the current function:
+each field represents a function.
+
+Once all functions have been defined
+with such a structure as a parameter,
+we can build such a structure using fuel
+(an artificially decreasing argument),
+calling all the corresponding functions
+with a new structure as argument,
+with less fuel available.
+The interpreter is then defined using this structure of functions.
+This way of defining the interpreter avoids
+having to deal with explicit fuels all along the computation.
+It also makes definitions easier to read.
+
+
+\subsubsection{Global Variables}
+\label{sec:global:variables}
+
+The source code of \R{} uses a large number of global variables.
+We categorize these global variables into two distinct categories:
+global variables that are initialised when \R{} starts, then never changed,
+and global variables that may change at any point during execution.
+Note that \mintinline{C}{static} variables declared inside a function in \Cn{}
+behave as global variables,
+in the sense that the global state has to store their values.
+
+The first kind can be separated into two subcategories:
+either it is simply a constant, either it needs some complex initialisation.
+If the value is simply a constant
+it is directly translated to a \Coq{} value,
+usually at the beginning of the file \texttt{low/Reval.v}.
+For instance, the value \mintinline{C}{R_NaInt},
+is just an alias for \mintinline{C}{INT_MIN}.
+
+The case in which the function needs an initialisation is complex.
+Such values (for instance \mintinline{C}{R_BaseEnv})
+need to call to non-trivial \R{} function
+(such as \mintinline{C}{NewEnvironment} or \mintinline{C}{defineVars})
+to be initialised.
+These calls will usually allocate pointers,
+changing the heap.
+Furthermore, the called functions do not guarantee success or termination
+(at least, not within their types:
+they return a \mintinline{Coq}{result T}—%
+see Section~\ref{sec:monadic:style}).
+
+To model such global variables,
+we added a global context \mintinline{Coq}{Globals} to our formalisation.
+Each function using one of these global variables
+(for instance, \mintinline{Coq}{forcePromise}
+uses \mintinline{Coq}{R_UnboundValue})
+is parameterised by this context.
+This context is defined
+(initialising the state)
+in the file \texttt{low/Globals.v}.
+This enables to define the global interpreter:
+first, the \mintinline{Coq}{Globals} context is defined,
+then the evaluation function is run in this context.
+
+The second kind of global variables—%
+that may change at any place during the execution of an \R{} program—%
+have been incorporated into the state.
+For instance, the global variable \mintinline{C}{R_SymbolTable}
+is updated every time that the function
+\mintinline{C}{install} is called.
+Such a call can occur in the initialisation,
+but also in the middle of an \R{} session,
+to dynamically add new symbols to the set of known symbols.
+The definition of \mintinline{Coq}{state} is shown below.
+\begin{minted}{Coq}
+Record state := make_state {
+    state_memory :> memory ;
+    state_context : context ;
+    R_SymbolTable : SExpRec_pointer ;
+    (* ... *)
+  }.
+
+Definition update_R_SymbolTable S p := {|
+    state_memory := state_memory S ;
+    state_context := state_context S ;
+    R_SymbolTable := p ;
+    (* ... *)
+  |}.
+\end{minted}
+
+There is a large number of global variables of the first kind
+(that are initialised once, then never changed).
+Furthermore, the initialisation procedure is subtle:
+global variables must be initialised in a specific order.
+It was thus necessary to find an easily extendable definition:
+adding global variables to the formalisation should not be a difficult task.
+To illustrate this, let us consider one particular
+global variable: \mintinline{C}{R_NilValue}.
+The \Cn{} source code of \R{} very rarely uses
+the \mintinline{C}{NULL} pointer.
+Instead, it uses a special \R{} value: \mintinline{C}{R_NilValue}.
+This value points to a simple object:
+a list whose first and next elements both point
+to \mintinline{C}{R_NilValue},
+but whose type
+(see the definition of \mintinline{Coq}{SExpType} in Section~\ref{sec:closeness})
+is \mintinline{Coq}{NilSxp}—%
+it is the only element of such a type in \R{}.
+%
+Not-yet-initialised fields of \R{} structures,
+are usually pre-initialised to this specific pointer.
+Lists are terminated by this special pointer.
+Changing the value of \mintinline{C}{R_NilValue}
+during the execution of an \R{} program,
+or getting its value wrong,
+will thus probably lead to \R{} looping or crashing
+(looking for a \mintinline{C}{R_NilValue} pointer but never finding it).
+This actually happened in the first version of the interpreter,
+the value of \mintinline{C}{R_NilValue} being written
+in the global state after a particular \R{} list being unfolded.
+It is one of the first global variable to be set,
+in the function \mintinline{C}{InitMemory}.
+
+This example illustrates that the initialisation has to be done
+in a specific order, but also that the next initialisation functions
+usually needs the global variables defined before.
+The definition of \mintinline{Coq}{Globals} is shown below.
+We first define symbols,
+one for each global variables.
+We prove that these symbols are (decidably) comparable—%
+this part is automatically done using tactics,
+but may take some time to complete.
+\begin{minted}{Coq}
+Inductive GlobalVariable :=
+  | R_AsCharacterSymbol
+  | R_BaseEnv
+  | R_BaseNamespaceName
+  | R_BaseNamespace
+  (* ... *).
+\end{minted}
+The global context is then defined as a complete function
+from these symbols to pointers.
+These pointers are initialised,
+as done in \Cn{},
+by the \mintinline{C}{NULL} pointer.
+\begin{minted}{Coq}
+Definition Globals : Type := GlobalVariable -> SExpRec_pointer.
+
+Definition empty_globals : Globals :=
+  fun _ => NULL.
+\end{minted}
+Reading such a context is trivial:
+we just has to apply the corresponding symbol to the context.
+Writing is done using the following function.
+The \mintinline{Coq}{ifb} construct is part of the TLC library~\parencite{TLC}.
+It looks for type-classes deciding the following predicate,
+replacing them with the corresponding decidability procedure.
+In this case, it uses the proof that symbols are comparable.
+A notation similar to \OCaml{}’s field update is given to this function.
+\begin{minted}{Coq}
+Definition GlobalsWith (g : Globals)
+    (C : GlobalVariable) (p : SExpRec_pointer) : Globals :=
+  fun C' =>
+    ifb C = C' then p
+    else g C'.
+
+Definition GlobalsWith_list :=
+  fold_left (fun C_p g => GlobalsWith g (fst C_p) (snd C_p)).
+
+Notation "'{{' g 'with' L '}}'" :=
+  (GlobalsWith_list g L) : globals_scope.
+\end{minted}
+We can now define the initialisation procedure
+as the \Coq{} equivalent of the \mintinline{C}{setup_Rmainloop}
+\Cn{} function.
+Each calls returns some values to be written in the global context,
+and the global context is updated accordingly.
+\begin{minted}{Coq}
+Definition setup_Rmainloop max_step S : result Globals :=
+  let globals := empty_globals in
+  let%success (NilValue, TrueValue, FalseValue, LogicalNAValue) :=
+    InitMemory globals S using S in
+  let globals := {{ globals with [(R_NilValue, NilValue) ;
+                                  (R_TrueValue, TrueValue) ;
+                                  (R_FalseValue, FalseValue) ;
+                                  (R_LogicalNAValue, LogicalNAValue)] }} in
+  let%success (EmptyEnv, BaseEnv) :=
+    InitBaseEnv globals (runs globals max_step) S using S in
+  let globals := {{ globals with [(R_EmptyEnv, EmptyEnv) ;
+                                  (R_BaseEnv, BaseEnv)] }} in
+  (* ... *)
+  result_success S globals.
+\end{minted}
+
+
+\subsubsection{Primitives and Internals}
+\label{sec:primitives:internals}
+
+\R{} defines a large number of variables present in the initial heap.
+These fall into two categories:
+the ones defined in the global environment, called \emph{primitives},
+and the ones defined in \texttt{.Internals}, called \emph{internals}.
+Primitives are usually considered to be the basic language features of \R{}.
+Primitives includes usual arithmetical operators,
+but also language features such as \mintinline{R}{if} or \mintinline{R}{while},
+as well as common functions like \mintinline{R}{c} or \mintinline{R}{sin}.
+
+In the \Cn{} code of the main interpreter,
+these primitives are defined in the file \texttt{src/main/names.c}.
+First, an array \mintinline{C}{R_FunTab} is defined (see below).
+This array contains informations about each functions,
+such as its name, a pointer to the \Cn{} function implementing it,
+its arity, as well as various other informations.
+The \Cn{} function associated with a construct
+(for instance the function \mintinline{C}{do_if} used below)
+have exactly four arguments:
+\mintinline{C}{call}, \mintinline{C}{op}, \mintinline{C}{args}, and \mintinline{C}{rho}.
+The arguments are passed in the form of a \R{} list structure
+through the \mintinline{C}{args} argument.
+\begin{minted}{C}
+FUNTAB R_FunTab[] =
+{
+/* printname  c-entry  offset  eval  arity  pp-kind  precedence  rightassoc */
+  { "if",      do_if,    0,    200,   -1,  { PP_IF,    PREC_FN,   1 } },
+  { "while",   do_while, 0,    100,   2,   { PP_WHILE, PREC_FN,   0 } },
+  { "for",     do_for,   0,    100,   3,   { PP_FOR,   PREC_FN,   0 } },
+  /* ... */
+  { NULL,      NULL,     0,    0,     0,   { PP_INVALID, PREC_FN, 0} },
+};
+\end{minted}
+
+During the initialisation,
+each of these primitive and internals are associated with a symbol
+(see Section~\ref{sec:optimisations}),
+as well as added into the right environment:
+the top environment for primitives,
+and the \mintinline{R}{.Internals} array for internals.
+\begin{minted}{C}
+void attribute_hidden InitNames()
+{
+    /* ... */
+    for (int i = 0; R_FunTab[i].name; i++) installFunTab(i);
+}
+\end{minted}
+
+The array \mintinline{C}{R_FunTab} naturally translates
+into a \Coq{} list,
+and the initialisation of the array in \mintinline{C}{InitNames}
+by a list folding.
+However, there is an issue with this approach:
+the functions in the array may call look in the array
+for other functions,
+introducing new ways to loop in the interpreter.
+Because of this, the definition of the \Coq{} version
+of the \mintinline{C}{R_FunTab} array have to be parametrised
+by an additional fuel argument,
+similar to the \mintinline{Coq}{runs} argument of most functions
+(see Section~\ref{sec:monadic:style}).
+I have thus added an argument to store \mintinline{C}{R_FunTab}
+in the \mintinline{Coq}{runs} structure to deal with this.
+
+
+\subsubsection{Code Rewriting}
+\label{sec:code:rewriting}
+
+Even using monadic style,
+translating a \Cn{} program into \Coq{} can be complex.
+I tried to stay the closest possible from the original
+\Cn{} source code,
+but there were places in which direct translation was difficult.
+For instance, in function \mintinline{C}{matchArgs},
+an array \mintinline{C}{fargused} of integers is declared,
+tracking for each argument whether it is used or not.
+As I did not model the full \Cn{} memory—%
+the only kind of cells that we can allocate in the model
+is basic language elements—%
+allocating such an array would not be possible.
+\begin{minted}{C}
+int fargused[arg_i ? arg_i : 1]; // avoid undefined behaviour
+memset(fargused, 0, sizeof(fargused));
+\end{minted}
+
+One solution would be to define \mintinline{Coq}{fargused}
+as a list of integers, as below.
+The \Cn{} code defines an array of length at least one,
+as an empty array is considered undefined behaviour
+(that is, the program can do whatever it wants,
+including sending an email or other unexpected behaviour).
+Declaring an empty list is not an issue in \Coq{}.
+Such a list would then be updated using monadic style.
+\begin{minted}{Coq}
+let fargused : list nat :=
+  let fargused : list nat :=
+    let fix zeros i :=
+      match i with
+      | 0 => nil
+      | S n => 0 :: zeros n in
+    in aux argi in
+    (* ... *)
+\end{minted}
+
+However, when observing in practise what the \Cn{} program
+does, it does not fully use the fact that it is an array:
+the \(i\)th cell of the array is only accessed in the \(i\)th
+iteration of the loop.
+As the loop was translated as an application of the fold function
+on the given list,
+it was not a issue to push the array into the fold function.
+One possible interpretation of this formalisation choice
+is that we have locally rewritten the original \Cn{} program
+to an equivalent program.
+I only did such a program rewriting when the style of the \Cn{}
+program was difficult to directly translate into \Coq{},
+and the change were all local:
+I do not expect it to yield a lot of complexity in the proof of correctness.
+
+
+\subsubsection{Parsing}
+\label{sec:parsing}
+
+Parsing is currently not performed in \Coq{}, but in \OCaml{}.
+The reason is that the \Coq{} backend of Menhir~\parencite{jourdan2012validating}
+suffers some limitations hindering the approach proposed here.
+\R{} interpreter uses Bison~\parencite{Bison} to parse its input.
+The main idea to trust parsing
+is to use Menhir with a file looking as much as possible
+from the original Bison grammar.
+In particular, the grammar will not be improved to use the helpful
+additional features of Menhir,
+such as \mintinline{OCaml}|%inline|.
+This method has some issues, however.
+The most important one is that the original file \texttt{src/main/gram.y}
+produces \(81\) shift/reduce conflicts when run using Bison.
+%
+The \Coq{} backend of Menhir requires\footnote{
+    Actually, the it seems that the \Coq{} backend only requires
+    this when generating the proof of correctness of the generated parser.
+    It would thus be interesting to see whether we can move the parser
+    into \Coq{}.
+} the grammar to be in a special form
+(conflict resolution resolved via priority and associativity declarations
+are not supported),
+but the \R{} reference grammar is not written in this form.
+We thus backtrack in the meantime to the usual \OCaml{} backend of Menhir.
+
+The lexer of the \R{} reference interpreter is unfortunately
+written directly in \Cn{} as a \mintinline{C}{token}/\mintinline{C}{yylex} function
+(\mintinline{C}{token} parses simple tokens,
+whilst \mintinline{C}{yylex} parses more general tokens
+like the newline character).
+This is unpractical for several reasons.
+First, we consider that having a standard lexer helps to read our interpreter.
+Second, the \mintinline{C}{yylex} is admitted by its authors
+to be written in a “very messy fashion”
+(see File \texttt{src/main/gram.y}).
+For instance, \mintinline{R}{if}-statements in \R{} can interact with
+newline characters:
+when in interactive mode, parsing stops if the current input is valid
+when reaching a newline character.
+As the \mintinline{R}{else} clause of an \mintinline{R}{if}-statement
+is facultative,
+parsing may stop when the first clause of the \mintinline{R}{if}-statement
+ends if a newline appears.
+Such behaviour is usually defined in the parser.
+The authors of \R{} choose to make the lexer define a stack
+to store this information,
+effectively mixing the usual roles of lexers and parsers.
+We chose to clearly separate lexer and parser.
+
+To get an idea of how the \Cn{} tokenizer is written, here is an extract from it.
+It uses \mintinline{C}{goto} statements and looks like
+what a code generator would produce.
+\begin{minted}{C}
+static int token(void)
+{
+    int c;
+    /* ... */
+    c = SkipSpace();
+    if (c == '#') c = SkipComment();
+    if (c == R_EOF) return END_OF_INPUT;
+    if (c == '.' && typeofnext() >= 2) goto symbol;
+    /* ... */
+ symbol:
+    if (c == '.') return SymbolValue(c);
+    switch (c) {
+    case '<':
+    if (nextchar('=')) {
+        yylval = install_and_save("<=");
+        return LE;
+    }
+    if (nextchar('-')) {
+        yylval = install_and_save("<-");
+        return LEFT_ASSIGN;
+    }
+    if (nextchar('<')) {
+        if (nextchar('-')) {
+        yylval = install_and_save("<<-");
+        return LEFT_ASSIGN;
+        }
+        else
+        return ERROR;
+    }
+    /* ... */
+}
+\end{minted}
+This is the corresponding \OCaml{} lexer.
+In contrary to the \Cn{} code,
+using \texttt{ocamllex} enables us to group operators
+by meaning rather than by characters.
+\begin{minted}{OCaml}
+rule lex = parse
+  (* ... *)
+  | "<-"    { LEFT_ASSIGN }
+  | "="     { EQ_ASSIGN }
+  | "->"    { RIGHT_ASSIGN }
+  (* ... *)
+  | "<="    { LE }
+  (* ... *)
+  | ('#' [^ '\n']*)? '\n'   { NEW_LINE }
+  | space+                  { lex lexbuf }
+  | _                       { ERROR }
+  | eof                     { END_OF_INPUT }
+\end{minted}
+
+\R{} lexer (or more precisely, the function \mintinline{C}{yylex})
+performs some side effects.
+Typically, it allocates new basic language elements.
+This behaviour is difficult to directly link with our monadic interpreter.
+To this end, we changed the associated type of some tokens:
+when tokens stores a pointer to a basic language element in \Cn{},
+we change their associated type with a function allocating this pointer,
+and returning a \mintinline{Coq}{result}.
+This enables us to reuse the same allocating functions from \Coq{}.
+\begin{minted}{OCaml}
+%token<globals -> runs_type -> state -> sExpRec_pointer result>
+    STR_CONST NUM_CONST NULL_CONST SYMBOL FUNCTION
+\end{minted}
+
+As said above, we choose to focus on the similarity of the parser
+with respect to the original parser rather than efficiency or readability.
+In particular, we left unchanged some unexpected choices of the authors of \R{}.
+For instance, there exists several syntaxes to extract some elements from an array.
+One of them if \mintinline{R}{a[[i]]}, where \mintinline{R}{a} is an array
+and \mintinline{R}{i} an (array of) index(es).
+The lexer recognises the form \mintinline{R}|[[|, but no \mintinline{R}|]]|.
+Instead, the grammar expects a \mintinline{R}|[[| token,
+followed by an expression, followed by two successive closing brackets \mintinline{R}|]|.
+This means that space can be placed between these two last brackets,
+but not between the first two:
+\mintinline{R}|a[[i] ]| is valid, but \mintinline{R}|a[ [i]]| is not.
+We catch these behaviours, thanks to our code similarity.
+
+There is a place where our parser differs from the original parser, however.
+Indeed, \R{} parser uses imperatives side-effects during parsing,
+and these side-effects changes the behaviour of the lexer.
+We implemented these differently.
+In \R{} interactive mode, new lines are indeed treated in a special way:
+when a new line appears, if the current expression is a valid \R{} expression,
+then it is immediately executed, without parsing the next lines.
+To implement this, \R{}'s authors uses a global variable
+\mintinline{C}{EatLines}, which is \(1\) if the previous token
+expects something afterwards.
+For instance, if a new line appears after \mintinline{R}{if (cond)},
+we should wait for a statement first.
+But if a new line appears after \mintinline{R}{if (cond) stat},
+then the parsing stops, and the expression is executed
+(even if a \mintinline{R}{else} might appear afterwards).
+Below is the beginning of the \mintinline{C}{yylex} function
+implementing this behaviour.
+\begin{minted}{C}
+static int yylex (void){
+  int tok;
+again:
+  tok = token_ ();
+  if (tok == '\n'){
+    if (EatLines) goto again;
+    /* ... */
+  }
+  /* ... */
+}
+\end{minted}
+Many functions building \R{} terms update the global variable \mintinline{C}{EatLines},
+such as \mintinline{C}{xxcond}, \mintinline{C}{xxexprlist}, etc.
+But in partical, the grammar product \mintinline{C}{cr} is defined as shown below:
+\begin{minted}{C}
+cr:           { EatLines = 1; }
+  ;
+\end{minted}
+It is placed in the grammar when a new line might appear,
+but that the functions called to build the subterm of the current expression
+do not already set \mintinline{C}{EatLines} to \(1\).
+This assignment has non-trivial implications.
+Our first try was to
+consider that \mintinline{C}{cr} is a sequence of newlines,
+as shown below.
+\begin{minted}{OCaml}
+cr:
+  | NEW_LINE cr { }
+  |             { }
+\end{minted}
+This approach turned however to create incorrect parsing trees.
+It was also added a lot of ambiguity,
+the parser sometimes having to predict which token would appear
+after a sequence of new lines before this sequence.
+We thus backtracked into a less principled way but more similar than \R{}’s:
+the lexer and parser both shared a global variable \mintinline{OCaml}{eatlines : bool ref}.
+This introduces non-trivial interactions between the lexer and the parser.
+In particular, it becomes important to check when the parser calls the lexer.
+There is still currently a bug in some states of the \OCaml{} parser,
+as Bison and Menhir calls the lexer in a different way
+(Menhir is always one step ahead of the lexer,
+but Bison is not).
+For instance, the empty block \mintinline{R}|{}|
+is parsed differently by our Menhir parser:
+it expects and end-of-line afterwards whilst \R{} does not.
+We consider these different small enough for the middle term.
+
+Not everything was formalised in the parser.
+The function \mintinline{C}{R_atof} was for instance not translated:
+the \OCaml{} function \mintinline{OCaml}{float_of_string}
+is used instead.
+There were a lot of additional informations computed by the parser
+(line numbers, identifiers, etc.):
+these informations were not translated.
+Finally, the entire \R{} parser seems to exist in two modes,
+controlled by the \mintinline{C}{GenerateCode} boolean.
+This boolean is able to disable the creation of \R{} structures
+(replacing every returned element by \mintinline{C}{R_NilValue}).
+This mode is probably enabled when one only wants to check
+that a given \R{} program is syntactically valid,
+but does not want to convert it to an abstract syntax tree.
+We do not model this mode:
+the parser always allocates the corresponding abstract syntax trees.
+
+
+\subsubsection{Closeness to the \Cn{} Source Code}
+\label{sec:closeness}
+
+The goal of the low-level formalisation is to be as close as possible
+from the \Cn{} source code of \R{}.
+This eyeball closeness has two purposes.
+First, anyone with basic \Coq{} and \Cn{} training
+can check that the translation from \Cn{} to \Coq{} yielded
+a similar behaviour.
+Second, close programs are easier to prove correct one with another:
+this closeness will help relating the low-level formalisation
+to the interpretation of the original \Cn{} code in a \Cn{} semantics.
+In this section, we evaluate how close the low-level formalisation
+is to the original \R{} source code.
+
+Let us start by structure definitions.
+In the \Cn{} source code, the different types of basic language elements
+are defined by an enumeration.
+\begin{minted}{C}
+typedef enum {
+    NILSXP  = 0,    /* nil = NULL */
+    SYMSXP  = 1,    /* symbols */
+    LISTSXP = 2,    /* lists of dotted pairs */
+    CLOSXP  = 3,    /* closures */
+    ENVSXP  = 4,    /* environments */
+    PROMSXP = 5,    /* promises: [un]evaluated closure arguments */
+    /* ... */
+    FUNSXP  = 99    /* Closure or Builtin */
+} SEXPTYPE;
+\end{minted}
+This enumeration is naturally translated into an inductive in \Coq{}.
+In this case,
+the \Coq{} translation even appears more natural than the original \Cn{}.
+\begin{minted}{Coq}
+(** SEXPTYPE **)
+Inductive SExpType :=
+  | NilSxp
+  | SymSxp
+  | ListSxp
+  | CloSxp
+  | EnvSxp
+  | PromSxp
+  (* ... *)
+  | FunSxp
+  .
+\end{minted}
+However, there are some places in which the \mintinline{C}{SEXPTYPE}
+enumeration is stored in only \(5\)~digits.
+This is an issue as the last item of the enumeration
+is associated the value~\(99\)—%
+the one before is associated the value \(31\) and fits the \(5\)~digits:
+there are holes in the enumeration.
+This makes the constructor \mintinline{C}{FUNSXP} coerced
+to the constructor \mintinline{C}{CLOSXP} in such places
+(as \(99 \bmod 2^5 = 3\)).
+This behaviour was wanted by the developers.
+To translate this effect,
+we need to be careful when storing a \mintinline{Coq}{SExpType}
+into a place that can not hold the value \mintinline{C}{FUNSXP} in \Cn{}.
+To this end, we define a function
+\mintinline{Coq}{SExpType_restrict} to map the value
+\mintinline{Coq}{FunSxp} to \mintinline{Coq}{CloSxp} when needed.
+This may seem like something easily forgettable,
+but as said earlier, most of the time a basic language element is built,
+it is built using constructors:
+in practise, the function \mintinline{Coq}{SExpType_restrict}
+only appears in these few constructors.
+
+The \Cn{} structure below is attached to any
+basic language element.
+We can recognise the small number of bits reserved for the type field.
+Some fields are currently unused by the \Cn{} interpreter,
+and have not been formalised.
+It will not be difficult to add these fields afterwards if needed,
+as only the small number of generic function building
+basic language elements need to be updated for such a change.
+Some fields are about garbage collection
+and have been removed from the \Coq{} formalisation.
+\begin{minted}{C}
+struct sxpinfo_struct {
+    SEXPTYPE type      :  5;
+    unsigned int obj   :  1;
+    unsigned int named :  2;
+    unsigned int gp    : 16;
+    unsigned int mark  :  1;
+    unsigned int debug :  1;
+    unsigned int trace :  1;  /* functions and memory tracing */
+    unsigned int spare :  1;  /* currently unused */
+    unsigned int gcgen :  1;  /* old generation number */
+    unsigned int gccls :  3;  /* node class */
+}; /*          Tot: 32 */
+\end{minted}
+Below is the \Coq{} translation of this structure.
+The field \mintinline{C}{named} can only take three distinct values
+(and not \(2^2 = 4\), as its type seems to indicate):
+one value for temporary variables,
+one value to indicate that a variable is unique
+and can be deallocated once used,
+and one indicated that a variable is used at several places of the memory.
+It has thus naturally been formalised as an inductive \mintinline{Coq}{named_field},
+associating each value with a more understandable constructor.
+%
+The \mintinline{C}{gp} is used to store various informations,
+and is not used consistently along the program.
+It is for instance sometimes used to mark already seen nodes
+when exploring a graph,
+or to stored some specific information in some basic language elements.
+In a functional programming language,
+such a field would probably be a type parameter of the type
+\mintinline{C}{sxpinfo_struct}, enabling a program to associate
+it a value of any needed type.
+We choose to represent it at the lowest level possible,
+as a bit vector.
+\begin{minted}{Coq}
+(** sxpinfo_struct **)
+Record SxpInfo := make_SxpInfo {
+    type : SExpType ;
+    obj : bool ;
+    named : named_field ;
+    gp : nbits 16
+  }.
+\end{minted}
+
+The type of basic language element in the \Cn{} interpreter is shown below.
+It is more complex.
+First, it is composed of a header,
+which carries the basic information shown above,
+as well as a pointer to a list of attributes
+(the two other values are used by the garbage collector).
+Due to alignment issues, the developers implemented this header
+as a macro.
+In \Coq{}, we gave it a proper type.
+The second part of the basic language element
+depends on the kind of basic element it is.
+In \Cn{}, this is naturally defined as a union.
+It is not a one-to-one correspondance, however.
+For instance, both types \mintinline{C}{LISTSXP} and \mintinline{C}{LANGSXP}
+are associated with the \mintinline{C}{listsxp_struct} structure.
+\begin{minted}{C}
+#define SEXPREC_HEADER \
+    struct sxpinfo_struct sxpinfo; \
+    struct SEXPREC *attrib; \
+    struct SEXPREC *gengc_next_node, *gengc_prev_node
+
+/* The standard node structure consists of a header followed by
+  the node data. */
+typedef struct SEXPREC {
+    SEXPREC_HEADER;
+    union {
+        struct primsxp_struct primsxp;
+        struct symsxp_struct symsxp;
+        struct listsxp_struct listsxp;
+        /* ... */
+    } u;
+} SEXPREC, *SEXP;
+\end{minted}
+Below is the \Coq{} translation of these structures.
+The union has been translated as an inductive type.
+In \Cn{}, accesses to this union are untyped:
+there are no control performed by the compiler to check that
+is was explicitly defined as such a variant of the union.
+In \Coq{}, these checks are guarded:
+the only way to access a particular field of the structure
+\mintinline{Coq}{ListSxp_struct} is to first coerce
+the union into this type.
+This coercion might fail:
+it is naturally performed by a monad.
+\begin{minted}{Coq}
+Inductive SExpRec_union :=
+  | primSxp : PrimSxp_struct -> SExpRec_union
+  | symSxp : SymSxp_struct -> SExpRec_union
+  | listSxp : ListSxp_struct -> SExpRec_union
+  (* ... *)
+  .
+
+(** SEXPREC_HEADER **)
+Record SExpRecHeader := make_SExpRecHeader {
+    sxpinfo :> SxpInfo ;
+    attrib : SExpRec_pointer
+  }.
+
+(** SEXPREC **)
+Record NonVector_SExpRec := make_NonVector_SExpRec {
+    NonVector_SExpRec_header :> SExpRecHeader ;
+    NonVector_SExpRec_data :> SExpRec_union (* node data *)
+  }.
+\end{minted}
+
+The structure \mintinline{C}{SEXPREC} is unfortunately
+not the only structure that can be pointed by a \mintinline{C}{SEXP} pointer.
+Vector-like structures (of type \mintinline{C}{INTSXP}, \mintinline{C}{REALSXP}, etc.)
+actually point to the alternative structure below.
+It starts with the same header,
+which enables the \R{} interpreter to access its type without
+knowing whether it is \mintinline{C}{SEXPREC} structure
+or a \mintinline{C}{VECTOR_SEXPREC} structure.
+The structure stores two numbers,
+and is then followed by an array
+(not shown in the type).
+The number of cell of the array is described by the two numbers
+(the first one giving the size of the array and the second the allocated size).
+However, the size of the individual cells
+is given by the type.
+For instance, the size of the cells of a complex number array
+(of type \mintinline{C}{CPLXSXP}) are twice as large
+as those of a real number array (of type \mintinline{C}{REALSXP}).
+This structure can be very delicate to manipulate in \Cn{}
+due to the lack of guards.
+\begin{minted}{C}
+struct vecsxp_struct {
+    R_len_t length;
+    R_len_t truelength;
+};
+
+typedef struct VECTOR_SEXPREC {
+    SEXPREC_HEADER;
+    struct vecsxp_struct vecsxp;
+} VECTOR_SEXPREC, *VECSEXP;
+\end{minted}
+To represent such a structure in \Coq{},
+we are forced to parameterise the type of data stored:
+we have to explicitly incorporate the array in the structure.
+As we do not model garbage collection,
+we here ignore the allocated size.
+\begin{minted}{Coq}
+(** vecsxp_struct **)
+Record VecSxp_struct (A : Type) := make_VecSxp_struct {
+    VecSxp_length : nat ;
+    VecSxp_data : list A
+  }.
+
+(** VECTOR_SEXPREC **)
+Record Vector_SExpRec (A : Type) := make_Vector_SExpRec {
+    Vector_SExpRec_header :> SExpRecHeader ;
+    Vector_SExpRec_vecsxp :> VecSxp_struct A
+  }.
+\end{minted}
+Finally, we define in \Coq{} the \mintinline{Coq}{SexpRec}
+structure as either being a non-vector structure
+(corresponding to the \Cn{} structure \mintinline{C}{SEXPREC}),
+or a vector structure parameterised by one of the possible vector types.
+\begin{minted}{Coq}
+Inductive SExpRec :=
+  | SExpRec_NonVector : NonVector_SExpRec -> SExpRec
+  | SExpRec_VectorChar : Vector_SExpRec char -> SExpRec
+  | SExpRec_VectorInteger : Vector_SExpRec int -> SExpRec
+  (* ... *)
+  .
+\end{minted}
+All these structures share the same header.
+It is thus possible to define an extractor \mintinline{Coq}{get_SxpInfo}
+taking the header out of a \mintinline{Coq}{SExpRec}.
+For practical reasons, we make this extractor a coercion.
+This enables us to translate \mintinline{C}{e.type}
+to \mintinline{Coq}{type e} when \mintinline{C}{e}
+is an object of type either \mintinline{C}{SEXPREC}
+or \mintinline{C}{VECTOR_SEXPREC}
+(and in \Coq{},
+any of the types \mintinline{Coq}{SExpRec}, \mintinline{Coq}{NonVector_SExpRec},
+or \mintinline{Coq}{Vector_SExpRec T}).
+
+We now consider a \Cn{} function from the \R{} interpreter,
+and show how it has been translated into \Coq{}.
+\begin{minted}{C}
+SEXP eval(SEXP e, SEXP rho)
+{
+    switch (e->type) {
+        case NILSXP:
+        case LISTSXP:
+        /* ... */
+        case EXPRSXP:
+        if (e->named <= 1) e->named = 2;
+        return e;
+        default: break;
+    }
+
+    if (!isEnvironment(rho))
+        error("`rho' must be an environment")
+
+    /* ... */
+}
+\end{minted}
+The \Coq{} translation is shown below.
+Note that it does not return a \mintinline{Coq}{SExpRec_pointer},
+as could be expected from the initial \Cn{} function,
+but a \mintinline{Coq}{result SExpRec_pointer},
+due to the monadic style.
+\begin{minted}{Coq}
+Definition eval runs (S : state) (e rho : SExpRec_pointer)
+    : result SExpRec_pointer :=
+  read%defined e_ := e using S in
+  match type e_ with
+  | NilSxp
+  | ListSxp
+  (* ... *)
+  | ExprSxp =>
+    write%defined e := set_named_plural e_ using S in
+    result_success S e
+  | _ =>
+    read%defined rho_ := rho using S in
+    ifb type rho_ <> EnvSxp then
+      result_error S "[eval] `rho' must be an environment."
+    else
+      (* ... *)
+  end.
+\end{minted}
+To ease the readability of the \Coq{} formalisation,
+each monad have been associated with a monadic notation.
+Here follows a version without these notations.
+\begin{minted}{Coq}
+Definition eval runs (S : state) (e rho : SExpRec_pointer)
+    : result SExpRec_pointer :=
+  if_defined S (read_SExp S e) (fun e_ =>
+    match type e_ with
+    | NilSxp
+    | ListSxp
+    (* ... *)
+    | ExprSxp =>
+      if_defined S (write_SExp S e (set_named_plural e_)) (fun S =>
+        result_success S e)
+    | _ =>
+      if_defined S (read_SExp S rho) (fun rho_ =>
+        ifb type rho_ <> EnvSxp then
+          result_error S "[eval] `rho' must be an environment."
+        else
+          (* ... *))
+    end).
+\end{minted}
+We start by exposing the differences between these two codes.
+First, the \Coq{} function \mintinline{Coq}{eval} takes two additional arguments.
+The \mintinline{Coq}{runs} argument is explained in Section~\ref{sec:monadic:style}:
+as \Coq{} does not enable termination, potentially-non-terminating features
+are packed into this structure.
+The \mintinline{Coq}{S} argument is the state.
+There is no global variable or side effects in \Coq{}:
+we are thus forced to pass the state along all functions.
+The state in also included in the result of the function,
+hidden in the monadic style
+(see Section~\ref{sec:monadic:style} for the definition
+of the \mintinline{Coq}{result T} type).
+Notice how the function output \mintinline{C}{return e}
+has been translated into \mintinline{Coq}{result_success S e}:
+the state \mintinline{Coq}{S} has been included in the result.
+
+Then, the \Cn{} program directly accesses the pointer \mintinline{C}{e}.
+We can not do that in \Coq{}:
+maybe this pointer does not map to an allocated basic language element.
+We first have to dereference the pointer \mintinline{Coq}{e}
+to the object \mintinline{Coq}{e_}.
+We do this dereferencing through a monad,
+making the failing case transparent.
+The \Cn{} style \mintinline{C}{switch} statement then naturally translates
+into a \Coq{} style pattern-matching.
+The \mintinline{C}{default} case in the \Cn{} code can be problematic, though.
+We are indeed forced in \Coq{} to continue the program in this case.
+We do not think this difference to be an issue.
+In the non-\mintinline{C}{default} case,
+the \mintinline{C}{named} field is set to \(2\)
+(as it can only take three values, the test is just there to potentially avoid a write).
+In \Coq{}, we have to rewrite the entire object.
+Note that \(2\) is given a more readable name in \Coq{}:
+\mintinline{Coq}{named_plural}
+(see the definition of \mintinline{Coq}{named_field} above).
+
+Apart from these style differences,
+mostly due to the different programming styles associated with both languages,
+we believe these two programs snippets to be sufficiently close one to each others.
+Let us consider another \Cn{} snippets.
+\begin{minted}{C}
+SEXP applyClosure (SEXP call, SEXP op, SEXP arglist, SEXP rho,
+                   SEXP suppliedvars)
+{
+  SEXP formals, actuals, savedrho, newrho;
+
+  if (rho->type != ENVSXP)
+    errorcall (call, "'rho' must be an environment.");
+
+  formals = op->clo.formals;
+  savedrho = op->clo.env;
+  actuals = matchArgs (formals, arglist, call);
+  PROTECT (newrho = NewEnvironment (formals, actuals, savedrho));
+
+  /* ... */
+  return v;
+}
+\end{minted}
+The \Coq{} translation is shown below.
+\begin{minted}{Coq}
+Definition applyClosure S
+    (call op arglist rho suppliedvars : SExpRec_pointer)
+    : result SExpRec_pointer :=
+  read%defined rho_ := rho using S in
+  ifb type rho_ <> EnvSxp then
+    result_error S "‘rho’ must be an environment."
+  else
+    read%clo op_clo := op using S in
+    let formals := clo_formals op_clo in
+    let savedrho := clo_env op_clo in
+    let%success actuals :=
+      matchArgs S formals arglist call using S in
+    let%success newrho :=
+      NewEnvironment S formals actuals savedrho using S in
+    (* ... *)
+    result_success S v.
+\end{minted}
+The beginning of these two functions is close as previously seen.
+Let us focus on the part of the function following the error case.
+In the \Cn{} code, we simply consider \mintinline{C}{op->clo}.
+There are two ways for this read to fail:
+either the pointer \mintinline{C}{op} is unbound,
+and we are deferencing an unbound pointer, which has an undefined behaviour,
+or \mintinline{C}{op} is indeed bound,
+but to something else than a closure.
+As \mintinline{C}{op} points to a union, there is no guards
+chacking that it is effectively a closure.
+Of course, as programmers, we know that if the type of a basic language element
+is \mintinline{C}{ENVSXP}, then the associated union is indeed a closure,
+but there is no guard in the type of this object.
+In \Coq{}, we have thus to first deallocate the pointer
+(which may fail),
+then checking the kind of returned object,
+failing if we have not a closure.
+This has been translated by the monad notation
+\mintinline{Coq}|read%clo op_clo := op using S in|.
+
+Let us now consider the two function calls.
+Both takes in \Coq{} the state \mintinline{Coq}{S} as addition argument.
+Both of these function may also fail.
+We have thus to pass their result to a monad
+(in this case through the monad notation \mintinline{Coq}|let%success|%
+).
+The \Cn{} code featured a macro \mintinline{C}{PROTECT}.
+This macro temporary disables the guarbage manager,
+preventing it to recycle the newly allocated environment,
+which is not yet used.
+As we do not model guarbage collection in \Coq{},
+this macro has been removed.
+
+As a conclusion,
+we have seen several translations of \Cn{} function into \Coq{}.
+In each of these translation,
+we have seen that each one or two lines of \Cn{}
+have been translated into one or two lines of \Coq{}.
+Furthermore, these lines are farily similar
+thanks to the monadic notations.
+There are still some differences, but we beleive these differences
+not to hinder the eyeball closeness.
+in particular, we expect that a basic train is enough for anyone
+to convince themselves that the \Coq{} translation has a similar behaviour
+than the original \Cn{} program.
+
+
+\subsubsection{Validation}
+\label{sec:validation}
+
+In essence, the \Coq{} formalisation is executable.
+Waiting to relate the formalisation to CompCert's interpretation
+of the \Cn{} source code, we can test the formal interpreter
+on benchmarks,
+such as TestR (see Section~\ref{sec:TestR}).
+
+The \Coq{} formalisation has been designed to be as close as
+possible to the \Cn{} code.
+This means that each line of the \Coq{} can be compared to its
+\Cn{} counterpart.
+The \Coq{} monadic style is heavier—%
+making a lot of behaviors explicit—,
+but closely matches the \Cn{} source code.
+This way of validating the formalisation
+is called “eyeball closeness”~\parencite{bodin2014trusted}.
+
+Later, we plan to relate the \Coq{} formalisation
+to the \Cn{} source code using CompCert~\parencite{Leroy-Compcert-CACM}
+or Formalin~\parencite{formalin},
+by relating in \Coq{} the CompCert or Formalin interpretation
+of the source code of \R{}
+to the low-level formalisation.
+We expect this relation to be heavy because of the complex \Cn{} semantics,
+but we hope that the closeness between the monadic interpreter and the \Cn{}
+source code will greatly help the proof.
+
+
+\subsection{Application}
+\label{sec:application}
+
+Once a solid \Coq{} formalisation will be finished,
+we aim to apply it by proving some properties on a \R{} program.
+%
+The \Coq{} formalisation does not contain any \R{} construct.
+The first step will thus be to identify which constructs
+are crucial for the analysis of the targeted program,
+then provide them a specification
+(either from the source, or a high-level one, which will have
+to be tested against \R{} using the testing architecture
+presented in Section~\ref{sec:TestR}).
+
+
+\printbibliography
+
+\end{document}
+
