@@ -7,26 +7,27 @@
     10pt,
     screen,
     printccs=true,
-    % review, % Note: remove the [review] option for the final document.
+    review, % Note: remove the [review] option for the final document.
     natbib=false % Note: This is here to be able to use Biber.
  ]{acmart}
 %\let\citename\relax
 
 \settopmatter{printfolios=true} % ,printacmref=false}
 
-\setcopyright{acmlicensed}
-\acmPrice{15.00}
-\acmDOI{10.1145/3276945.3276946}
-\acmYear{2018}
-\copyrightyear{2018}
-\acmISBN{978-1-4503-6030-2/18/11}
-\acmConference[DLS '18]{Proceedings of the 14th ACM SIGPLAN International Symposium on Dynamic Languages}{November 6, 2018}{Boston, MA, USA}
-\acmBooktitle{Proceedings of the 14th ACM SIGPLAN International Symposium on Dynamic Languages (DLS '18), November 6, 2018, Boston, MA, USA}
-% \acmBooktitle{DLS'18, November 6, 2018, Boston, MA, USA}
+% Note: We should receive the exact information after publishing.
+% \setcopyright{acmlicensed}
+% \acmPrice{15.00}
+% \acmDOI{10.1145/3276945.3276946}
+% \acmYear{2020}
+% \copyrightyear{2020}
+% \acmISBN{}
+% \acmConference[TOPLAS '20]{Proceedings of the 14th ACM SIGPLAN International Symposium on Dynamic Languages}{November 6, 2018}{Boston, MA, USA}
+% \acmBooktitle{Proceedings of the 14th ACM SIGPLAN International Symposium on Dynamic Languages (DLS '18), November 6, 2018, Boston, MA, USA}
+% % \acmBooktitle{DLS'18, November 6, 2018, Boston, MA, USA}
 
 % \startPage{1}
 % \pagestyle{empty} % We are not supposed to have any page number.
-\pagenumbering{gobble}
+% \pagenumbering{gobble}
 
 \usepackage{booktabs}
 \usepackage{subcaption}
@@ -86,8 +87,6 @@
 
 \newcommand\ignore[1]{}
 
-\newcommand\CoqR{CoqR}
-
 % \newcommand\newtext[1]{{\color{blue} #1}}
 % \newcommand\changed[1]{{\color{blue} #1}}
 \newcommand\newtext[1]{#1}
@@ -111,9 +110,8 @@
 \orcid{0000-0003-3588-3782}
 \affiliation{
   %\position{}
-  \department{Center for Mathematical Modeling \& \\
-  Computer Science Department}
-  \institution{University of Chile}
+  \department{}
+  \institution{Imperial College London}
   % \streetaddress{Beauchef 851}
   % \city{Santiago}
   % \state{State1}
@@ -158,7 +156,7 @@
 \email{etanter@dcc.uchile.cl}
 
 \begin{abstract}
-The R programming language is very popular for developing statistical software and data analysis, thanks to rich libraries, concise and expressive syntax, and support for interactive programming. Yet, the semantics of R is fairly complex, contains many subtle corner cases, and is not formally specified. This makes it difficult to reason about R programs. In this work, we develop a big-step operational semantics for R in the form of an interpreter written in the Coq proof assistant. We ensure the trustworthiness of the formalization by introducing a monadic encoding that allows the Coq interpreter, \CoqR, to be in direct visual correspondence with the reference R interpreter, GNU~R. Additionally, we provide a testing framework that supports systematic comparison of \CoqR{} and GNU~R. In its current state, \CoqR{} covers the nucleus of the R language as well as numerous additional features, making it pass a significant number of realistic test cases from the GNU~R and FastR projects. To exercise the formal specification, we prove in Coq the preservation of memory invariants in selected parts of the interpreter. This work is an important first step towards a robust environment for
+The R programming language is very popular for developing statistical software and data analysis, thanks to rich libraries, concise and expressive syntax, and support for interactive programming. Yet, the semantics of R is fairly complex, contains many subtle corner cases, and is not formally specified. This makes it difficult to reason about R programs. In this work, we develop a big-step operational semantics for R in the form of an interpreter written in the Coq proof assistant. We ensure the trustworthiness of the formalization by introducing a monadic encoding that allows the Coq interpreter, CoqR, to be in direct visual correspondence with the reference R interpreter, GNU~R. Additionally, we provide a testing framework that supports systematic comparison of CoqR and GNU~R. In its current state, CoqR covers the nucleus of the R language as well as numerous additional features, making it pass a significant number of realistic test cases from the GNU~R and FastR projects. To exercise the formal specification, we prove in Coq the preservation of memory invariants in selected parts of the interpreter. This work is an important first step towards a robust environment for
 formal verification of R programs.
 \end{abstract}
 
@@ -274,7 +272,7 @@ how do we know that a formal semantics properly models the real-world language i
 Some formalization approaches like $\lambda_{JS}$~\cite{Guha2010} and KJS~\cite{kjs} augment trust through extensive testing and comparison with existing implementations. JSCert~\parencite{popl14jscert} also uses testing and further augments trust through the notion of a so-called {\em eyeball correspondence}, i.e.~a line-to-line syntactic connection, between the formalization (in Coq) and the ECMAScript specification (in English and pseudo-code).
 
 \paragraph{Contributions.}
-We present \CoqR{}, a trustworthy formalization of the R programming language in the Coq proof assistant.
+We present CoqR, a trustworthy formalization of the R programming language in the Coq proof assistant.
 The formalization is a big-step operational semantics, in the form of an interpreter (Section~\ref{sec:coq:interp}).
 %
 We say that this interpreter is {\em trustworthy} because we have followed two complementary techniques to maximize trust: eyeball correspondence, and testing.
@@ -282,7 +280,7 @@ We say that this interpreter is {\em trustworthy} because we have followed two c
 First, the Coq interpreter has been written using a monadic encoding that allows for a direct eyeball correspondence with the C source code of GNU~R~\parencite{Rwebsite}. In the absence of a standardized formal semantics, GNU~R is the reference point that defines what R really is. Note that other alternative implementations of R, such as FastR~\parencite{kalibera2014fast}, also treat GNU~R as the ground truth.
 
 \begin{sloppypar}
-Second, we have developed a testing framework that streamlines the process of running both \CoqR{} and GNU~R on a set of test cases and report on mismatches and errors, among others (Section~\ref{sec:testing:architecture}). We use several test suites to measure the advancement of the \CoqR{} implementation.
+Second, we have developed a testing framework that streamlines the process of running both CoqR and GNU~R on a set of test cases and report on mismatches and errors, among others (Section~\ref{sec:testing:architecture}). We use several test suites to measure the advancement of the CoqR implementation.
 % the test suite of GNU~R itself ($\sim$3,600 loc), a test suite of the FastR implementation ($\sim$1,300 loc)~\parencite{kalibera2014fast}, and a test suite that we developed to exercise corner cases ($\sim$1,100 loc).
 % Additionally,\et{update once finished} we report on the process of scaling up our interpreter in order to be able to load existing R libraries (Section~\ref{sec:library}), in particular the R base library.
 \end{sloppypar}
@@ -292,10 +290,10 @@ We also report on a proof effort to establish that memory invariants are preserv
 Section~\ref{sec:related:work} discusses related work and Section~\ref{sec:conclusion} concludes.
 
 \begin{sloppypar}
-The current implementation of \CoqR{}\footnote{\url{https://github.com/Mbodin/CoqR/releases/tag/DLS2018}} is not feature-complete:
+The current implementation of CoqR\footnote{\url{https://github.com/Mbodin/CoqR/releases/tag/DLS2018}} is not feature-complete:
 R is a very large programming language and achieving 100\% coverage of the language and its main libraries is a huge implementation effort.
 The contribution of this work is to provide realistic foundations for a trustworthy R formalization in Coq.
-First, the interpreter covers the nucleus of the language and over 120 additional features. It is implemented in an extensible manner, following the architecture of GNU~R itself. Second, the testing infrastructure we provide is designed to help drive the development effort towards the most pressing missing features. At present, the \CoqR{} implementation passes a substantial number of tests from real-world R projects. This is realistic enough to support the claim that, given more engineering power, our approach scales up to the full language and its main libraries.
+First, the interpreter covers the nucleus of the language and over 120 additional features. It is implemented in an extensible manner, following the architecture of GNU~R itself. Second, the testing infrastructure we provide is designed to help drive the development effort towards the most pressing missing features. At present, the CoqR implementation passes a substantial number of tests from real-world R projects. This is realistic enough to support the claim that, given more engineering power, our approach scales up to the full language and its main libraries.
 \end{sloppypar}
 
 
@@ -306,7 +304,7 @@ First, the interpreter covers the nucleus of the language and over 120 additiona
 % \url{https://github.com/Mbodin/proveR/releases/tag/DLS2018}\todo{make this tag exist on Github}.
 
 % % Contributions.
-% We introduce \CoqR{}
+% We introduce CoqR
 
 % a formalization of the R programming language in the Coq proof assistant.
 % This is a continuation of a previous work~\parencite{CoqRCoqPL},
@@ -337,13 +335,13 @@ First, the interpreter covers the nucleus of the language and over 120 additiona
 % Finally, Section~\ref{sec:proofs} presents some proofs that have been done
 % using our language formalization.
 
-\section{\CoqR: An R Interpreter in Coq}
+\section{CoqR: An R Interpreter in Coq}
 \label{sec:coq:interp}
 
-We develop the formal semantics of R in the form of an interpreter defined in Coq; therefore, \CoqR{} is a big-step operational semantics.
+We develop the formal semantics of R in the form of an interpreter defined in Coq; therefore, CoqR is a big-step operational semantics.
 Operational semantics written as a Coq recursive function is usually not the best fit for Coq proofs---an inductive definition of the operational semantics is usually more convenient for reasoning---but our approach comes with a crucial advantage: it can be run, and thus tested.
 %
-We show how we defined \CoqR{} in order to achieve the first of the two mechanisms in place for trust, 
+We show how we defined CoqR in order to achieve the first of the two mechanisms in place for trust, 
 namely the eyeball correspondence with the GNU~R interpreter.
 %
 \newtext{GNU~R's overall structure is fairly standard for an interpreter, so the principles exposed here should be reusable in other contexts.}
@@ -428,9 +426,9 @@ are translated into
 \mintinline{Coq}{result_impossible}.
 Getting this result immediately ends the Coq interpreter:
 it is meant to be unreachable.
-Observing such a result either means \CoqR{} has a bug, or that an actual bug in GNU~R has been found, which could possibly be undetectable by running GNU~R due to a C compiler optimization. At this date, we have not encountered the latter situation.
+Observing such a result either means CoqR has a bug, or that an actual bug in GNU~R has been found, which could possibly be undetectable by running GNU~R due to a C compiler optimization. At this date, we have not encountered the latter situation.
 % \et{has this happened? I guess not}
-% \mbi{No it hasn't. What I meant is that in \CoqR{}, undefined behaviors always result in a special error,
+% \mbi{No it hasn't. What I meant is that in CoqR, undefined behaviors always result in a special error,
 %      whilst in GNU~R, this could result in a silent error due to compiler optimizations:
 %      we are in theory able to catch ``bugs'' that direct testing on GNU~R wouldn't be able to catch.}
 %
@@ -481,7 +479,7 @@ the value carried by \mintinline{Coq}{result_longjump} to replace the default on
 %This binder was surprisingly easy to define in Coq.
 This obliviousness to global state, errors, \newtext{jumps,} and non-termination is what enables a close correspondence between a program written in both languages.
 
-% We believe that this helps to find bugs in \CoqR{}
+% We believe that this helps to find bugs in CoqR
 % and to convey trust to the overall R semantics.
 
 \begin{figure*}[t]
@@ -577,11 +575,11 @@ Definition do_attr globals runs S
 % correspond to one or two lines of the reference interpreter.
 % %
 
-By developing \CoqR{} as a monadic interpreter using the result monad introduced above, we are able to achieve an eyeball correspondence between the C and Coq interpreters.
+By developing CoqR as a monadic interpreter using the result monad introduced above, we are able to achieve an eyeball correspondence between the C and Coq interpreters.
 This correspondence is extremely helpful during development:
 whenever a bug is encountered while testing, we localize the function responsible for the bug,
 then directly and visually compare both interpreters.
-Such checks are quick and easy to perform, often leading to a quick fix of \CoqR{}.
+Such checks are quick and easy to perform, often leading to a quick fix of CoqR.
 %
 
 Figure~\ref{fig:do_attr} shows an example of the eyeball correspondence that can be achieved using the result monad.
@@ -611,7 +609,7 @@ We clarify each of these points in the following subsections.
 
 % Basic language elements.
 We now describe how we modeled GNU~R's heap.
-\newtext{Various models of C's heap~\parencite{formalin,Leroy-Compcert-CACM} exist in Coq, but in \CoqR{} we exploit the specific structure around which GNU~R is built~\parencite{ihaka1996r}:} almost all objects manipulated by GNU~R
+\newtext{Various models of C's heap~\parencite{formalin,Leroy-Compcert-CACM} exist in Coq, but in CoqR we exploit the specific structure around which GNU~R is built~\parencite{ihaka1996r}:} almost all objects manipulated by GNU~R
 are \emph{basic language elements}
 (\mintinline{C}{SEXPREC} in C).
 \newtext{Consequently, CoqR's heap is exactly a mapping from pointers to basic language elements}.
@@ -702,7 +700,7 @@ For instance, if Coq expects a \mintinline{Coq}{SEXPRECData}
 and is given a \mintinline{Coq}{ListStruct},
 then the constructor \mintinline{Coq}{listExp} will be implicitly added
 thanks to Line~\ref{line:SEXPREC:Coercion:listExp} of Figure~\ref{fig:SEXPREC}.
-In the context of \CoqR{},
+In the context of CoqR,
 this is more than a simple syntactic notation
 as it helps the eyeball correspondence
 by hiding in the Coq code what is not present in C.
@@ -735,7 +733,7 @@ closely mimicking the unguarded accesses of C.
 % At this stage, the reader should be able
 % to compare the C and Coq programs of Figure~\ref{fig:do_attr}
 % line by line.
-% The rest of \CoqR{} was similarly defined.
+% The rest of CoqR was similarly defined.
 
 \begin{figure*}
     \centering{}
@@ -783,7 +781,7 @@ and \mintinline{C}{tag} fields point to \mintinline{C}{R_NilValue} itself.
 This element is used instead of the \mintinline{C}{NULL} pointer
 to mark absent elements. Another important global variable is
 \mintinline{C}{R_FunTab}, which is the {\em symbol table} that maps operation and function names to their C implementions.
-(We exploit this structuring of the interpreter for building \CoqR{} in an incremental manner
+(We exploit this structuring of the interpreter for building CoqR in an incremental manner
 \newtext{from a simple nucleus}---see Section~\ref{sec:coq:structure}.)
 
 %
@@ -791,7 +789,7 @@ to mark absent elements. Another important global variable is
 To avoid this circular dependency---which Coq would not accept---one could parametrize each nucleus function by the value of the global variables it uses.
 This would however not scale, considering the size of the project and the number of global variables involved.
 %
-Instead, we parameterize each function of \CoqR{} by a single \mintinline{Coq}{globals} environment, which is a mapping from a definite set of global variables to \mintinline{Coq}{SEXP}. This additional argument can be seen in the Coq code of Figure~\ref{fig:coq:do_attr}: it is passed along at each call site.
+Instead, we parameterize each function of CoqR by a single \mintinline{Coq}{globals} environment, which is a mapping from a definite set of global variables to \mintinline{Coq}{SEXP}. This additional argument can be seen in the Coq code of Figure~\ref{fig:coq:do_attr}: it is passed along at each call site.
 
 To make definitions more convenient, we use coercions to make Coq implicitly perform a lookup in the \mintinline{Coq}{globals} environment whenever a global variable is read. Therefore, accessing global variables is transparent, as illustrated by the use of \mintinline{C}{do_attr_formals} in Figure~\ref{fig:coq:do_attr}.
 
@@ -876,7 +874,7 @@ the corresponding projection of the record,
 as in a regular fix-point combinator.
 
 For instance, Figure~\ref{fig:while_loop} shows the definition
-of while loops in \CoqR{}.
+of while loops in CoqR.
 First the \mintinline{Coq}{Runs} record is defined
 with all the potentially looping functions.
 A \mintinline{C}{while}-loop is obviously part of these functions.
@@ -905,30 +903,30 @@ Figure~\ref{fig:runs} shows its Coq definition.
 % }
 % %
 % In addition to passing the extra \mintinline{Coq}{runs} argument,
-This idiom requires only one pattern-matching on fuel in the whole \CoqR{} interpreter;
+This idiom requires only one pattern-matching on fuel in the whole CoqR interpreter;
 it is thus a lightweight way to enforce termination.
 
 
 \subsection{Limitations}
 % About garbage collection.
 The use of the \mintinline{C}{PROTECT} macro in Figure~\ref{fig:c:do_attr} is missing in the Coq translation. This macro use performs a garbage collecting action, namely it saves the object \mintinline{C}{argList} from garbage collection.
-We choose not to model the garbage collection aspect of GNU~R in \CoqR{}. 
+We choose not to model the garbage collection aspect of GNU~R in CoqR. 
 \newtext{A garbage collector is an optimization of a language implementation, which is arguably irrelevant for the specification of the language itself (for instance, neither R6RS for Scheme nor ECMAScript for JavaScript even mention garbage collection).}
 % Indeed, garbage collection adds complexity to the interpreter, but is supposed to not affect the result of any computation. \newtext{
-% Consequently, the reasoning enabled by \CoqR{} is to be understood ``up to a correct GC'', which is a reasonable assumption. Verifying the GNU~R GC is a separate project.}
+% Consequently, the reasoning enabled by CoqR is to be understood ``up to a correct GC'', which is a reasonable assumption. Verifying the GNU~R GC is a separate project.}
 
 % Ignored aspects.
 % As stated in Section~\ref{sec:eyeball:closeness},
 % we chose to ignore some aspects of the source code of GNU~R.
 % All garbage collection commands have been formalized out.
-Currently, \CoqR{} only considers ASCII strings, and hence does not support various locales and character encodings supported by R.
-More generally, \CoqR{} ignores any possibility to dynamically
+Currently, CoqR only considers ASCII strings, and hence does not support various locales and character encodings supported by R.
+More generally, CoqR ignores any possibility to dynamically
 parametrize the behavior of the interpreter using options
 stored the shell environment.
 
 % \mb{Are there other things we should mention?}
 
-Note that the eyeball correspondence between GNU~R and \CoqR{} would pay off in the future if one wants to extend \CoqR{} to account for some of these features.
+Note that the eyeball correspondence between GNU~R and CoqR would pay off in the future if one wants to extend CoqR to account for some of these features.
 
 
 \begin{figure}
@@ -955,18 +953,18 @@ FUNTAB R_FunTab[] = {
 \end{figure}
 
 
-\subsection{Incremental Development of \CoqR{}}
+\subsection{Incremental Development of CoqR}
 \label{sec:coq:structure}
 
 R is by no means a small language.
-Currently, \CoqR{} spans over 18,000 lines of Coq definitions.
+Currently, CoqR spans over 18,000 lines of Coq definitions.
 This is larger than the interpreter of JSCert, named JSRef~\parencite{popl14jscert}, which consists of 12,500 lines of Coq definitions.
 % \et{ref + how large is JSCert?}\mb{We already quote it several times in the paper: isn't it too much?}
-% \mbi{For the statistics: \CoqR{} is 18,000 lines of Coq definitions + 1500 lines of Coq proofs.
+% \mbi{For the statistics: CoqR is 18,000 lines of Coq definitions + 1500 lines of Coq proofs.
 %     JSCert is 12,500 lines of Coq definitions + 5,000 lines of Coq proofs. Both according to \texttt{coqwc}.
 %     It is difficult to compare these figures, but I find the comparizon with JSCert impressive.}
-Therefore, for pragmatical reasons, it is important to be able to proceed {\em incrementally} in the development of \CoqR{}.
-We hence identify a minimal nucleus of R to support initially, and then incrementally extend \CoqR{}.
+Therefore, for pragmatical reasons, it is important to be able to proceed {\em incrementally} in the development of CoqR.
+We hence identify a minimal nucleus of R to support initially, and then incrementally extend CoqR.
 To this end, we exploit the fact that GNU~R is structured around a huge {\em symbol table} \newtext{with more than 700 entries}, corresponding to all functions present in the initial environment of R, whose code is written natively in C.
 
 Figure~\ref{fig:names} shows an excerpt of the symbol table.
@@ -999,7 +997,7 @@ but some assignment functions are, because they are used when calling functions.
 All functions in the symbol table are then considered {\em additional features}. The first version of the interpreter only supported the nucleus of R, allowing us to focus the effort on a very restricted sub-language.
 We were then able to add additional features one at a time, by implementing
 the associated function and adding it to the symbol table.
-In the current \CoqR{} development, out of the 18,000 lines,
+In the current CoqR development, out of the 18,000 lines,
 around 5,000 lines are for the nucleus of R,
 and 4,000 lines are for additional features.
 % \et{what about the other 9,000 lines?}
@@ -1024,7 +1022,7 @@ Verified software, e.g. written in Coq, needs to interact with unverified code, 
 % Bugs can still appear in verified softwares.
 % Indeed, such softwares are not entirely formalized in Coq:
 % some additional code is added to perform the program's inputs and outputs.
-In the case of \CoqR{}, a particularly important part of the shim is the R parser. Parsing real-world programming languages is known to be challenging, so in order to maximize trust, we first tried to develop the parser in Coq
+In the case of CoqR, a particularly important part of the shim is the R parser. Parsing real-world programming languages is known to be challenging, so in order to maximize trust, we first tried to develop the parser in Coq
 using the Menhir tool~\parencite{jourdan2012validating} in order to obtain a formally-verified parser. Unfortunately, the grammar of GNU~R (defined in Bison) does not respect the grammar constraints of Menhir's Coq front-end.
 We had to fall back on Menhir's OCaml front-end, making the parser part of the shim.
 
@@ -1050,7 +1048,7 @@ which could in theory be different (we checked through testing that they are not
 % both choosing the second option above in practice.
 % Side effects in the grammar
 Another source of potential mismatch
-between the parsers of GNU~R \CoqR{} are new lines.
+between the parsers of GNU~R CoqR are new lines.
 There are contexts in R where new lines are significant
 and others where they are not.
 For instance, in \mintinline{R}{{ function () break + 1 }},
@@ -1091,7 +1089,7 @@ and easily fixable in the parsed R code.
 %
 
 
-\section{Testing \CoqR}
+\section{Testing CoqR}
 \label{sec:testing:architecture}
 
 % \mb{Tomás: can you check that what I wrote is indeed right?}
@@ -1099,8 +1097,8 @@ and easily fixable in the parsed R code.
 Being able to syntactically relate our interpreter
 with the source code of GNU~R helped us catch numerous bugs---%
 in some sense as a variant of Linus's law.\footnote{\url{https://en.wikipedia.org/wiki/Linus\%27s\_Law}}
-To further augment the level of trust of \CoqR{}, we have developed
-a testing framework that supports comparative execution of \CoqR{} and GNU~R. The framework additionally helps the development process by providing useful reports. This section presents the general testing methodology and the framework we developed to support it, discusses the support for the base library of R, and then presents the results of the current status of \CoqR{} with respect to the chosen test suites.
+To further augment the level of trust of CoqR, we have developed
+a testing framework that supports comparative execution of CoqR and GNU~R. The framework additionally helps the development process by providing useful reports. This section presents the general testing methodology and the framework we developed to support it, discusses the support for the base library of R, and then presents the results of the current status of CoqR with respect to the chosen test suites.
 
 % \et{what?}
 % In particular, as few safe results as possible should be marked as bugs.
@@ -1109,10 +1107,10 @@ a testing framework that supports comparative execution of \CoqR{} and GNU~R. Th
 % Second, helping our development
 
 % However, given the small number of people
-% involved in the \CoqR{} project compared to the size of the interpreter,
+% involved in the CoqR project compared to the size of the interpreter,
 % some bugs may have been unnoticed.
 % % A relevant commit: https://github.com/Mbodin/proveR/commit/03708d1bc5f5ab6af5fd5668845472ffc9d9a6fb
-% To be really able to state that the \CoqR{} interpreter is trustable,
+% To be really able to state that the CoqR interpreter is trustable,
 % we need to test it.
 % %
 
@@ -1122,8 +1120,8 @@ a testing framework that supports comparative execution of \CoqR{} and GNU~R. Th
 
 % Test suite sources.
 \noindent\textbf{Test suites.}
-To exercise \CoqR, we exploit different existing test suites:
-the test suite of GNU~R itself~\parencite{Rwebsite}, and two test suites from the FastR project~\parencite{kalibera2014fast}, which we refer to as FastR1\footnote{https://github.com/h2oai/fastr} and FastR2\footnote{https://github.com/oracle/fastr}. \newtext{These test suites are first curated to eliminate expressions that rely on external effects and resources (internet connection, files, specific packages), or produce charts or PDFs (whose comparison is cumbersome); additionally, we excluded generated tests.\footnote{The details of the filtering can be found on the \CoqR{} Github repository.}}
+To exercise CoqR, we exploit different existing test suites:
+the test suite of GNU~R itself~\parencite{Rwebsite}, and two test suites from the FastR project~\parencite{kalibera2014fast}, which we refer to as FastR1\footnote{https://github.com/h2oai/fastr} and FastR2\footnote{https://github.com/oracle/fastr}. \newtext{These test suites are first curated to eliminate expressions that rely on external effects and resources (internet connection, files, specific packages), or produce charts or PDFs (whose comparison is cumbersome); additionally, we excluded generated tests.\footnote{The details of the filtering can be found on the CoqR Github repository.}}
  In total, these curated test suites include over 17,000 tested expressions.
  % Overall, as far as we can tell, all these test suites have very little overlap.\et{is that true?}
 
@@ -1153,7 +1151,7 @@ In addition to these test suites, we have developed our own test suite, referred
 
 Note that tests come in various shapes: some files provide expressions supposed to evaluate to \mintinline{R}{TRUE}, some are just supposed not to raise any error, and some tests print on the standard output
 whether they passed. To uniformly process these test suites,
-we compare the results produced by GNU~R and by \CoqR{},
+we compare the results produced by GNU~R and by CoqR,
 at each step of execution, as described further below.
 Also, some tests are supposed to be executed as a normal file, while some tests are meant to be read line-by-line, resetting the environment at each line. We manually marked the latter files with a \mintinline{R}{#@line} tag, recognized by our testing framework.\\
 
@@ -1184,7 +1182,7 @@ Also, some tests are supposed to be executed as a normal file, while some tests 
 %     \begin{tikzpicture}[node distance = 13mm]
 %         \node [box] (source) {R program} ;
 %         \node [box, below left of = source, xshift = -1cm, yshift = -5mm] (R) {GNU~R} ;
-%         \node [box, below right of = source, xshift = 1cm, yshift = -5mm] (CoqR) {\CoqR{}} ;
+%         \node [box, below right of = source, xshift = 1cm, yshift = -5mm] (CoqR) {CoqR} ;
 %         \newcommand\identifytype{\parbox{5.5em}{\centering{}Identify type\\of result}}
 %         \node [box, below of = R] (Rtype) {\identifytype} ;
 %         \node [box, below of = CoqR] (CoqRtype) {\identifytype} ;
@@ -1200,13 +1198,13 @@ Also, some tests are supposed to be executed as a normal file, while some tests 
 %         \draw [->, thick] (CoqRtype) -- (CoqRint) ;
 %         \draw [<->] (Rint) -- node [above] {compare} node [below] {interpretations} (CoqRint) ;
 %     \end{tikzpicture}
-%     \caption{Comparing the results of GNU~R and \CoqR{}}
+%     \caption{Comparing the results of GNU~R and CoqR}
 %     \label{fig:methodology}
 % \end{figure}
 
 \noindent\textbf{Comparing results.}
-After interpretation of the R code, we obtain the raw outputs for each interpreter, GNU~R and \CoqR. % , which are just strings.
-These strings cannot be compared directly for equality as many syntactic details makes them superficially different. Indeed, \CoqR{}'s pretty-printer is part of the shim (the non-formalized part)
+After interpretation of the R code, we obtain the raw outputs for each interpreter, GNU~R and CoqR. % , which are just strings.
+These strings cannot be compared directly for equality as many syntactic details makes them superficially different. Indeed, CoqR's pretty-printer is part of the shim (the non-formalized part)
 and does not follow an eyeball correspondence with GNU~R's pretty-printer, which is quite complex. This introduces harmless output mismatches. For instance, when printing vectors with GNU~R, some are left padded, others are right padded. Other minor sources of mismatch are spaces and newlines. Therefore, the testing framework first processes the result strings of both interpreters into a common set of values that can meaningfully be compared.
 
 This step is carried out by {\em result processors} (implemented in Python). There are two classes of processors; one that handles GNU~R outputs, and one that handles CoqR outputs.  Each processor matches the received raw string against a list of regular expressions (regexes). As soon as a regex matches, an object of type \mintinline{Python}{Result} is created and the matching stops. \newtext{There are nine subclasses of \mintinline{Python}{Result}, corresponding to different result types, such as \mintinline{Python}{ListResult} and \mintinline{Python}{VectorResult}, the latter} with further subclasses for boolean, numeric and string vector results. 
@@ -1216,7 +1214,7 @@ This step is carried out by {\em result processors} (implemented in Python). The
 
  
  % : \mintinline{Python}{BooleanVectorResult}, \mintinline{Python}{NumericVectorResult} and \mintinline{Python}{StringVectorResult}.
-The differences between the GNU~R and \CoqR{} processors lies in the regexes they use to recognize result strings, and hence in the particular instances of \mintinline{Python}{Result} they produce.
+The differences between the GNU~R and CoqR processors lies in the regexes they use to recognize result strings, and hence in the particular instances of \mintinline{Python}{Result} they produce.
 %
 When creating result objects, processor include additional information that can be necessary for later comparison. For example, if the regex for numerical vector matches, the processor extracts the actual numerical value contained in the raw string and stores it in the \mintinline{Python}{NumericVectorResult} object. \\
 
@@ -1233,10 +1231,10 @@ After processing, the testing framework obtains the result objects and uses thei
 The testing framework categorizes each step of computation
 in one of \changed{8 categories}, denoting different possible scenarios. The \textsf{passed} category corresponds to successfully executed test cases. The \textsf{failed} category is used when an actual mismatch in results is observed. 
 
-All other categories are there to help the development of \CoqR{} by refining failure cases. \newtext{The \textsf{not implemented} category gathers tests whose execution has reached the Coq constructor \mintinline{Coq}{result_not_implemented} inside \CoqR{} (recall Figure~\ref{fig:result}). This therefore corresponds to a test execution reaching some as-yet-unimplemented function (or case) in the Coq code of \CoqR{}. Additionally, 
-the \textsf{not found} category corresponds to failures due to a test requiring an R function or object that is not defined in the \CoqR{} environment.}
+All other categories are there to help the development of CoqR by refining failure cases. \newtext{The \textsf{not implemented} category gathers tests whose execution has reached the Coq constructor \mintinline{Coq}{result_not_implemented} inside CoqR (recall Figure~\ref{fig:result}). This therefore corresponds to a test execution reaching some as-yet-unimplemented function (or case) in the Coq code of CoqR. Additionally, 
+the \textsf{not found} category corresponds to failures due to a test requiring an R function or object that is not defined in the CoqR environment.}
 
-The \textsf{impossible} category corresponds to the constructor \mintinline{Coq}{result_impossible}. As mentioned before, if \CoqR{} were bug free, an impossible result would correspond to a critical bug in GNU~R. All the \textsf{impossible} results we have observed so far were instead due to \CoqR{} bugs.
+The \textsf{impossible} category corresponds to the constructor \mintinline{Coq}{result_impossible}. As mentioned before, if CoqR were bug free, an impossible result would correspond to a critical bug in GNU~R. All the \textsf{impossible} results we have observed so far were instead due to CoqR bugs.
 
 % \noindent\textbf{Two-step comparison.\td{Not quite, there's the "processing"/"normalization" phase then the comparison}}
 % To compare each result, we adopt the general scheme shown in Figure~\ref{fig:methodology}.
@@ -1246,26 +1244,26 @@ The \textsf{impossible} category corresponds to the constructor \mintinline{Coq}
 % First, we process the result each interpreter returns and transform\td{maybe normalize is better?}
 %  them into a common set of {\em types}.
 % Examples of types include errors, boolean vectors, numerical vectors, etc. as well as the special
-% ``not implemented'' and ``impossible'' results of \CoqR{}.
+% ``not implemented'' and ``impossible'' results of CoqR.
 % This phase takes care of the necessary normalization in order to obtain meaningful comparison.
 
 % We did not model this logic and therefore sometimes outputs do not match;
 % the processor for numerical vectors then converts results by ignoring these subtleties
 % (such as spaces).
 
-% These types are then compared; if they do not match,  e.g. if GNU~R returns an error but \CoqR{} returns a string vector, the test is marked as failed without further processing.
+% These types are then compared; if they do not match,  e.g. if GNU~R returns an error but CoqR returns a string vector, the test is marked as failed without further processing.
 
 % Second, if the two result types are identical
-% in both GNU~R and \CoqR{},
+% in both GNU~R and CoqR,
 % we interpret the results using a type-specific function. Such a function takes care of the necessary normalization in order to obtain meaningful comparison.
-% Indeed, \CoqR{}'s pretty-printer is part of the shim (the non-formalized part)
+% Indeed, CoqR's pretty-printer is part of the shim (the non-formalized part)
 % and does not follow an eyeball correspondence with GNU~R's pretty-printer, which is quite complex. This introduces harmless output mismatches. For instance, when printing vectors with GNU~R, some are left padded, others are right padded. We did not model this logic and therefore sometimes outputs do not match; the normalizer\et{normalizer vs interpreter vs processor} for numerical vectors converts results by ignoring spaces.
 % For instance \mintinline{R}{c (1, 100, 2)} is printed
-% as \mintinline[showspaces,autogobble=false]{text}{  1 100   2} by GNU~R, while \CoqR{} prints \mintinline[showspaces]{text}{1   100 2  }.
+% as \mintinline[showspaces,autogobble=false]{text}{  1 100   2} by GNU~R, while CoqR prints \mintinline[showspaces]{text}{1   100 2  }.
 % above
 % to the vector \mintinline{R}{c (1, 100, 2)}, ignoring spaces.
-% Second, these types are compared; if they do not match,  e.g. if GNU~R returns an error but \CoqR{} returns a string vector, the test is marked as failed without further processing.
-% If the two result types are identical in both GNU~R and \CoqR{}, they can be compared for equality.\\
+% Second, these types are compared; if they do not match,  e.g. if GNU~R returns an error but CoqR returns a string vector, the test is marked as failed without further processing.
+% If the two result types are identical in both GNU~R and CoqR, they can be compared for equality.\\
 %The final results can be compared for equality after normalization. \\
 % leading to either a failure or a success.
 
@@ -1308,7 +1306,7 @@ the way vectors are printed, and our pretty-printer is not aware of all of these
 %
 % As a special case, \mb{This sentence should be moved before, I think.}
 % invisible results (that are thus not printed by R)
-% are considered successful whenever \CoqR{} did not return an error.
+% are considered successful whenever CoqR did not return an error.
 % Indeed, test suites always include a latter step printing down variables:
 % if the computed value is not correct, the testing framework
 % will catch it when GNU~R will print down the computed value.
@@ -1347,7 +1345,7 @@ Having different categories of testing outcomes is crucial when facing a huge de
 % \td{Missing objects as well, but not as useful as functions (mostly facilitates reading results)}.
 
 \begin{sloppypar}
-Recall that a not-implemented result generally corresponds to an entry of the symbol table that has not been translated into \CoqR{}. It can also correspond to some branch in a large \mintinline{C}{switch} statement that we decided to postpone for some reason. On the other hand, a missing function definition corresponds to the use of an undefined R function in the test; this is typically because the function was not imported in the \CoqR{} test code base. (Missing objects are often failed assignments due to previous errors.)
+Recall that a not-implemented result generally corresponds to an entry of the symbol table that has not been translated into CoqR. It can also correspond to some branch in a large \mintinline{C}{switch} statement that we decided to postpone for some reason. On the other hand, a missing function definition corresponds to the use of an undefined R function in the test; this is typically because the function was not imported in the CoqR test code base. (Missing objects are often failed assignments due to previous errors.)
 % and occasionally refer to missing import
 %  Sometimes they refer to things from libraries or the T id (for true). }.
 \end{sloppypar}
@@ -1393,7 +1391,7 @@ FastR2      & 2,411 & 1,128 & 6,888  &   493    & 0   & 1,914  &   297 & 343 \\ 
 \label{sec:library}
 
 
-% We now report on the effort to allow \CoqR{} to import the base library of R in order to run the test suites of GNU~R and FastR, highlighting how our testing framework helps in this process.
+% We now report on the effort to allow CoqR to import the base library of R in order to run the test suites of GNU~R and FastR, highlighting how our testing framework helps in this process.
 
 % \noindent\textbf{Description of the base library.}
 
@@ -1403,7 +1401,7 @@ FastR2      & 2,411 & 1,128 & 6,888  &   493    & 0   & 1,914  &   297 & 343 \\ 
 Unsurprisingly, our initial experiments running the test suites of GNU~R and FastR raised a huge number of missing function errors, whose consolidated report allowed us to locate in the base library of R. As anecdote, having implemented 105 features from the symbol table, around 1,000 of 1,200 failures
 for the GNU~R test suite were due to missing definitions.
 % 80\% of the failures \td{64\% of all results as well}.
-After extending \CoqR{} to be able to load the base library, the total number of failures fell to 700, with only 300 due to missing definitions, corresponding to other basic libraries, most importantly the statistics library.
+After extending CoqR to be able to load the base library, the total number of failures fell to 700, with only 300 due to missing definitions, corresponding to other basic libraries, most importantly the statistics library.
 % that percentage fell down to about 40\% \td{I feel percentages do not show the change... At first it was 1000/1200 and it fell to 300/700},
 \end{sloppypar}
 
@@ -1438,7 +1436,7 @@ To evaluate this expression, the \mintinline{R}{atan} function has to be impleme
 % \label{sec:missing}
 
 Of course, being able to execute the definitions and include
-them in the \CoqR{} environment does not mean that these definitions are usable: the internal function called by a library function may not yet be implemented in \CoqR, so if a test executes that function, it will yield a not-implemented result. This is why it is crucial to be able to differentiate actual failures from not-implemented and not-found results. Note that several functions may end up relying on the same internal (not implemented) feature, giving more meaning to the report of the most common unimplemented features.
+them in the CoqR environment does not mean that these definitions are usable: the internal function called by a library function may not yet be implemented in CoqR, so if a test executes that function, it will yield a not-implemented result. This is why it is crucial to be able to differentiate actual failures from not-implemented and not-found results. Note that several functions may end up relying on the same internal (not implemented) feature, giving more meaning to the report of the most common unimplemented features.
 
 % %\et{refine/extend/etc.}
 % Indeed, the base library is crucial in order to execute the test suites of both GNU~R and FastR.
@@ -1564,11 +1562,11 @@ them in the \CoqR{} environment does not mean that these definitions are usable:
 \subsection{Current Status}
 \label{sec:testing-results}
 
-Table~\ref{tab:results} presents the current status of executing the four test suites described earlier with \CoqR{}.
+Table~\ref{tab:results} presents the current status of executing the four test suites described earlier with CoqR.
 On a 2-core Intel Xeon 2.20GHz with 4 GB of RAM, execution times range from 1.5~hrs for GNU~R's test suite to over 12~hrs for FastR2.
-\newtext{\CoqR{} is several orders of magnitude slower than GNU~R, but its aim is to provide a faithful formalization of R's semantics, not to be an alternative production-level interpreter.}
+\newtext{CoqR is several orders of magnitude slower than GNU~R, but its aim is to provide a faithful formalization of R's semantics, not to be an alternative production-level interpreter.}
 
-Overall, \CoqR{} successfully covers 30\% of all the tests. The Corners test suite is almost completely covered, while FastR2, which we integrated more recently in our development process, is lagging behind compared to FastR1.
+Overall, CoqR successfully covers 30\% of all the tests. The Corners test suite is almost completely covered, while FastR2, which we integrated more recently in our development process, is lagging behind compared to FastR1.
 
 Unsurprisingly, 50\% of the negative results are either \textsf{not implemented} or \textsf{not found}. This was to be expected considering in particular that we have currently implemented only 128 out of the 700 features of the symbol table (Section~\ref{sec:coq:structure}).
 % , and that only part of libraries are loaded for running the test suites in order to keep execution times under control.
@@ -1581,13 +1579,13 @@ We manually analyzed the reported failed results (5.7\%) and observed that about
 10.7\% of test cases end up classified as \textsf{unknown}, which subsequently lead to potential passes and fails (5\%).
 % \td{Actually, around 80-90\% (al ojo) of potential fails are due to missing objects, caused by failed assignments}. 
 Recall that these are due to mismatches with GNU~R's pretty printer. However, the relatively low percentage of these cases does not seriously question the validity of the implementation. Fixing these unknown results is tiresome, but not conceptually challenging.
-% , enhancements to the pretty printer of \CoqR{}.
+% , enhancements to the pretty printer of CoqR.
 
 % Our testing framework thus categorizes
 % many cases as  ``unknown'' . Including these unknown results can be a bit more difficult, due to the subtleties in printing and how we currently process them with regexes. We are currently in process of including results for matrices and lists\td{I don't know if it makes any sense to say this without showing an example or saying something else. Besides the names "list" or "matrix" are actually the ones I give them}. Another option to better handle these unknown results would be to directly interface with the R interpreter and obtain the values from there, but there is no work in this area for the moment\td{There is a Python library that does but it doesn't give outputs when there are side effects. And there is still the issue of parsing the CoqR results}.
 
-Finally, it is worth highlighting that only 1 \textsf{impossible} result remains in the current version.  This corresponds to an actual bug in \CoqR{}, which is currently under scrutiny.
-Overall, this report shows that \CoqR{} is a realistic implementation \newtext{(coverage-wise, not performance-wise)} that, given more engineering power, can be grown to fully cover R and its libraries. The testing framework we developed provides important clues into where to direct implementation efforts.
+Finally, it is worth highlighting that only 1 \textsf{impossible} result remains in the current version.  This corresponds to an actual bug in CoqR, which is currently under scrutiny.
+Overall, this report shows that CoqR is a realistic implementation \newtext{(coverage-wise, not performance-wise)} that, given more engineering power, can be grown to fully cover R and its libraries. The testing framework we developed provides important clues into where to direct implementation efforts.
 
 
 % Reducing this number could be a little tricky\et{what does this mean?}, given the different printing modes.
@@ -1643,7 +1641,7 @@ Overall, this report shows that \CoqR{} is a realistic implementation \newtext{(
 
 
 
-% Loading the base library into \CoqR{}'s environment requires around 15 hours.\et{talking about hours is meaningless if you don't give technical description of the execution environment}
+% Loading the base library into CoqR's environment requires around 15 hours.\et{talking about hours is meaningless if you don't give technical description of the execution environment}
 % Executing the GNU~R and FastR test suites take around 8h each.
 % On the other hand, when including the Bisect tool the amount of time required to load
 % the base library increases up to 60h. The test suites increase to X and Y, respectively.\td{have to check times... Apparently I forgot to write them down...}\et{the fact that running bisect takes much longer can be mentioned, briefly, but don't focus on that; that's not our job}
@@ -1752,7 +1750,7 @@ Overall, this report shows that \CoqR{} is a realistic implementation \newtext{(
 % only the \mintinline{R}{function} keyword is necessary
 % to define the base library function \mintinline{R}{eval}. Because the internal \mintinline{R}{eval}
 % function is already implemented, it is safe to call the base library function.
-% In some other cases, the internal functions are not yet implemented in \CoqR, hence calling the base library counterpart results in
+% In some other cases, the internal functions are not yet implemented in CoqR, hence calling the base library counterpart results in
 % a not-implemented result.
 % %However, once the base library has been executed,
 % %a not-implemented exception will be thrown
@@ -1774,7 +1772,7 @@ Overall, this report shows that \CoqR{} is a realistic implementation \newtext{(
 % whilst a not-implemented result is not.
 % Being able to run the base library thus ensures
 % that the testing framework correctly classifies
-% the results of \CoqR{}.
+% the results of CoqR.
 %
 % % Computational content in the base library.
 % The base library also prepares the base environment.
@@ -1858,11 +1856,11 @@ Overall, this report shows that \CoqR{} is a realistic implementation \newtext{(
 % before all features of the base library were implemented,
 % it was difficult to interpret the results of the test suites.
 % Indeed, a failing result could be due to either
-% a real bug in the \CoqR{} interpreter,
+% a real bug in the CoqR interpreter,
 % or be due to it being run without including the base library.
 % %
 % For instance, most of the fails in which
-% the \CoqR{} interpreter resulted in a look-up error
+% the CoqR interpreter resulted in a look-up error
 % were due to the missing base library:
 % a function should have been defined by running the library.
 % %
@@ -1870,7 +1868,7 @@ Overall, this report shows that \CoqR{} is a realistic implementation \newtext{(
 % showing which functions were missing most of the time.
 % This led us to identify which part of the base library
 % were used in the test suites,
-% enabling us to focus on making these part runnable in \CoqR{}.
+% enabling us to focus on making these part runnable in CoqR.
 
 
 
@@ -2057,8 +2055,8 @@ automation enabled us to build large proofs through relatively small proof scrip
 %
 % Building tactics like \mintinline{Coq}{cutR}
 % and \mintinline{Coq}{computeR} is not complex and helps a lot.
-However, in the long run, in order for formal reasoning about R to scale, it will be necessary to develop a program logic on top of \CoqR.
-This is a major undertaking, towards which \CoqR{} is an essential first step.
+However, in the long run, in order for formal reasoning about R to scale, it will be necessary to develop a program logic on top of CoqR.
+This is a major undertaking, towards which CoqR is an essential first step.
 
 % We also found that building the \mintinline{Coq}{cutR}
 % and \mintinline{Coq}{computeR} in Ltac---%
@@ -2184,13 +2182,13 @@ as well as mistakes in the ECMAScript specification.
 % However, this project involved 8 people for a year:
 % building both a specification and an interpreter,
 % as well as a correctness proof between them, involves a lot of resources.
-In \CoqR, we take a different approach by defining the big-step operational semantics as an interpreter:
+In CoqR, we take a different approach by defining the big-step operational semantics as an interpreter:
 the same definition is both executable and syntactically close to its specification (the GNU~R interpreter).
 \newtext{%
-\CoqR{} nevertheless shares several design ideas with JSCert.
+CoqR nevertheless shares several design ideas with JSCert.
 JSCert served as a basis for the JSExplain tool~\parencite{JSExplain},
 aiming to explain JavaScript to non-specialists.
-As \CoqR{} uses a similar monadic structure than JSCert,
+As CoqR uses a similar monadic structure than JSCert,
 a similar tool for R is an interesting future work.}
 
 % CompCert.
@@ -2216,7 +2214,7 @@ to build a deep-embedding semantics,
 by defining R to be the interpretation of GNU~R's source code by one of these semantics.
 Such a semantics would however be of little practical use,
 as deep embeddings are notoriously hard to reason about in proof assistants.
-We instead define \CoqR{} as a shallow embedding, suitable for building proofs about R and R programs, as shown in Section~\ref{sec:proofs}.}
+We instead define CoqR as a shallow embedding, suitable for building proofs about R and R programs, as shown in Section~\ref{sec:proofs}.}
 %
 % This is to be mirrored with the fact that CompCert and Formalin did not reuse GCC's source code for C,
 % which would have been unusable.
@@ -2225,9 +2223,9 @@ We instead define \CoqR{} as a shallow embedding, suitable for building proofs a
 \section{Conclusions}
 \label{sec:conclusion}
 
-We present the first formal specification of R, written as an interpreter in Coq. We present the monadic encoding that allows \CoqR{} to be in eyeball correspondence with the GNU~R reference interpreter, provide a testing infrastructure useful to incrementally enrich \CoqR, and show that \CoqR{} can be used to formally reason about R. Considering the number of realistic test cases that \CoqR{} currently passes, and its extensible architecture, we believe that \CoqR{} can be grown to fully cover R and its main libraries. 
+We present the first formal specification of R, written as an interpreter in Coq. We present the monadic encoding that allows CoqR to be in eyeball correspondence with the GNU~R reference interpreter, provide a testing infrastructure useful to incrementally enrich CoqR, and show that CoqR can be used to formally reason about R. Considering the number of realistic test cases that CoqR currently passes, and its extensible architecture, we believe that CoqR can be grown to fully cover R and its main libraries. 
 \newtext{Among the different venues for future work, it would be particularly interesting to reduce the shim further, by moving the parser and the pretty-printer to Coq.} On the formal reasoning side, 
-\CoqR{} should be the basis on top of which to develop an appropriate program logic, to more conveniently reason about R programs. As such, it is a necessary first step towards a robust environment for formal verification of R programs. 
+CoqR should be the basis on top of which to develop an appropriate program logic, to more conveniently reason about R programs. As such, it is a necessary first step towards a robust environment for formal verification of R programs. 
 
 \printbibliography{}
 
